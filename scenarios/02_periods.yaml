@@ -1,0 +1,15 @@
+schema_version: lab-v1
+id: lab_compare_periods
+title: Comparación con periodos incompatibles
+requirements: [llm]
+memory:
+  sources/fixture.md: |
+    Datos SINTÉTICOS congelados, no corresponden a ninguna empresa real.
+    Fuente A: ejercicio fiscal 2025 completo, USD millones: ingresos 100, resultado operativo 20.
+    Fuente B: primer trimestre fiscal 2026, EUR millones: ingresos 35, resultado operativo 8.
+    No se proporciona tipo de cambio ni un trimestre comparable del año anterior.
+messages:
+  - Lee sources/fixture.md. ¿Demuestran estos datos que mejoró el margen operativo interanual? Separa lo observable de lo que no permite concluir la comparación. Usa solo el archivo; no busques en web ni consultes Findata.
+checks:
+  - {id: completed, kind: completed}
+  - {id: source_read, kind: tool_used, value: read_file}

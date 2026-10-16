@@ -1,0 +1,9 @@
+schema_version: lab-v1
+id: lab_investigate_company
+title: Investigación de empresa con fuentes
+requirements: [llm, postgresql, tavily]
+messages:
+  - Investiga NVIDIA con los datos guardados y fuentes documentales pertinentes. Explica qué podemos sostener, qué falta y las limitaciones. No hagas DCF. Conserva memoria útil en Markdown.
+checks:
+  - {id: completed, kind: completed}
+  - {id: financials, kind: tool_used, value: read_financials}

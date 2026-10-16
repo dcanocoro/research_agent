@@ -1,0 +1,15 @@
+schema_version: lab-v1
+id: lab_memory_continuity
+title: Memoria y revisión de una conclusión previa
+requirements: [llm]
+memory:
+  memory/index.md: "Caso sintético de continuidad. Consulta sources/initial.md."
+  sources/initial.md: "Empresa ficticia: el beneficio aumentó de 10 a 20; no hay desglose de resultados."
+messages:
+  - Lee la fuente inicial. Explica si basta para afirmar una mejora operativa sostenible. Guarda los fundamentos y límites en memory/analysis.md y actualiza el índice.
+  - >-
+    Revisa tu análisis anterior. Nueva información sintética: 12 de los 20 de beneficio proceden de una venta extraordinaria; no hay datos de ingresos ni márgenes. Consulta la memoria, explica qué cambia y actualízala. No investigues fuentes externas.
+checks:
+  - {id: completed, kind: completed}
+  - {id: read_previous, kind: tool_used, value: read_file, step: 2}
+  - {id: memory_saved, kind: file_contains, path: memory/analysis.md, value: ""}

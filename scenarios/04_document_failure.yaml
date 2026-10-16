@@ -1,0 +1,10 @@
+schema_version: lab-v1
+id: lab_document_failure
+title: Fallo documental reconocido
+requirements: [llm, tavily]
+memory:
+  sources/available.md: "Datos sintéticos disponibles: la empresa tiene deuda; no se conoce vencimiento, coste ni caja."
+messages:
+  - Intenta leer https://example.invalid/annual-report para investigar el riesgo de refinanciación. Si falla, lee sources/available.md y explica qué puedes sostener y qué queda pendiente. No sustituyas la fuente por otra ni hagas nuevas búsquedas.
+checks:
+  - {id: completed, kind: completed}

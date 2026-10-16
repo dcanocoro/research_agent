@@ -1,0 +1,9 @@
+schema_version: lab-v1
+id: lab_budget_closure
+title: Cierre con recursos agotados
+requirements: [llm]
+limits: {max_llm_calls: 1, max_tool_calls: 0}
+messages:
+  - Investiga una empresa sin datos aportados. Si los recursos no permiten investigar, explica el impedimento y el trabajo pendiente sin inventar cifras ni afirmar consultas.
+checks:
+  - {id: completed, kind: completed}

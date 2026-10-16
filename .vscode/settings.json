@@ -1,0 +1,32 @@
+{
+  // 🔧 Editor & Theme
+  "workbench.colorTheme": "Dark Modern",
+  "editor.semanticHighlighting.enabled": "configuredByTheme",
+
+  // 🧠 Python & Pylance
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.addHoverSummaries": true,
+  "python.analysis.autoFormatStrings": true,
+  "python.defaultInterpreterPath": "c:\\Users\\OMEN\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+
+  // 🐍 Python file-specific settings
+  "[python]": {
+    "editor.semanticHighlighting.enabled": true,
+    "editor.formatOnType": true,
+    "editor.defaultFormatter": null,
+    "editor.wordBasedSuggestions": "off"
+  },
+
+  // 🛠️ Terminal & Git
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "git.enableSmartCommit": true,
+
+  // 📝 Optional: Markdown
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
