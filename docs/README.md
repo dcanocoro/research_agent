@@ -1,9 +1,9 @@
 # Documentación de Research Agent
 
 Research Agent es el laboratorio para estudiar los mecanismos de conocimiento,
-investigación y revisión del futuro FinMate. **La prioridad es reconstruir el modelo
-conceptual actual de FinMate**, antes de escoger alternativas de estado. La agenda
-está en [estrategia](strategy.md); ese análisis aún no se ha realizado en este cambio.
+investigación y revisión del futuro FinMate. La [arqueología conceptual](finmate-concept-model/modelo-conocimiento-actual.md)
+sirve de base al primer [experimento de expedientes](experiments/E001-nvidia-casefile/protocol.md).
+La agenda y los límites de esta elección provisional están en [estrategia](strategy.md).
 
 ## Cinco referencias principales
 
@@ -40,8 +40,9 @@ La prioridad vigente se consulta en estrategia, no en la última campaña record
 - **Hallazgo:** observación fechada con base, evidencia y límites; interpretación separada.
 - **Decisión:** elección explícita con estado y justificación; no consecuencia automática de un check.
 
-Hoy existe solo A, con herramientas y memoria Markdown. CLI y Audit cargan una guía
-financiera básica; A0–A3, el expediente formal, DCF y cartera no están implementados.
+Hoy existe solo A, con herramientas, memoria Markdown y modo opcional de expediente
+versionado. CLI y Audit cargan una guía financiera básica; A0–A3, DCF y cartera no
+están implementados. Audit usa vanilla; la CLI permite seleccionar `cases`.
 Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
 La documentación de sus fuentes puede diferir del wheel instalado: verificar antes
 de atribuir capacidades. Reorganización revisada el 2026-10-17.

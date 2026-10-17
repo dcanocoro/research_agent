@@ -221,6 +221,15 @@ async def check():
                     return ResponseTurn([AssistantResponse('done')],'done',None)
             agent.client=Fake()
             assert (await agent.run(AgentRequest('hello','space','conversation'))).status=='completed'
+            assert 'save_case' not in {s.name for s in agent.tools.specs()}
+            assert agent.instructions == ()
+        async with build_agent(root/'case-workspace',root/'case-runs',case_store=root/'cases') as agent:
+            agent.client=Fake()
+            assert 'save_case' in {s.name for s in agent.tools.specs()}
+            assert len(agent.instructions)==1
+            assert (await agent.run(AgentRequest('hello','space','case-chat'))).status=='completed'
+            assert 'case_research.md' in (agent.recorder.current/'manifest.json').read_text()
+            assert (agent.recorder.current/'state_after.json').exists()
         from contextlib import asynccontextmanager
         @asynccontextmanager
         async def builder(workspace,runs,limits):

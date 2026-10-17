@@ -130,6 +130,32 @@ Revisar `result.json` y el motivo de cierre, no solo el código de salida.
 `--timeout-seconds` cambia el presupuesto temporal. `--instructions archivo.md` puede
 repetirse y añade instrucciones a las incluidas. No sirve para seleccionar el futuro A0.
 
+### Modo experimental de expedientes
+
+`--knowledge-mode` admite `vanilla` (predeterminado) o `cases`. Este último exige
+`--case-store`; proporcionar almacén en vanilla es un error. Ejemplo desde la raíz:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --knowledge-mode cases --case-store ./artifacts/example/cases --workspace ./artifacts/example/workspace --runs ./artifacts/example/runs
+```
+
+Otro proceso con las mismas tres rutas recupera memoria y expedientes, sin restaurar
+el chat. El prompt de expedientes se añade automáticamente; no pasar manualmente una
+copia por `--instructions`. El almacén debe ser disjunto de workspace, runs, código e
+instrucciones; queda ligado a las rutas originales y no se comparte entre workspaces.
+No borrar `.lock` para resolver contención: el bloqueo real lo mantiene el sistema
+operativo y se libera al terminar el proceso. Un conflicto exige releer la revisión.
+Los snapshots de estado identifican restos de escrituras no publicadas; conservarlos
+para diagnóstico. No borrar o promover automáticamente esos archivos.
+
+El esquema y límites están en [arquitectura](architecture.md#modo-experimental-de-expedientes).
+La investigación y continuación acordadas tienen el [protocolo E001](experiments/E001-nvidia-casefile/protocol.md).
+Se usa la CLI en procesos separados, porque Audit mantiene una instancia por escenario
+y su configuración actual no selecciona este modo ni garantiza un reinicio entre pasos.
+La dependencia directa Pydantic se declara en el proyecto. Mypy comprueba el código local
+y omite los imports sin marcadores de tipado del wheel compartido, mediante overrides
+explícitos; no implica comprobar internamente las bibliotecas compartidas.
+
 Workspace y archivo de ejecuciones deben ser disjuntos y estar fuera del código/prompts.
 La memoria Markdown persiste; el historial del proceso CLI no. Actualizar el índice
 permite descubrir las notas en la siguiente intervención; no carga automáticamente

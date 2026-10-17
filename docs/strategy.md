@@ -5,10 +5,14 @@
 
 ## Prioridad actual
 
-**Comprender el modelo conceptual vigente de FinMate antes de diseñar su sustituto.**
-La reorganización documental prepara ese trabajo; no constituye la arqueología ni
-demuestra sus conclusiones. Las variantes A0–A3 siguen siendo una línea posterior,
-no el primer paso. No hay modelo candidato ni representación física seleccionados.
+**Contrastar un primer expediente mínimo sobre la arqueología disponible.** El
+[mapa conceptual](finmate-concept-model/modelo-conocimiento-actual.md) y su
+[anexo](finmate-concept-model/estructuras-y-campos.md) reconstruyen el corte de FinMate
+que se toma como referencia. El usuario ha autorizado implementar y explorar el
+candidato [E001](experiments/E001-nvidia-casefile/protocol.md): Markdown versionado,
+metadatos mínimos y cuatro herramientas, con investigación y continuación de NVIDIA.
+Es una elección experimental local, no una arquitectura final ni una aceptación
+semántica general de toda la arqueología. Las variantes A0–A3 siguen siendo posteriores.
 
 El punto de partida es distinguir cuatro preguntas:
 
@@ -39,7 +43,7 @@ Las fases admiten retroalimentación. No requieren implementar todas las alterna
 ni una reescritura completa. La elección de un modelo o una sustitución material
 requiere decisión humana; los prototipos y campañas necesitan un encargo concreto.
 
-## Próximo encargo: arqueología conceptual
+## Referencia del encargo de arqueología
 
 Partir del [mapa de referencias](finmate-references.md) y seguir productores,
 persistencia y consumidores reales. Estudiar usuario e intenciones; empresa y
@@ -57,8 +61,7 @@ evaluación persistida y revisión posterior, hasta donde exista. Examinar tambi
 leen las vistas y acciones. Identificar duplicaciones, pérdidas de contexto y qué
 estados anteriores se pueden reconstruir realmente; un hash no conserva su contenido.
 
-El resultado debe cubrir tres piezas, en un informe enlazado o en archivos separados
-si el tamaño lo exige:
+El encargo de referencia cubre tres piezas, reunidas en la arqueología enlazada:
 
 - Modelo actual: conceptos y relaciones, con evidencia de implementación.
 - Mapa de ciclos de vida: diagramas y ejemplos de lectura, modificación y consumo.
@@ -68,6 +71,11 @@ si el tamaño lo exige:
 Cerrar con incertidumbres y comparaciones propuestas. La revisión humana confirma
 que el mapa describe fielmente el sistema antes de seleccionar alternativas.
 No se realiza aquí ese análisis ni se modifica FinMate.
+
+E001 se ha ejecutado: sus [hallazgos](experiments/E001-nvidia-casefile/findings.md)
+registran ausencia de guardado en ambos procesos y truncamiento del primer cierre.
+El siguiente contraste propuesto estudia cuándo persistir, antes de añadir entidades;
+no se ha ejecutado ni implica autorización para modificar la política silenciosamente.
 
 ## Cómo usar los antecedentes
 

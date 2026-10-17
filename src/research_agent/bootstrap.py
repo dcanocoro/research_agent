@@ -2,7 +2,8 @@ from collections.abc import AsyncIterator
 """Composition root; shared services own transport and provider policy."""
 from dataclasses import asdict, replace
 from pathlib import Path
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, ExitStack
+from importlib.resources import files, as_file
 from .agent import AgentA
 from .contracts import AgentLimits
 from .recording import RunRecorder
@@ -11,7 +12,17 @@ from .workspace import Workspace
 
 
 @asynccontextmanager
-async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits()) -> AsyncIterator[AgentA]:
+async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits(), *,
+                      case_store: Path | None = None) -> AsyncIterator[AgentA]:
+    # Validate experiment paths before constructing clients or database engines.
+    recorder = RunRecorder(runs)
+    registry = ToolRegistry(recorder)
+    store = None
+    if case_store is not None:
+        from .cases import CaseStore
+        from .integrations.case_tools import register_cases
+        store = CaseStore(case_store, workspace, recorder)
+        register_cases(registry, store)
     from findata.settings import settings
     from sqlalchemy import create_engine
     from sqlalchemy.engine import make_url
@@ -29,8 +40,6 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     import research_agent
     factory = LLMFactory(settings)
     profile = replace(configured_profile(settings, "planner"), name="lab")
-    recorder = RunRecorder(runs)
-    registry = ToolRegistry(recorder)
     space = Workspace(workspace)
     if space.root.resolve() == runs.resolve() or space.root.resolve() in runs.resolve().parents or runs.resolve() in space.root.resolve().parents:
         raise ValueError("Workspace and audit directory must be disjoint.")
@@ -48,8 +57,16 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
             hashes = [(str(p.relative_to(package)), hashlib.sha256(p.read_bytes()).hexdigest())
                       for p in sorted(package.rglob("*")) if p.suffix in {".py", ".md"}]
             fingerprints[module.__name__] = hashlib.sha256(repr(hashes).encode()).hexdigest()
-        yield AgentA(factory.conversation(profile), registry, space, recorder, limits,
-                     configuration={**asdict(profile), "code_sha256": fingerprints})
+        with ExitStack() as resources:
+            instructions: tuple[Path, ...] = ()
+            if store is not None:
+                prompt = resources.enter_context(as_file(files("research_agent").joinpath("prompts/case_research.md")))
+                instructions = (prompt,)
+            yield AgentA(factory.conversation(profile), registry, space, recorder, limits,
+                         configuration={**asdict(profile), "code_sha256": fingerprints,
+                                        "knowledge_mode": "cases" if store else "vanilla",
+                                        "case_store": store.binding.model_dump(mode="json") if store else None},
+                         instructions=instructions)
     finally:
         await factory.aclose()
         database.dispose()

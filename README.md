@@ -4,12 +4,15 @@ Laboratorio para descubrir qué mecanismos de conocimiento, investigación y rev
 necesita el futuro FinMate. La aspiración es mantener evaluaciones de inversión
 fundamentadas y revisables; su arquitectura se decidirá mediante experimentos.
 
-**Prioridad actual:** comprender el modelo conceptual vigente de FinMate antes de
-comparar alternativas de estado. El [plan](docs/strategy.md) define alcance y criterios
-de avance; esta reorganización documental todavía no realiza ese análisis.
+**Prioridad actual:** explorar un expediente mínimo versionado a partir de la
+[arqueología de FinMate](docs/finmate-concept-model/modelo-conocimiento-actual.md).
+La [estrategia](docs/strategy.md) define alcance y criterios de avance; el primer
+[protocolo](docs/experiments/E001-nvidia-casefile/protocol.md) investiga NVIDIA y
+continúa en un proceso nuevo.
 
 Hoy implementa el agente A: modelo → herramienta → modelo → respuesta, con memoria
-Markdown y herramientas financieras y web. No incorpora DCF, cartera o grafo obligatorio.
+Markdown y herramientas financieras y web. El modo opcional `cases` añade expedientes
+versionados. No incorpora DCF, cartera o grafo obligatorio.
 
 El proyecto vive fuera de FinMate. Reutiliza bibliotecas compartidas instaladas desde
 un wheel local; sus fuentes permanecen en FinMate. No importa `finmate`, `engine` o `api`.
@@ -24,6 +27,7 @@ Con el entorno y `.env` preparados según [desarrollo e instalación](docs/devel
 
 ```powershell
 .\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA sin DCF" --workspace ./artifacts/workspace --runs ./artifacts/runs
+.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --knowledge-mode cases --case-store ./artifacts/example/cases --workspace ./artifacts/example/workspace --runs ./artifacts/example/runs
 $auditRoot = Join-Path $PWD.Path "artifacts/audit"
 .\.venv\Scripts\python.exe -m experience_audit lab ./scenarios --output $auditRoot
 ```

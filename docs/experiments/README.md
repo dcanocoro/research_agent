@@ -1,8 +1,7 @@
 # Registro de experimentos y hallazgos
 
 La [metodología](../experiments.md) define cómo comparar y la
-[estrategia](../strategy.md) establece la prioridad. No hay protocolos ni hallazgos
-locales registrados aquí todavía. Los escenarios ejecutables de [scenarios](../../scenarios)
+[estrategia](../strategy.md) establece la prioridad. Los escenarios ejecutables de [scenarios](../../scenarios)
 son estímulos y checks, no campañas realizadas ni resultados semánticos.
 
 Crear una carpeta `E001-nombre-breve/` cuando exista un contraste concreto:
@@ -24,3 +23,7 @@ si las capturas no pueden compartirse. No incorporar secretos o payloads privado
 Mantener aquí una fila por experimento cuando exista: ID, pregunta, estado, enlaces
 a protocolo/hallazgos y decisión asociada. Un experimento puede concluir sin recomendar
 un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos.
+
+| ID | Pregunta | Registro |
+|---|---|---|
+| E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Concluido: sin expediente; primera entrega fallida, segunda por presupuesto. [Protocolo](E001-nvidia-casefile/protocol.md), [hallazgos](E001-nvidia-casefile/findings.md) |

@@ -31,8 +31,9 @@ justificarse por el problema que resuelve, la alternativa más sencilla y cómo 
 su aportación. La arquitectura resultante será una conclusión revisable.
 
 Hoy solo está implementado A: ciclo de modelo y herramientas, memoria Markdown,
-Findata de solo lectura, Tavily, aritmética y captura experimental. No administra
-cartera ni ejecuta inversiones; no dispone de DCF, expediente formal o vigilancia
+Findata de solo lectura, Tavily, aritmética y captura experimental. Un modo opcional
+añade expedientes versionados con Markdown y referencias, como candidato experimental.
+No administra cartera ni ejecuta inversiones; no dispone de DCF o vigilancia
 programada. El contrato vigente está en [arquitectura](architecture.md).
 
 ## Qué queremos contrastar

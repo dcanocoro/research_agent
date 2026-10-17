@@ -5,8 +5,11 @@
 
 ## Qué comparar primero
 
-La [estrategia](strategy.md) comienza por reconstruir el modelo conceptual de FinMate.
-Después se compararán candidatos narrativo, argumentativo y financiero-argumentativo
+La [arqueología](finmate-concept-model/modelo-conocimiento-actual.md) reconstruye el
+modelo conceptual de FinMate. La [estrategia](strategy.md) ha avanzado al candidato
+exploratorio [E001](experiments/E001-nvidia-casefile/protocol.md), autorizado por el
+usuario: expediente versionado con investigación de NVIDIA y continuación tras reinicio.
+Después se podrán comparar candidatos narrativo, argumentativo y financiero-argumentativo
 con los mismos ejemplos y operaciones. Son familias propuestas de representación del
 conocimiento, no variantes de A implementadas ni tres sistemas que debamos construir.
 
@@ -81,7 +84,9 @@ conocimiento: son factores distintos, que conviene estudiar por separado.
 
 ## Ejemplo de representación por contrastar
 
-No hay schema o carpeta de casos obligatoria en A. Una convención a probar sería:
+Vanilla no exige schema o carpeta de casos. El modo opcional `cases` tiene el contrato
+descrito en [arquitectura](architecture.md#modo-experimental-de-expedientes). La siguiente
+convención histórica es una alternativa de organización textual, no su almacén actual:
 
 ```text
 workspace/cases/nvidia/
@@ -143,7 +148,7 @@ usuario; el agente actual no administra cartera. Rentabilidad superior requiere 
 evaluación: muchas decisiones, tiempo, benchmarks, costes, control de riesgo y ausencia
 de información futura. No inferirla de una campaña local o un dossier coherente.
 
-El siguiente paso de investigación es el análisis conceptual definido en
-[estrategia](strategy.md). Sus resultados permitirán elegir una comparación y fijar
-su protocolo y rúbrica antes de implementar los mecanismos mínimos. No hay aquí
-autorización implícita para construir toda la agenda.
+El siguiente paso autorizado es E001, con su protocolo y guía previos a ejecutar.
+Sus hallazgos orientarán una comparación posterior. Esta exploración no incluye
+control ni permite atribuir mejoras causales a la representación. No hay autorización
+implícita para construir toda la agenda.

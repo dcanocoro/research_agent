@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "research-agent"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["findata==0.1.0", "PyYAML>=6,<7"]
+dependencies = ["findata==0.1.0", "PyYAML>=6,<7", "pydantic>=2,<3"]
 
 [project.scripts]
 research-agent = "research_agent.cli:main"
@@ -16,3 +16,8 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 research_agent = ["prompts/*.md", "py.typed"]
+
+[[tool.mypy.overrides]]
+# The installed shared wheel does not publish typing markers; check local code.
+module = ["runtime_contracts.*", "infra.*", "findata.*", "observability_context"]
+ignore_missing_imports = true

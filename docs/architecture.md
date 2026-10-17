@@ -1,6 +1,6 @@
 # Arquitectura implementada
 
-> Estado: contraste estático con el código del proyecto externo. Revisión: 2026-10-16.
+> Estado: implementación local, incluido el modo experimental de expedientes. Revisión: 2026-10-17.
 > Autoridad: `src/research_agent/`, schemas registrados y biblioteca compartida instalada.
 
 ## Frontera y estructura
@@ -75,6 +75,7 @@ No significa suficiencia financiera. Otros estados son `interrupted`, `failed` y
 | Tavily | `search_web`, `read_document` |
 | Workspace | `list_files`, `read_file`, `search_files`, `write_markdown` |
 | Evidencia y cálculo | `read_artifact`, `calculate` |
+| Expedientes, solo modo cases | `list_cases`, `read_case`, `save_case`, `list_case_revisions` |
 
 Findata conserva metadatos y ausencias; exige PostgreSQL, transacción de solo lectura
 y timeout por sentencia. No ingiere ni escribe. Buscar fuentes no equivale a leerlas:
@@ -85,7 +86,7 @@ No valida que la referencia respalde los números ni que sean comparables. La ex
 de citas, una llamada exitosa o un resultado numérico no certifica la inferencia económica.
 No hay SQL libre, shell, Python arbitrario o DCF.
 
-Las escrituras solo admiten Markdown dentro del workspace. Se rechazan escapes,
+Las herramientas de archivos solo escriben Markdown dentro del workspace. Se rechazan escapes,
 streams de Windows, enlaces y junctions. Workspace, archivo de ejecuciones e instrucciones
 deben estar separados. Estos controles no son un sandbox contra procesos externos
 que modifiquen simultáneamente el sistema de archivos.
@@ -151,6 +152,53 @@ La [CLI](../src/research_agent/cli.py) y Audit añaden
 no sustituye esos prompts. `AGENTS.md` guía al desarrollador y no se carga automáticamente
 como prompt del agente. La matriz A0–A3 requiere cambios experimentales aún no implementados.
 
-No hay expediente con schema obligatorio, grafo argumentativo, estados de postura,
-valoración DCF, cartera, aprendizaje persistente o vigilancia proactiva. La disposición
-`cases/<empresa>/` es una [propuesta de experimento](experiments.md), no un contrato vigente.
+Vanilla no impone expediente. El modo `cases` implementa el contrato experimental
+descrito a continuación. No hay grafo argumentativo, estados de postura, DCF, cartera,
+aprendizaje persistente ni vigilancia proactiva. La disposición `cases/<empresa>/`
+de los ejemplos antiguos no es el almacenamiento implementado.
+
+## Modo experimental de expedientes
+
+[CaseStore](../src/research_agent/cases.py) añade identidad y revisiones para probar
+recuperación longitudinal; copiar notas libremente no ofrece revisión esperada ni
+publicación consistente. El significado y la calidad del contenido siguen abiertos.
+Se activa desde CLI con `--knowledge-mode cases --case-store RUTA`; vanilla es el
+valor predeterminado. `build_agent(..., case_store=Path(...))` registra las cuatro
+herramientas y añade el prompt del dominio mediante instrucciones de instancia.
+La llamada existente de Audit sigue construyendo vanilla; no se cambia su wheel.
+
+Expediente: UUID, activo, pregunta original, fecha y puntero vigente. Revisión: UUID,
+antecedente, fecha, explicación, referencias a artefactos, run productor y hash del
+Markdown. Los contratos Pydantic son mínimos; evaluación, argumentos, supuestos,
+objeciones y dudas permanecen en texto. No se impone plantilla ni guardado automático.
+El servicio asigna identidades y fechas; activo y pregunta original son inmutables.
+Otra pregunta puede abrir otro expediente del mismo activo.
+
+El almacén contiene `binding.json`, `.lock` y `<case_id>/case.json` junto a
+`revisions/<revision_id>.json` y `.md`. Se vincula a sus rutas absolutas, workspace y
+archivo; rechaza otra vinculación. Debe ser disjunto de workspace, runs y código o
+instrucciones. No se admite traslado automático ni acceso multiusuario. El control
+de enlaces/junctions tiene los mismos límites frente a procesos externos que Workspace.
+
+Un bloqueo del sistema operativo serializa operaciones y se libera al morir el proceso.
+Cada actualización exige revisión esperada. Primero se escriben archivos nuevos con
+creación exclusiva y flush; después se reemplaza atómicamente `case.json`. No hay
+transacción contra cortes físicos de energía de todo el sistema de archivos. Un
+fallo anterior al reemplazo conserva el puntero anterior y deja restos diagnosticables.
+La lectura histórica sigue únicamente antecedentes publicados; detecta ciclos,
+identidades inconsistentes y contenido Markdown con hash diferente. No expone huérfanos
+como revisiones válidas ni los limpia automáticamente.
+
+Las referencias aceptadas son `artifacts/<sha256>.json`, verificadas en el archivo del
+workspace, incluidas ejecuciones previas. No se valida literalidad de citas ni soporte
+económico de la inferencia. Las fuentes y cifras mantienen sus contratos existentes.
+El prompt recomienda citar pasajes/periodos dentro del contenido y conservar límites.
+Resultados grandes de expedientes pasan por la paginación existente de `read_artifact`.
+
+El núcleo de A conserva un solo ciclo. El registro ofrece lectores genéricos de estado:
+`state_before.json` y `state_after.json` capturan todos los punteros del almacén y
+restos no publicados, sin incorporarlos automáticamente al contexto del modelo. Un
+error de captura se identifica como tal. Los eventos `lab.case.*` correlacionan lecturas,
+revisión seleccionada y cambios con la ejecución; el manifiesto identifica modo y almacén.
+Las herramientas y snapshots complementan el archivo, no convierten `completed` en
+calidad financiera. El primer protocolo es [E001](experiments/E001-nvidia-casefile/protocol.md).

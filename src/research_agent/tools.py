@@ -2,6 +2,7 @@ from __future__ import annotations
 """Simple function dispatch with the same schemas shown to the model."""
 import asyncio
 import inspect
+from pathlib import Path
 from collections.abc import Callable
 from typing import Any
 from jsonschema import Draft202012Validator
@@ -14,6 +15,17 @@ class ToolRegistry:
     def __init__(self, recorder: RunRecorder) -> None:
         self.recorder = recorder
         self._tools: dict[str, tuple[ToolSpec, Callable[..., Any]]] = {}
+        self.state_readers: dict[str, Callable[[], Any]] = {}
+        self.protected_roots: list[Path] = []
+
+    def snapshot_state(self) -> dict[str, Any]:
+        result = {}
+        for name, reader in self.state_readers.items():
+            try:
+                result[name] = reader()
+            except Exception as exc:
+                result[name] = {"capture_error": type(exc).__name__}
+        return result
 
     def register(self, name: str, description: str, properties: dict[str, Any], function: Callable[..., Any]) -> None:
         if name in self._tools:

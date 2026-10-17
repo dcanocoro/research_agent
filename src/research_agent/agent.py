@@ -19,24 +19,31 @@ from .workspace import Workspace
 
 class AgentA:
     def __init__(self, client: ConversationClient, tools: ToolRegistry, workspace: Workspace,
-                 recorder: RunRecorder, limits: AgentLimits = AgentLimits(), configuration: dict[str, Any] | None = None) -> None:
+                 recorder: RunRecorder, limits: AgentLimits = AgentLimits(), configuration: dict[str, Any] | None = None,
+                 instructions: tuple[Path, ...] = ()) -> None:
         self.client, self.tools, self.workspace, self.recorder = client, tools, workspace, recorder
         self.limits, self.configuration = limits, configuration or {}
         self.history: list[ConversationItem] = []
         self._conversation_id: str | None = None
+        self.instructions = instructions
 
     async def run(self, request: AgentRequest) -> AgentResult:
         if self._conversation_id not in (None, request.conversation_id):
             raise ValueError("An AgentA instance belongs to one conversation.")
         self._conversation_id = request.conversation_id
-        protected = [Path(str(files("research_agent"))), *request.instructions]
+        instructions = (*self.instructions, *request.instructions)
+        protected = [Path(str(files("research_agent"))), *instructions]
         for path in protected:
             if self.workspace.root.resolve() == path.resolve() or self.workspace.root.resolve() in path.resolve().parents:
                 raise ValueError("Workspace must not contain instructions or package code.")
+            for root in self.tools.protected_roots:
+                a, b = root.resolve(), path.resolve()
+                if a == b or a in b.parents or b in a.parents:
+                    raise ValueError("State stores must be disjoint from instructions and package code.")
         run_id, interaction_id = str(uuid4()), str(uuid4())
         deadline = monotonic() + self.limits.timeout_seconds
         base = files("research_agent").joinpath("prompts/agent_a.md").read_text(encoding="utf-8")
-        prompts = {"agent_a.md": base, **{str(p): p.read_text(encoding="utf-8") for p in request.instructions}}
+        prompts = {"agent_a.md": base, **{str(p): p.read_text(encoding="utf-8") for p in instructions}}
         system = "\n\n".join(prompts.values())
         self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id,
             "conversation_id": request.conversation_id, "workspace_id": request.workspace_id,
@@ -54,6 +61,8 @@ class AgentA:
             self.recorder.event("lab.run.started", **request.metadata)
             try:
                 self.recorder.save("workspace_before.json", self.workspace.snapshot())
+                if self.tools.state_readers:
+                    self.recorder.save("state_before.json", self.tools.snapshot_state())
                 index = self.workspace.path("memory/index.md")
                 memory = self.workspace.read_file("memory/index.md", max_bytes=8192) if index.exists() else {"text": ""}
                 self.history.append(ConversationContext({"memory_index": memory}))
@@ -111,8 +120,11 @@ class AgentA:
             finally:
                 self.recorder.save("transcript.json", self.history)
                 self.recorder.save("workspace_after.json", self.workspace.snapshot())
+                if self.tools.state_readers:
+                    self.recorder.save("state_after.json", self.tools.snapshot_state())
                 outcome = AgentResult(run_id, status, answer, reason,
-                    ("manifest.json", "transcript.json", "workspace_before.json", "workspace_after.json", "events.jsonl"),
+                    ("manifest.json", "transcript.json", "workspace_before.json", "workspace_after.json", "events.jsonl",
+                     *(("state_before.json", "state_after.json") if self.tools.state_readers else ())),
                     calls, tool_calls, error)
                 self.recorder.save("result.json", outcome)
                 if answer is not None and self.recorder.current is not None:
