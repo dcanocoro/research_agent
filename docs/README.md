@@ -1,45 +1,47 @@
 # Documentación de Research Agent
 
-> Estado: índice del proyecto externo. Revisión: 2026-10-16.
-> Autoridad: código local, contratos de las bibliotecas instaladas y evidencia fechada.
+Research Agent es el laboratorio para estudiar los mecanismos de conocimiento,
+investigación y revisión del futuro FinMate. **La prioridad es reconstruir el modelo
+conceptual actual de FinMate**, antes de escoger alternativas de estado. La agenda
+está en [estrategia](strategy.md); ese análisis aún no se ha realizado en este cambio.
 
-Research Agent permite investigar agentes con herramientas y memoria. La primera
-especialización es financiera; no impone un grafo, expediente o valoración para responder.
+## Cinco referencias principales
 
-## Orden de lectura
+| Documento | Qué resuelve |
+|---|---|
+| [Visión y propósito](purpose.md) | Qué producto buscamos y qué hipótesis estudia el laboratorio |
+| [Estrategia](strategy.md) | Qué investigar, en qué orden y con qué criterios de avance |
+| [Arquitectura](architecture.md) | Qué está implementado, quién lo posee y cuáles son sus límites |
+| [Experimentos](experiments.md) | Cómo comparar mecanismos y qué conclusiones permite la evidencia |
+| [Desarrollo](development.md) | Instalar, actualizar dependencias, ejecutar, verificar y entregar |
 
-1. [Propósito, reflexión e hipótesis](purpose.md): por qué existe y qué no sabemos aún.
-2. [Arquitectura implementada](architecture.md): clases, flujo, herramientas y límites.
-3. [Dependencias de FinMate](dependencies.md): distribuciones, wheel, configuración y actualizaciones.
-4. [Experimentos y evaluación](experiments.md): escenarios actuales, propuestas A0–A3 y continuidad.
-5. [Desarrollo y operación](development.md): ejecutar, comprobar y conservar resultados.
-6. [Referencias de FinMate](finmate-references.md): dónde investigar contratos y antecedentes.
-7. [Entrega documental del 16 de octubre](deliveries/2026-10-16-documentation.md).
+Para diseñar, empezar por visión y estrategia; para programar, seguir arquitectura,
+productores, consumidores y pruebas del área afectada. [AGENTS.md](../AGENTS.md)
+establece las reglas de colaboración; el [README](../README.md) ofrece el arranque rápido.
+No hace falta releer todo en cada tarea.
 
-Las instrucciones de colaboración están en [AGENTS.md](../AGENTS.md). El
-[README inicial](../README.md) proporciona el arranque rápido.
+## Registros y referencias
 
-## Cómo interpretar estas páginas
+| Registro | Pregunta que conserva |
+|---|---|
+| [Decisiones](decisions/README.md) | ¿Qué elegimos, por qué y qué queda abierto? |
+| [Experimentos y hallazgos](experiments/README.md) | ¿Qué contrastamos y qué aprendimos con qué evidencia? |
+| [Entregas](deliveries/README.md) | ¿Qué se cambió y verificó en un corte concreto? |
+| [Referencias de FinMate](finmate-references.md) | ¿Dónde investigar el producto y las bibliotecas compartidas? |
 
-| Tipo de información | Referencia propietaria | Qué acredita |
-|---|---|---|
-| Capacidad actual | Arquitectura y código enlazado | Existencia de un recorrido, no su calidad financiera |
-| Propósito e hipótesis | Propósito | Dirección de investigación, no comportamiento obligatorio |
-| Dependencia o instalación | Dependencias | Relación con bibliotecas; verificar el entorno efectivo |
-| Protocolo experimental | Experimentos | Qué controlar y observar; no resultados anticipados |
-| Resultado fechado | Entrega y artefactos citados | Lo observado en esa ejecución, con sus límites |
+Cada tema tiene una referencia propietaria; los registros enlazan esa referencia sin
+copiarla. Las entregas conservan su fecha: sus siguientes pasos pueden ser históricos.
+La prioridad vigente se consulta en estrategia, no en la última campaña recordada.
 
-Se conserva una referencia por tema. Los antecedentes de FinMate se enlazan, no se
-copian como contratos locales. La documentación de la fuente compartida puede ser
-más reciente que el wheel instalado: contrastar antes de atribuir una capacidad.
+## Cómo leer las afirmaciones
 
-## Estado a este corte
+- **Visión y propuesta:** dirección a contrastar; no capacidad ni autorización de cambio.
+- **Implementación:** código, schemas y configuración efectiva; no prueba de calidad financiera.
+- **Hallazgo:** observación fechada con base, evidencia y límites; interpretación separada.
+- **Decisión:** elección explícita con estado y justificación; no consecuencia automática de un check.
 
-- Agente A con ciclo autónomo, memoria Markdown, Findata, Tavily y aritmética.
-- Proyecto externo `research-agent`, paquete `research_agent`; bibliotecas comunes en FinMate.
-- CLI y campañas de Experience Audit sin backend, navegador ni expediente del producto.
-- Sin DCF, cartera, órdenes, vigilancia programada, grafo obligatorio ni variantes A0–A3.
-- La entrada habitual carga guía financiera básica; no es el futuro A0 sin guía específica.
-
-Las referencias entre repositorios suponen carpetas hermanas `research_agent` y
-`FinMate`. Es una comodidad documental, no una ruta de importación en ejecución.
+Hoy existe solo A, con herramientas y memoria Markdown. CLI y Audit cargan una guía
+financiera básica; A0–A3, el expediente formal, DCF y cartera no están implementados.
+Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
+La documentación de sus fuentes puede diferir del wheel instalado: verificar antes
+de atribuir capacidades. Reorganización revisada el 2026-10-17.

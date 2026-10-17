@@ -17,7 +17,7 @@ en el [mapa de FinMate](../finmate-references.md). No se copiaron secretos ni ca
 - [AGENTS local](../../AGENTS.md), adaptado a un agente externo con dependencias instaladas.
 - [Propósito](../purpose.md) y [experimentos](../experiments.md) que incorporan las reflexiones:
   expediente evolutivo, materialidad, puente económico, estructura de memoria y variantes A0–A3.
-- [Arquitectura](../architecture.md), [dependencias](../dependencies.md) y
+- [Arquitectura](../architecture.md), [dependencias](../development.md) y
   [operación](../development.md) que describen capacidades y límites actuales.
 
 Quedan explícitos: distribución frente a paquete; editable frente a wheel; fuentes

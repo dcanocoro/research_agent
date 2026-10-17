@@ -1,7 +1,34 @@
 # Experimentos y evaluación
 
-> Estado: escenarios operativos existentes y agenda propuesta, separados.
-> Las propuestas sintetizan las reflexiones aportadas el 2026-10-16; no son resultados.
+> Metodología y líneas de contraste. Revisión: 2026-10-17.
+> La prioridad está en estrategia; protocolos y resultados se registran por separado.
+
+## Qué comparar primero
+
+La [estrategia](strategy.md) comienza por reconstruir el modelo conceptual de FinMate.
+Después se compararán candidatos narrativo, argumentativo y financiero-argumentativo
+con los mismos ejemplos y operaciones. Son familias propuestas de representación del
+conocimiento, no variantes de A implementadas ni tres sistemas que debamos construir.
+
+El primer contraste puede hacerse con expedientes de ejemplo y transiciones manuales
+o procedimientos pequeños, antes de conectar un LLM. No evaluarlo solo por su aspecto:
+probar construcción, incorporación de evidencia, contradicción, revisión longitudinal,
+coexistencia de tesis y recuperación histórica. Las vistas y un caso de decisión de
+cartera sirven como pruebas conceptuales de información necesaria; no requieren
+implementar interfaz, cartera u órdenes en el laboratorio.
+
+| Dimensión | Observación que buscar |
+|---|---|
+| Expresividad y simplicidad | Qué se representa y qué abstracciones exige |
+| Continuidad y trazabilidad | Si se recuperan fundamentos y estados anteriores sin redescubrirlos |
+| Actualización | Si una revisión corrige lo afectado y conserva contradicciones e incertidumbres |
+| Utilidad para agente y usuario | Si se puede leer, modificar y derivar una vista comprensible |
+| Calidad financiera y coste | Si conecta evidencia con consecuencias económicas y qué recursos consume |
+
+La estructura que facilita registrar una evaluación no demuestra que esa evaluación
+sea correcta. Las disciplinas de razonamiento y la representación física son factores
+posteriores que deben aislarse. El [registro experimental](experiments/README.md)
+define cómo fijar cada protocolo y conservar hallazgos, fallos y límites.
 
 ## Qué podemos ejecutar hoy
 
@@ -29,7 +56,7 @@ La hipótesis de [propósito](purpose.md) propone probar más estructura en el c
 retenido antes de imponer una secuencia rígida de ejecución. Argumentar puede ayudar
 a razonar o a representar la conclusión: son intervenciones distintas.
 
-## Matriz propuesta de instrucciones
+## Línea posterior: matriz de instrucciones
 
 | Variante propuesta | Argumentación explícita obligatoria | Guía financiera específica |
 |---|---|---|
@@ -49,10 +76,10 @@ captura de la condición efectiva. Mantener iguales herramientas, modelo, datos,
 presupuesto y tarea. No añadir simultáneamente expediente, políticas y nuevos cálculos:
 no podríamos atribuir la diferencia. Esta documentación no implementa esos cambios.
 
-Después se podría comparar memoria narrativa, estructura ligera y representación
-argumentativa. Es otro factor experimental, que conviene estudiar por separado.
+Esta matriz estudia instrucciones. No confundirla con las familias de modelos de
+conocimiento: son factores distintos, que conviene estudiar por separado.
 
-## Expediente mínimo propuesto
+## Ejemplo de representación por contrastar
 
 No hay schema o carpeta de casos obligatoria en A. Una convención a probar sería:
 
@@ -74,7 +101,7 @@ Primero probar la utilidad de la convención con las herramientas actuales. Solo
 formalizar contratos adicionales si permite una mejora observable de recuperación,
 revisión o validación. Una consulta breve no tiene por qué producir un expediente.
 
-## Primer experimento longitudinal recomendado
+## Recorrido longitudinal para un protocolo futuro
 
 1. Proporcionar un conjunto fechado de datos y documentos. Pedir una evaluación inicial
    con fundamentos, límites y una incertidumbre material para la pregunta.
@@ -116,6 +143,7 @@ usuario; el agente actual no administra cartera. Rentabilidad superior requiere 
 evaluación: muchas decisiones, tiempo, benchmarks, costes, control de riesgo y ausencia
 de información futura. No inferirla de una campaña local o un dossier coherente.
 
-El siguiente paso recuperable es acordar un protocolo longitudinal y su rúbrica sobre
-fuentes congeladas. Después, implementar únicamente los mecanismos necesarios para
-ese contraste. No hay aquí autorización implícita para construir toda la agenda.
+El siguiente paso de investigación es el análisis conceptual definido en
+[estrategia](strategy.md). Sus resultados permitirán elegir una comparación y fijar
+su protocolo y rúbrica antes de implementar los mecanismos mínimos. No hay aquí
+autorización implícita para construir toda la agenda.

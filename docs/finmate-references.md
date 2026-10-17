@@ -36,7 +36,7 @@ solo porque sus salidas se parezcan.
 
 Ante una diferencia entre guía y ejecución, revisar fuentes, tests y versión instalada.
 Cambios en Findata/Infra/Audit se realizan en FinMate y se incorporan mediante una
-actualización deliberada del wheel, según [dependencias](dependencies.md).
+actualización deliberada del wheel, según [dependencias](development.md).
 
 ## Extracción y evidencia histórica
 

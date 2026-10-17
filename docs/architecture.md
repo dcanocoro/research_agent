@@ -20,7 +20,7 @@ research_agent/
 El núcleo no importa `finmate`, `engine` o `api`; la prueba en subprocess bloquea
 su carga durante ejecución de A y Audit. No utiliza el backend del producto. Las
 bibliotecas compartidas se instalan desde wheel; sus fuentes siguen en FinMate.
-El [mapa de dependencias](dependencies.md) explica instalación y configuración.
+El [manual de desarrollo](development.md) explica dependencias, instalación y configuración.
 
 ## Componentes y contratos
 
@@ -90,7 +90,13 @@ streams de Windows, enlaces y junctions. Workspace, archivo de ejecuciones e ins
 deben estar separados. Estos controles no son un sandbox contra procesos externos
 que modifiquen simultáneamente el sistema de archivos.
 
-## Tres clases de estado
+## Estado de dominio y tres clases de estado técnico
+
+El estado de dominio que estudia la [estrategia](strategy.md) expresa qué conoce,
+cree, pretende, evalúa o ha decidido FinMate. No equivale a la memoria del harness
+(el entorno que ejecuta el agente). Una evaluación puede estar escrita en Markdown;
+el archivo es su representación, no su significado financiero. A no impone hoy ese
+modelo de dominio. Su implementación conserva tres clases de estado técnico:
 
 1. **Historial de conversación:** en memoria de la instancia de A; incorpora llamadas,
    resultados y continuaciones. Una instancia pertenece a una conversación.

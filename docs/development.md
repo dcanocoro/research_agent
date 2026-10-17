@@ -1,12 +1,124 @@
 # Desarrollo y operación
 
-> Estado: uso del proyecto externo, revisado el 2026-10-16.
+> Operación y dependencias del proyecto externo. Reorganización: 2026-10-17.
+> Los detalles del wheel corresponden al corte del 2026-10-16; verificar el entorno efectivo.
 
-## Arranque y configuración
+## Dependencias y frontera de instalación
 
-Empezar por [dependencias](dependencies.md) para crear el entorno. Los ejemplos siguientes
-se ejecutan desde la raíz de Research Agent con su `.venv` y configuración local.
-No modificar fuentes de FinMate para una consulta ni ejecutar migraciones para arrancar A.
+Una distribución instalable puede aportar varios paquetes importables:
+
+| Distribución | Declaración | Paquetes que aporta |
+|---|---|---|
+| `research-agent==0.1.0` | [pyproject local](../pyproject.toml) | `research_agent` |
+| `findata==0.1.0` | [pyproject de FinMate](../../FinMate/pyproject.toml) | `findata`, `infra`, `runtime_contracts`, `experience_audit`, módulos de observabilidad y otros paquetes del producto |
+
+Findata, Infra y Experience Audit se instalan juntas desde el wheel local `findata`.
+Que incluya código del producto no autoriza a cargarlo: los tests de frontera rechazan
+`finmate`, `engine` y `api`.
+
+```mermaid
+flowchart LR
+    F[Fuentes compartidas en FinMate] --> W[Wheel local findata]
+    W --> V[Entorno propio de Research Agent]
+    R[Fuentes externas research_agent] -->|Instalación editable| V
+    V --> A[CLI y Experience Audit lab]
+```
+
+### Bibliotecas reutilizadas
+
+| Biblioteca | Uso en A | Frontera |
+|---|---|---|
+| Findata | Empresas, observaciones y tendencias v2 | PostgreSQL de solo lectura; sin ingesta o creación de tablas |
+| Infra | `LLMFactory`, perfil, clientes, replay, reintentos, búsqueda y extracción Tavily | Sin fallback entre modelos añadido por el laboratorio |
+| runtime_contracts | Mensajes, herramientas, continuaciones, errores, documentos y contexto técnico | Sin entidades, ORM o SDKs del producto |
+| Observabilidad | Correlación y captura local de logs/payloads | Nombres históricos `engine.llm*`; sin exportador configurado aquí |
+| Experience Audit | Escenarios `lab-v1`, ejecución, Archive, consulta e informes | Importa Research Agent para ejecutarlo; Research Agent no importa Audit |
+
+Engine mantiene reexportaciones de contratos por compatibilidad con sus consumidores.
+El agente importa las definiciones canónicas de `runtime_contracts`; no necesita cargar
+Engine. Véase la [decisión compartida](../../FinMate/docs/architecture/decisions/0004-shared-runtime-contracts.md).
+
+### Editable frente a wheel
+
+En el corte de extracción, Research Agent se instaló editable: los imports siguen
+sus fuentes y los cambios de código se ven en la siguiente ejecución. Cambiar sus
+metadatos o dependencias puede requerir reinstalarlo. El wheel compartido se instaló
+como copia: editar FinMate no cambia esa instalación. Esto fija código, no datos,
+web, modelos remotos o configuración; verificar el entorno antes de comparar.
+
+## Instalación
+
+Desde la raíz del proyecto, con Python >=3.11; el corte anterior se verificó con 3.12:
+
+```powershell
+py -3.12 -m venv .venv
+# Primero obtener el wheel local construido desde las fuentes de FinMate.
+.\.venv\Scripts\python.exe -m pip install -c constraints.txt "RUTA_LOCAL\findata-0.1.0-py3-none-any.whl"
+.\.venv\Scripts\python.exe -m pip install -c constraints.txt -e .
+.\.venv\Scripts\python.exe -m pip install -c constraints.txt pytest mypy types-PyYAML types-jsonschema
+.\.venv\Scripts\python.exe -m pip check
+```
+
+Crear `.env` con la configuración indicada abajo solo si no existe. No sobrescribir
+una configuración existente ni sustituir el wheel por un homónimo de un índice público.
+
+`constraints.txt` conserva versiones del corte de extracción: limita la resolución,
+no instala todo su contenido ni es un lock con hashes. El wheel inicial quedó en
+`../FinMate/artifacts/experience-audit-validation/relocation-2026-10-16/wheels/`;
+es evidencia local ignorada y puede no existir en otra máquina. Para trasladar el proyecto,
+conservar también el wheel aprobado o reconstruirlo desde la revisión correspondiente.
+
+## Configuración y servicios
+
+La composición usa la configuración compartida del planificador (`LLM_PLANNER_PROVIDER`,
+`LLM_PLANNER_MODEL` y ajustes asociados) con un perfil explícito llamado `lab`.
+Las claves de proveedor y `TAVILY_API_KEY` se mantienen fuera de Git.
+
+`DATABASE_URL` debe apuntar a PostgreSQL con datos ya disponibles. El esquema de URL
+elige el controlador: `postgresql+psycopg` necesita psycopg 3; `postgresql` utiliza
+normalmente psycopg2 con SQLAlchemy. SQLite no sustituye las lecturas v2. Usar además
+credenciales de lectura cuando estén disponibles; A abre transacciones de solo lectura.
+
+Se conserva OpenTelemetry por compatibilidad de dependencias. No es necesario configurar
+un exportador para producir los registros locales. La instalación amplia del wheel puede
+incluir dependencias del producto, pero las campañas `lab` no necesitan sus servicios,
+usuarios, navegador ni instalar binarios de Playwright.
+
+Las rutas de workspace y archivo son explícitas. Los prompts incluidos son recursos
+del paquete; no se localizan buscando el checkout padre. Para ejecutar desde otra
+carpeta, proporcionar configuración disponible allí o variables de entorno: no asumir
+que se descubrirá automáticamente el `.env` de este proyecto.
+
+## Actualizar una biblioteca compartida
+
+1. Determinar el contrato y los consumidores afectados en FinMate. Cambiar allí la
+   biblioteca, con sus pruebas; no editar `site-packages` o copiarla al agente.
+2. Construir un wheel nuevo y conservar revisión de origen y SHA-256.
+3. Actualizar deliberadamente el entorno del agente y ejecutar sus verificaciones.
+4. Registrar la actualización y cualquier cambio experimental; conservar el wheel anterior.
+
+Ejemplo desde Research Agent, con las dependencias de construcción instaladas:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip wheel ..\FinMate --no-deps --no-build-isolation --wheel-dir artifacts/wheels
+Get-FileHash artifacts/wheels/findata-0.1.0-py3-none-any.whl -Algorithm SHA256
+.\.venv\Scripts\python.exe -m pip install --force-reinstall --no-deps artifacts/wheels/findata-0.1.0-py3-none-any.whl
+.\.venv\Scripts\python.exe -m pip check
+```
+
+`--no-deps` presupone un entorno compatible; si cambian los requisitos, resolverlos
+explícitamente antes de aceptar la actualización. El mismo número `0.1.0` puede ocultar
+código distinto: registrar hash del wheel y revisión, no solo la versión. No reinstalar
+silenciosamente durante una comparación experimental.
+
+Extraer Findata o Audit como distribuciones independientes sigue siendo una decisión
+futura. Puede hacerse si su evolución lo justifica; no es requisito del agente actual.
+Las referencias documentales entre carpetas hermanas no son dependencias de ejecución.
+
+## Ejecutar A
+
+Desde la raíz de Research Agent, con su `.venv` y configuración local. No modificar
+fuentes de FinMate ni ejecutar migraciones para arrancar A.
 
 ```powershell
 .\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA: fundamentos, riesgos y límites de los datos, sin DCF" --workspace ./artifacts/workspace --runs ./artifacts/runs
@@ -139,7 +251,9 @@ repetida en el entorno actual. Registrar qué se comprobó y qué quedó fuera.
 
 Actualizar la referencia propietaria y el índice cuando cambie el mapa. Las entregas
 en `docs/deliveries/` indican fecha, base, cambio, verificaciones, límites y siguiente
-paso. Las propuestas experimentales permanecen en [experimentos](experiments.md).
+paso, sin duplicar el diseño. Los [protocolos y hallazgos](experiments/README.md)
+conservan lo aprendido; las [decisiones](decisions/README.md), las elecciones duraderas.
+La prioridad vigente está en [estrategia](strategy.md).
 
 No versionar `.env`, payloads privados, bases locales ni workspaces reales. `artifacts/`
 está ignorado; citar una ruta allí no hace portable la evidencia. Las guías pueden

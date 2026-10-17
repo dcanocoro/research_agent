@@ -1,86 +1,68 @@
-# Propósito e hipótesis de investigación
+# Visión y propósito
 
-> Estado: orientación de investigación. Revisión: 2026-10-16.
-> Origen: reflexión estratégica aportada por el usuario el 16 de octubre y discusión previa.
-> No modifica prompts, herramientas o contratos del producto.
+> Dirección de producto e hipótesis de investigación. Revisión: 2026-10-17.
+> No modifica el comportamiento del agente ni los contratos de FinMate.
 
-## Qué queremos descubrir
+## Para qué existe FinMate
 
-FinMate ha explorado investigación financiera, hipótesis, argumentos, evidencia,
-evaluaciones persistentes y revisión de conclusiones. Esa estructura puede aportar
-trazabilidad, pero también costes de coordinación y restricciones. El laboratorio
-existe para distinguir qué mecanismos ayudan y cuáles no justifican su complejidad.
+FinMate aspira a acompañar el proceso inversor: comprender los objetivos y restricciones
+del usuario, investigar empresas, elaborar evaluaciones justificadas y relacionarlas
+con su cartera. A largo plazo, contempla una gestión cada vez más autónoma y supervisada.
+Esa autonomía requerirá garantías de riesgo, permisos, ejecución y evaluación propias;
+no forma parte de los primeros experimentos de este laboratorio.
 
-La pregunta no es confirmar ni descartar de antemano la arquitectura neurosimbólica.
-Es comprobar qué combinación de autonomía, conocimiento financiero, argumentación,
-incertidumbre y memoria mejora el análisis y la revisión con recursos proporcionados.
-La complejidad existente tampoco demuestra inutilidad: algunos mecanismos protegen
-propiedades del producto que un experimento aislado todavía no necesita.
+La unidad de valor buscada es una **evaluación de inversión auditable que evoluciona
+con la evidencia**. El expediente vivo conserva qué sabemos, qué interpretamos, qué
+desconocemos, por qué sostenemos un juicio y qué nos haría revisarlo. Su significado
+y sus conceptos aún deben precisarse; no implica un schema o almacenamiento elegido.
+La [visión de FinMate](../../FinMate/docs/product/vision.md) y sus
+[capacidades](../../FinMate/docs/product/capabilities.md) documentan aquel producto.
 
-Research Agent es un instrumento para obtener esa evidencia, no un nuevo FinMate.
-Su núcleo debe servir a encargos generales; las finanzas son la primera especialización.
+## Para qué existe Research Agent
 
-## Aspiración financiera y capacidad actual
+Research Agent es el laboratorio para descubrir qué combinación de autonomía,
+herramientas, instrucciones y memoria permite mantener ese conocimiento con calidad
+y un coste proporcionado. Su núcleo es general; las finanzas son la primera especialización.
 
-La reflexión sitúa como dirección una inteligencia financiera continua: investigar,
-razonar, valorar, conservar fundamentos y colaborar en decisiones considerando riesgo,
-precio y, eventualmente, cartera. El usuario conserva la decisión sobre su capital.
+FinMate ha explorado entidades, operadores, argumentación y persistencia que aportan
+conocimiento y garantías, pero también pueden introducir coordinación innecesaria.
+Preservar una capacidad no exige conservar su implementación. Cada mecanismo debe
+justificarse por el problema que resuelve, la alternativa más sencilla y cómo comprobar
+su aportación. La arquitectura resultante será una conclusión revisable.
 
-Esa dirección puede buscar mejores resultados ajustados por riesgo; no es un beneficio
-demostrado. Hoy A investiga bajo demanda, conserva Markdown y utiliza herramientas.
-No posee cartera integrada, postura formal persistente, DCF, vigilancia programada
-o ejecución de inversiones. La [visión vigente de FinMate](../../FinMate/docs/product/vision.md)
-y sus [capacidades](../../FinMate/docs/product/capabilities.md) siguen siendo sus referencias.
-Esta síntesis no redefine silenciosamente el contrato de aquel producto.
+Hoy solo está implementado A: ciclo de modelo y herramientas, memoria Markdown,
+Findata de solo lectura, Tavily, aritmética y captura experimental. No administra
+cartera ni ejecuta inversiones; no dispone de DCF, expediente formal o vigilancia
+programada. El contrato vigente está en [arquitectura](architecture.md).
 
-## Expediente evolutivo como hipótesis
+## Qué queremos contrastar
 
-El objetivo de una futura línea longitudinal es mantener una evaluación revisable:
-qué sostiene el juicio, qué lo cuestiona, qué falta y qué información justificaría
-cambiarlo. No basta acumular un informe largo o argumentos sin efecto sobre la respuesta.
+La hipótesis principal es que un estado explícito y persistente, acompañado de una
+disciplina de investigación y revisión, permite evaluaciones más coherentes y útiles
+que responder sin continuidad. Queda abierto cuánto debe estructurarse y si la
+argumentación ayuda durante el razonamiento, al conservarlo o en ambas situaciones.
 
-Un recorrido conceptual sería: evaluación provisional → cuestión material → investigación
-o cálculo → revisión de fundamentos y límites → evaluación actualizada. No es una
-máquina de estados implementada ni obliga a recorrer todos esos pasos en cada consulta.
+Una segunda hipótesis es que ese progreso mejore las decisiones y, eventualmente,
+los resultados de inversión. Necesita evidencia diferente:
 
-## Argumentación, técnicas financieras y materialidad
-
-Un argumento bien referenciado no determina su impacto económico. Una explicación
-sobre márgenes debe conectarse con sus posibles consecuencias para flujos, escenarios
-y valoración cuando la pregunta lo requiera. La valoración y el precio tampoco deciden
-por sí solos la adecuación de una inversión a una cartera o una persona.
-
-Ejemplo hipotético: una ventaja competitiva podría sostener márgenes futuros. Hace
-falta contrastar esa explicación, delimitar su duración y estudiar qué cambia en los
-escenarios. Contar argumentos favorables no sustituye ese puente económico.
-
-La prioridad de investigación debería depender de cuánto puede mejorar la respuesta,
-la incertidumbre y el coste de obtener información. Lo menos documentado no es
-necesariamente lo más importante. Resolver una incertidumbre irrelevante puede aportar
-menos que revisar una premisa aparentemente sólida con gran consecuencia económica.
-
-La combinación de argumentación, técnicas financieras, gestión de incertidumbre y
-juicio es prometedora; no obliga a crear cuatro módulos o cuatro agentes.
-
-## Hipótesis central: estructura conservada frente a ejecución guiada
-
-Podría ser útil dar libertad al modelo para investigar y añadir estructura principalmente
-a lo que conserva y verifica. También es posible que formular argumentos explícitos
-durante el trabajo mejore el resultado más que organizarlos al final. Ambas posibilidades
-deben compararse. La memoria argumentativa y el razonamiento argumentativo no son lo mismo.
-
-La arquitectura será una conclusión experimental revisable. Nuevas entidades, operadores
-o abstracciones necesitan una capacidad concreta y una hipótesis sobre su aportación.
-
-## Tres niveles de éxito
-
-| Nivel | Pregunta | Evidencia que no basta |
+| Nivel | Qué habría que demostrar | Qué no basta |
 |---|---|---|
-| Razonamiento | ¿Es correcto, material, coherente y fundado? | Informe ordenado o muchos documentos |
-| Juicio y decisión | ¿Utiliza bien evidencia, precio, incertidumbre, riesgo y contexto? | Razonamiento coherente sin estudiar consecuencias |
-| Resultados de inversión | ¿Mejora resultados ajustados por riesgo frente a alternativas? | Un caso acertado o una campaña mecánicamente aprobada |
+| Análisis y revisión | Fundamento, fidelidad numérica, materialidad y continuidad | Un informe ordenado o muchos argumentos |
+| Juicio y decisión | Uso adecuado de precio, alternativas, incertidumbre, riesgo y contexto del usuario | Una explicación coherente de la empresa |
+| Resultados de inversión | Mejora frente a referencias, considerando horizonte, costes y riesgo | Un caso acertado o una campaña aprobada |
 
-Evaluar rentabilidad exige otro diseño: numerosos casos, referencias apropiadas,
-costes, riesgo, horizontes y control de información futura. No se ha ejecutado aquí.
-El trabajo inmediato se centra en fundamentos, progreso marginal, revisión, continuidad
-y eficiencia. Próximos diseños en [experimentos](experiments.md).
+## Distinciones que orientan el diseño
+
+Fuente, observación, interpretación, supuesto, cálculo, evaluación y decisión personal
+tienen significados distintos, aunque compartan un archivo. Por ejemplo, mayores
+ventas de NVIDIA son una observación; que sostengan sus márgenes es una hipótesis;
+que la acción resulte atractiva exige además expectativas y precio; aumentar una
+posición depende del usuario y su cartera. Citar las ventas no demuestra toda esa cadena.
+
+La investigación debe abordar incertidumbres capaces de cambiar la evaluación,
+ponderando su consecuencia económica y el coste de resolverlas. Lo menos documentado
+no es necesariamente lo más material. Una consulta breve puede cerrarse sin expediente.
+
+El [plan de investigación](strategy.md) establece la secuencia: comprender el estado
+actual de FinMate, contrastar alternativas y después estudiar persistencia, transiciones
+y presentación. [Experimentos](experiments.md) explica cómo evaluar esas hipótesis.
