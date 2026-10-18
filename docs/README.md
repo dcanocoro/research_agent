@@ -1,10 +1,10 @@
 # Documentación de Research Agent
 
-Research Agent es el laboratorio para estudiar los mecanismos de conocimiento,
-investigación y revisión del futuro FinMate. La [arqueología conceptual](finmate-concept-model/modelo-conocimiento-actual.md)
-sirve de base al primer [experimento de expedientes](experiments/E001-nvidia-casefile/protocol.md)
-y al siguiente [contraste de conservación](experiments/E002-persistent-research/protocol.md).
-La agenda y los límites de esta elección provisional están en [estrategia](strategy.md).
+Research Agent estudia mecanismos de conocimiento, investigación y revisión para el
+futuro FinMate. El [baseline vigente](baseline.md) identifica el estado que se toma
+como referencia para próximos experimentos, su configuración y evidencias disponibles.
+La [estrategia](strategy.md) fija la agenda; la arqueología caracteriza un corte
+histórico de FinMate y E001/E002 son antecedentes recuperables desde Git.
 
 ## Cinco referencias principales
 
@@ -25,6 +25,7 @@ No hace falta releer todo en cada tarea.
 
 | Registro | Pregunta que conserva |
 |---|---|
+| [Baseline](baseline.md) | ¿Qué implementación y evidencias usamos como referencia? |
 | [Decisiones](decisions/README.md) | ¿Qué elegimos, por qué y qué queda abierto? |
 | [Experimentos y hallazgos](experiments/README.md) | ¿Qué contrastamos y qué aprendimos con qué evidencia? |
 | [Entregas](deliveries/README.md) | ¿Qué se cambió y verificó en un corte concreto? |
@@ -44,7 +45,8 @@ La prioridad vigente se consulta en estrategia, no en la última campaña record
 Hoy existe solo A, con herramientas y estado de archivos por experimento; instrucciones,
 materiales y ejecuciones están separados. CLI permite crear o continuar una prueba.
 Audit conserva su interfaz instalada. Ambos cargan guía financiera básica; A0–A3, DCF
-y cartera no están implementados. E001/E002 documentan el mecanismo anterior.
+y cartera no están implementados. Los documentos de E001/E002 no están en el árbol
+actual; el registro experimental explica cómo recuperarlos desde Git.
 Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
 La documentación de sus fuentes puede diferir del wheel instalado: verificar antes
 de atribuir capacidades. Estado revisado el 2026-10-18.

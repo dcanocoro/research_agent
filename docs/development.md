@@ -1,6 +1,6 @@
 # Desarrollo y operación
 
-> Operación y dependencias del proyecto externo. Reorganización: 2026-10-17.
+> Operación y dependencias del proyecto externo. Revisión: 2026-10-18.
 > Los detalles del wheel corresponden al corte del 2026-10-16; verificar el entorno efectivo.
 
 ## Dependencias y frontera de instalación
@@ -84,7 +84,8 @@ un exportador para producir los registros locales. La instalación amplia del wh
 incluir dependencias del producto, pero las campañas `lab` no necesitan sus servicios,
 usuarios, navegador ni instalar binarios de Playwright.
 
-Las rutas de workspace y archivo son explícitas. Los prompts incluidos son recursos
+La CLI deriva las rutas de estado y ejecuciones de `--experiment`; la interfaz
+básica usada por Audit recibe workspace y archivo explícitamente. Los prompts incluidos son recursos
 del paquete; no se localizan buscando el checkout padre. Para ejecutar desde otra
 carpeta, proporcionar configuración disponible allí o variables de entorno: no asumir
 que se descubrirá automáticamente el `.env` de este proyecto.
@@ -270,13 +271,21 @@ git diff --check
 ```
 
 La suite incluye subprocess que bloquea imports de `finmate`, `engine` y `api`.
-El proyecto no tiene el comprobador documental ni catálogo de FinMate: comprobar
-enlaces de README, AGENTS y `docs/` aquí. Si también cambia documentación de FinMate,
+El comprobador local de enlaces y anclas se ejecuta con
+`.\.venv\Scripts\python.exe scripts/check_docs.py`; no necesita servicios remotos.
+No utiliza el catálogo documental de FinMate. Si también cambia documentación de FinMate,
 ejecutar allí su propio flujo documental; no copiar el catálogo al laboratorio.
 
 Un cambio documental no necesita llamadas a modelos o PostgreSQL. Tampoco acredita
 aceptación financiera. No confundir un resultado histórico enlazado con una prueba
 repetida en el entorno actual. Registrar qué se comprobó y qué quedó fuera.
+
+## Baseline y comparabilidad
+
+El [baseline](baseline.md) identifica código, prompts y wheel de referencia. Un run
+con `--new` reproduce el mecanismo, pero no congela web, datos ni configuración del
+entorno. Comparar manifiestos y conservar entradas idénticas antes de atribuir una
+mejora a un cambio. La guía del baseline separa checks locales y evidencia semántica.
 
 ## Entrega y continuidad
 

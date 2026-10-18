@@ -26,9 +26,26 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 
 | ID | Pregunta | Registro |
 |---|---|---|
-| E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Concluido: sin expediente; primera entrega fallida, segunda por presupuesto. [Protocolo](E001-nvidia-casefile/protocol.md), [hallazgos](E001-nvidia-casefile/findings.md) |
-| E002 | ¿Presupuesto visible, guardado provisional y cierre con escritura permiten conservar y continuar? | Concluido: dos revisiones, recuperación observada y consolidación parcial. [Protocolo](E002-persistent-research/protocol.md), [hallazgos](E002-persistent-research/findings.md) |
+| Baseline NVIDIA 2026-10-18 | ¿Qué dejó la primera ejecución del estado de archivos? | Observación exploratoria concluida; [hallazgos retrospectivos](baseline-nvidia-2026-10-18/findings.md). Sin protocolo previo ni control. |
+| E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Histórico: sin expediente; recuperación desde Git indicada abajo. |
+| E002 | ¿Presupuesto visible y cierre con escritura permiten conservar y continuar? | Histórico: dos revisiones y recuperación observada, consolidación parcial; recuperación desde Git indicada abajo. |
 
-E001/E002 conservan protocolos y hallazgos del modo de expedientes retirado. No son
-evidencia del estado de archivos adoptado el 2026-10-18. Para un contraste nuevo,
-crear un experimento separado con la [CLI vigente](../development.md#ejecutar-a-nuevo-experimento-o-continuación).
+## Antecedentes E001 y E002
+
+Sus cuatro documentos no están en el árbol de trabajo actual. No se han restaurado
+como parte de la revisión del baseline. Los resúmenes de las entregas de
+[expedientes](../deliveries/2026-10-17-casefile.md) y
+[conservación](../deliveries/2026-10-17-persistent-research.md) permanecen disponibles.
+Para consultar las versiones históricas sin modificar archivos:
+
+```powershell
+git show 20afee9:docs/experiments/E001-nvidia-casefile/protocol.md
+git show 20afee9:docs/experiments/E001-nvidia-casefile/findings.md
+git show 20afee9:docs/experiments/E002-persistent-research/protocol.md
+git show 20afee9:docs/experiments/E002-persistent-research/findings.md
+```
+
+Estos registros describen el modo de expedientes retirado. No son evidencia del estado
+actual de archivos. Crear un experimento separado con la
+[CLI vigente](../development.md#ejecutar-a-nuevo-experimento-o-continuación) para un
+contraste nuevo y seguir el [baseline](../baseline.md) para fijar las condiciones.

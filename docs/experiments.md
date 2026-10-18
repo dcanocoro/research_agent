@@ -1,19 +1,22 @@
 # Experimentos y evaluación
 
-> Metodología y líneas de contraste. Revisión: 2026-10-17.
+> Metodología y líneas de contraste. Revisión: 2026-10-18.
 > La prioridad está en estrategia; protocolos y resultados se registran por separado.
 
 ## Qué comparar primero
 
-La [arqueología](finmate-concept-model/modelo-conocimiento-actual.md) reconstruye el
-modelo conceptual de FinMate. La [estrategia](strategy.md) ha avanzado al candidato
-exploratorio [E001](experiments/E001-nvidia-casefile/protocol.md): expediente versionado
-con investigación de NVIDIA y continuación tras reinicio. Sus pérdidas de continuidad
-motivan el siguiente candidato autorizado, [E002](experiments/E002-persistent-research/protocol.md),
-que cambia conjuntamente instrucciones y cierre para estudiar persistencia efectiva.
-Después se podrán comparar candidatos narrativo, argumentativo y financiero-argumentativo
-con los mismos ejemplos y operaciones. Son familias propuestas de representación del
-conocimiento, no variantes de A implementadas ni tres sistemas que debamos construir.
+El [baseline vigente](baseline.md) es A con estado de archivos por experimento,
+materiales automáticos y consolidación sin publicación obligatoria. La ejecución de
+NVIDIA del 2026-10-18 tiene un [registro retrospectivo](experiments/baseline-nvidia-2026-10-18/findings.md).
+Es una observación exploratoria sin control ni rúbrica fijada antes de ejecutarla;
+no prueba superioridad, continuidad semántica ni rentabilidad.
+
+La [arqueología](finmate-concept-model/modelo-conocimiento-actual.md) caracteriza un
+corte histórico de FinMate. E001/E002 son [antecedentes](experiments/README.md#antecedentes-e001-y-e002)
+del modo de expedientes retirado. Los siguientes encargos podrán contrastar
+conservación, interpretación y revisión sobre materiales controlados, cambiando un
+factor cada vez. Las familias narrativa, argumentativa y financiero-argumentativa
+son candidatos por comparar, no variantes implementadas ni sistemas que debamos construir.
 
 El primer contraste puede hacerse con expedientes de ejemplo y transiciones manuales
 o procedimientos pequeños, antes de conectar un LLM. No evaluarlo solo por su aspecto:
@@ -72,7 +75,9 @@ a razonar o a representar la conclusión: son intervenciones distintas.
 
 Son cuatro condiciones experimentales del mismo agente, no cuatro agentes que
 colaboran. No existen selectores A0–A3 implementados. Hoy CLI y Audit añaden la guía
-financiera básica; `--instructions` agrega instrucciones, no las reemplaza. La ejecución
+financiera básica. En CLI, `--instructions` añade archivos solo con `--new`; las
+continuaciones utilizan las copias de `instrucciones/`, que pueden editarse explícitamente.
+Audit recibe las instrucciones de cada escenario. La ejecución
 actual no equivale a A0, ni la guía ligera representa necesariamente el tratamiento
 financiero completo propuesto para A2/A3.
 
@@ -150,7 +155,6 @@ usuario; el agente actual no administra cartera. Rentabilidad superior requiere 
 evaluación: muchas decisiones, tiempo, benchmarks, costes, control de riesgo y ausencia
 de información futura. No inferirla de una campaña local o un dossier coherente.
 
-El siguiente paso autorizado es E002, con su protocolo y guía previos a ejecutar.
-Sus hallazgos orientarán una comparación posterior. Esta exploración no incluye
-control ni permite atribuir mejoras causales a cambios individuales. No hay autorización
-implícita para construir toda la agenda.
+La base para próximos experimentos es el [baseline](baseline.md), con sus límites
+observados. Los experimentos futuros necesitan su protocolo y autorización propios;
+esta agenda no autoriza ejecutar campañas ni implementar toda la matriz.

@@ -6,7 +6,8 @@ fundamentadas y revisables; su arquitectura se decidirá mediante experimentos.
 
 **Prioridad actual:** contrastar conservación y continuidad con un estado de archivos
 por experimento, a partir de la [arqueología de FinMate](docs/finmate-concept-model/modelo-conocimiento-actual.md).
-La [estrategia](docs/strategy.md) define alcance y criterios de avance.
+El [baseline](docs/baseline.md) fija la referencia actual y sus límites; la
+[estrategia](docs/strategy.md) define alcance y criterios de avance.
 
 Hoy implementa A: modelo → herramienta → modelo → respuesta, con estado Markdown,
 JSON, TXT y CSV, materiales automáticos e instrucciones y ejecuciones separadas.

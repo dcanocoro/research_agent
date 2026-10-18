@@ -51,7 +51,8 @@ experimento/
 La profundidad máxima de carpetas es tres desde la raíz del experimento, sin contar
 los internos de Git. Evaluación y pendientes son nombres sugeridos, no una plantilla.
 Los nombres de runs son humanos, con fecha local y sufijo consecutivo ante colisiones;
-los IDs técnicos permanecen dentro de los registros.
+los IDs técnicos permanecen dentro de los registros. La fecha de los nombres utiliza
+`Europe/Madrid` en el código actual.
 
 Hay tres estados distintos: archivos persistentes, contexto transitorio de A y evidencia
 de ejecución. Solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
@@ -85,7 +86,7 @@ Las siete herramientas de Findata/web/cálculo conservan automáticamente cada r
 satisfactorio completo en `materiales/`, con nombres por run, secuencia y herramienta.
 El contenido mantiene el schema y metadatos originales, incluidas ausencias y recortes.
 El registro asocia argumentos, herramienta, hash y productor. Errores quedan en las trazas.
-Cada resultado devuelve `material_ref` y el alias `artifact_ref`; referencias relativas
+Cada resultado de esas siete herramientas devuelve `material_ref` y el alias `artifact_ref`; referencias relativas
 al estado permiten continuar después de trasladar el experimento. Los resultados grandes
 no se truncan en disco: se entregan referencias para leerlos por páginas.
 
@@ -98,7 +99,10 @@ a una evaluación, ni una cita certifica inferencias o comparabilidad numérica.
 ## Conservación y cierre de la investigación
 
 Con los defaults hay 18 llamadas al cliente, 30 herramientas, 300 segundos y 256 KiB
-de contexto serializado. Se reservan hasta dos llamadas de consolidación y una de respuesta.
+de contexto serializado. Son máximos, no una obligación de completar 18 turnos.
+Cada llamada al modelo puede pedir una herramienta o devolver texto para terminar.
+Los resultados se añaden al historial; si superan 32 KiB se incorpora una referencia
+para recuperarlos por páginas. Se reservan hasta dos llamadas de consolidación y una de respuesta.
 Consolidación se adelanta cuando quedan 45 segundos, dos herramientas o 32 KiB de contexto
 (como máximo un cuarto en límites pequeños). Se conserva la corrección temporal de E002:
 al entrar antes por llamadas/contexto puede usar el tiempo restante salvo la reserva de
@@ -133,13 +137,16 @@ Las capturas inicial/final permiten auditar runs realizados con cambios sin comm
 `build_agent(workspace, runs, limits)` mantiene el contrato de Audit; los argumentos
 opcionales `experiment` y `run_name` sirven al organizador CLI. Los nombres de archivos
 técnicos del consumidor básico permanecen compatibles. CLI usa la organización española.
-La operación y los comandos están en [desarrollo](development.md).
+La operación y los comandos están en [desarrollo](development.md). El
+[baseline](baseline.md) distingue capacidad implementada, resultado observado y
+aceptación semántica pendiente.
 
 ## Modo experimental de expedientes
 
 El modo `cases`, `CaseStore`, sus herramientas y su contrato de publicación se retiraron
 al adoptar el estado de archivos. No hay migración automática. Los protocolos y resultados
-históricos de [E001](experiments/E001-nvidia-casefile/findings.md) y
-[E002](experiments/E002-persistent-research/findings.md) describen el candidato ejecutado
-entonces; permanecen intactos. La [decisión](decisions/0001-estado-por-experimento.md)
+históricos de [E001](experiments/README.md#antecedentes-e001-y-e002) y
+[E002](experiments/README.md#antecedentes-e001-y-e002) describen el candidato ejecutado
+entonces. Sus documentos ya no están en el árbol actual; el
+[registro histórico](experiments/README.md#antecedentes-e001-y-e002) indica su recuperación desde Git. La [decisión](decisions/0001-estado-por-experimento.md)
 registra el cambio local, sin elegir la arquitectura final de FinMate.

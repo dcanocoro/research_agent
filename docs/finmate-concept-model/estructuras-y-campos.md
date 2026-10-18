@@ -7,13 +7,13 @@ Complementa el [informe conceptual](modelo-conocimiento-actual.md). Incluye camp
 
 Los campos heredados deben leerse en su clase base. Una declaración Column sin anotación utiliza su expresión SQLAlchemy como autoridad de tipo. Los campos de dataclasses describen memoria/proyecciones, no tablas. Los Literal enumeran valores aceptados, no capacidades completas entregadas. El inventario no expande diccionarios de catálogo ni copia implementaciones de métodos.
 
-Regenerar desde la raíz con `.\.venv\Scripts\python.exe artifacts/knowledge-archaeology/2026-10-17/generar_inventario.py`. Regenerar actualiza las huellas al árbol del momento; para comparar cortes, conservar el manifiesto anterior en Git.
+Comando histórico desde la raíz de FinMate (el script de `artifacts/` no se distribuye con este repositorio): `.\.venv\Scripts\python.exe artifacts/knowledge-archaeology/2026-10-17/generar_inventario.py`. Regenerar actualiza las huellas al árbol del momento; para comparar cortes, conservar el manifiesto anterior en Git.
 
 ## 1. Modelos físicos del dominio privado
 
 ### Analysis
 
-Fuente: [finmate/state/models/analysis.py](../../../finmate/state/models/analysis.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/analysis.py](../../../FinMate/finmate/state/models/analysis.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_analyses`.
 
@@ -37,7 +37,7 @@ Restricciones/índices declarados:
 
 ### DeliberationJob
 
-Fuente: [finmate/state/models/deliberation.py](../../../finmate/state/models/deliberation.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/deliberation.py](../../../FinMate/finmate/state/models/deliberation.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_deliberation_jobs`.
 
@@ -63,7 +63,7 @@ Restricciones/índices declarados:
 
 ### Event
 
-Fuente: [finmate/state/models/event.py](../../../finmate/state/models/event.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/event.py](../../../FinMate/finmate/state/models/event.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_events`.
 
@@ -88,7 +88,7 @@ Restricciones/índices declarados:
 
 ### Evidence
 
-Fuente: [finmate/state/models/evidence.py](../../../finmate/state/models/evidence.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/evidence.py](../../../FinMate/finmate/state/models/evidence.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_evidence`.
 
@@ -114,7 +114,7 @@ Restricciones/índices declarados:
 
 ### EvidenceLink
 
-Fuente: [finmate/state/models/evidence.py](../../../finmate/state/models/evidence.py), línea 43. Bases: `Base`.
+Fuente: [finmate/state/models/evidence.py](../../../FinMate/finmate/state/models/evidence.py), línea 43. Bases: `Base`.
 
 Tabla: `domain_evidence_links`.
 
@@ -134,7 +134,7 @@ Restricciones/índices declarados:
 
 ### MetricProbe
 
-Fuente: [finmate/state/models/metric_probe.py](../../../finmate/state/models/metric_probe.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/metric_probe.py](../../../FinMate/finmate/state/models/metric_probe.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_metric_probes`.
 
@@ -157,7 +157,7 @@ Restricciones/índices declarados:
 
 ### UserProfile
 
-Fuente: [finmate/state/models/profile.py](../../../finmate/state/models/profile.py), línea 13. Bases: `Base`.
+Fuente: [finmate/state/models/profile.py](../../../FinMate/finmate/state/models/profile.py), línea 13. Bases: `Base`.
 
 Tabla: `domain_user_profiles`.
 
@@ -176,7 +176,7 @@ Restricciones/índices declarados:
 
 ### UserProfileFact
 
-Fuente: [finmate/state/models/profile.py](../../../finmate/state/models/profile.py), línea 24. Bases: `Base`.
+Fuente: [finmate/state/models/profile.py](../../../FinMate/finmate/state/models/profile.py), línea 24. Bases: `Base`.
 
 Tabla: `domain_user_profile_facts`.
 
@@ -197,7 +197,7 @@ Restricciones/índices declarados:
 
 ### UserGoal
 
-Fuente: [finmate/state/models/profile.py](../../../finmate/state/models/profile.py), línea 37. Bases: `Base`.
+Fuente: [finmate/state/models/profile.py](../../../FinMate/finmate/state/models/profile.py), línea 37. Bases: `Base`.
 
 Tabla: `domain_user_goals`.
 
@@ -224,7 +224,7 @@ Restricciones/índices declarados:
 
 ### ProfileMutationRequest
 
-Fuente: [finmate/state/models/profile.py](../../../finmate/state/models/profile.py), línea 60. Bases: `Base`.
+Fuente: [finmate/state/models/profile.py](../../../FinMate/finmate/state/models/profile.py), línea 60. Bases: `Base`.
 
 Tabla: `domain_profile_mutation_requests`.
 
@@ -245,7 +245,7 @@ Restricciones/índices declarados:
 
 ### ResearchDirective
 
-Fuente: [finmate/state/models/research_directive.py](../../../finmate/state/models/research_directive.py), línea 10. Bases: `Base`.
+Fuente: [finmate/state/models/research_directive.py](../../../FinMate/finmate/state/models/research_directive.py), línea 10. Bases: `Base`.
 
 Tabla: `domain_research_directives`.
 
@@ -271,7 +271,7 @@ Restricciones/índices declarados:
 
 ### SavedScreen
 
-Fuente: [finmate/state/models/saved_screen.py](../../../finmate/state/models/saved_screen.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/saved_screen.py](../../../FinMate/finmate/state/models/saved_screen.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_saved_screens`.
 
@@ -290,7 +290,7 @@ Tabla: `domain_saved_screens`.
 
 ### InvestmentSelection
 
-Fuente: [finmate/state/models/selection.py](../../../finmate/state/models/selection.py), línea 10. Bases: `Base`.
+Fuente: [finmate/state/models/selection.py](../../../FinMate/finmate/state/models/selection.py), línea 10. Bases: `Base`.
 
 Tabla: `domain_investment_selections`.
 
@@ -318,7 +318,7 @@ Restricciones/índices declarados:
 
 ### SelectionCandidate
 
-Fuente: [finmate/state/models/selection.py](../../../finmate/state/models/selection.py), línea 34. Bases: `Base`.
+Fuente: [finmate/state/models/selection.py](../../../FinMate/finmate/state/models/selection.py), línea 34. Bases: `Base`.
 
 Tabla: `domain_selection_candidates`.
 
@@ -341,7 +341,7 @@ Restricciones/índices declarados:
 
 ### SelectionComparison
 
-Fuente: [finmate/state/models/selection.py](../../../finmate/state/models/selection.py), línea 50. Bases: `Base`.
+Fuente: [finmate/state/models/selection.py](../../../FinMate/finmate/state/models/selection.py), línea 50. Bases: `Base`.
 
 Tabla: `domain_selection_comparisons`.
 
@@ -368,7 +368,7 @@ Restricciones/índices declarados:
 
 ### SelectionDecision
 
-Fuente: [finmate/state/models/selection.py](../../../finmate/state/models/selection.py), línea 70. Bases: `Base`.
+Fuente: [finmate/state/models/selection.py](../../../FinMate/finmate/state/models/selection.py), línea 70. Bases: `Base`.
 
 Tabla: `domain_selection_decisions`.
 
@@ -396,7 +396,7 @@ Restricciones/índices declarados:
 
 ### Thesis
 
-Fuente: [finmate/state/models/thesis.py](../../../finmate/state/models/thesis.py), línea 8. Bases: `Base`.
+Fuente: [finmate/state/models/thesis.py](../../../FinMate/finmate/state/models/thesis.py), línea 8. Bases: `Base`.
 
 Tabla: `domain_theses`.
 
@@ -420,7 +420,7 @@ Restricciones/índices declarados:
 
 ### ThesisDocument
 
-Fuente: [finmate/state/models/thesis_inputs.py](../../../finmate/state/models/thesis_inputs.py), línea 9. Bases: `Base`.
+Fuente: [finmate/state/models/thesis_inputs.py](../../../FinMate/finmate/state/models/thesis_inputs.py), línea 9. Bases: `Base`.
 
 Tabla: `domain_thesis_documents`.
 
@@ -433,7 +433,7 @@ Tabla: `domain_thesis_documents`.
 
 ### CaseJob
 
-Fuente: [finmate/state/models/thesis_inputs.py](../../../finmate/state/models/thesis_inputs.py), línea 18. Bases: `Base`.
+Fuente: [finmate/state/models/thesis_inputs.py](../../../FinMate/finmate/state/models/thesis_inputs.py), línea 18. Bases: `Base`.
 
 Tabla: `domain_case_jobs`.
 
@@ -459,7 +459,7 @@ Restricciones/índices declarados:
 
 ### ThesisKnowledgeRevision
 
-Fuente: [finmate/state/models/thesis_review.py](../../../finmate/state/models/thesis_review.py), línea 8. Bases: `Base`.
+Fuente: [finmate/state/models/thesis_review.py](../../../FinMate/finmate/state/models/thesis_review.py), línea 8. Bases: `Base`.
 
 Tabla: `domain_thesis_knowledge_revisions`.
 
@@ -479,7 +479,7 @@ Restricciones/índices declarados:
 
 ### ThesisFinancialSnapshot
 
-Fuente: [finmate/state/models/thesis_review.py](../../../finmate/state/models/thesis_review.py), línea 17. Bases: `Base`.
+Fuente: [finmate/state/models/thesis_review.py](../../../FinMate/finmate/state/models/thesis_review.py), línea 17. Bases: `Base`.
 
 Tabla: `domain_thesis_financial_snapshots`.
 
@@ -493,7 +493,7 @@ Tabla: `domain_thesis_financial_snapshots`.
 
 ### ThesisEvaluation
 
-Fuente: [finmate/state/models/thesis_review.py](../../../finmate/state/models/thesis_review.py), línea 25. Bases: `Base`.
+Fuente: [finmate/state/models/thesis_review.py](../../../FinMate/finmate/state/models/thesis_review.py), línea 25. Bases: `Base`.
 
 Tabla: `domain_thesis_evaluations`.
 
@@ -507,7 +507,7 @@ Tabla: `domain_thesis_evaluations`.
 
 ### CaseAnalysisAssessment
 
-Fuente: [finmate/state/models/thesis_review.py](../../../finmate/state/models/thesis_review.py), línea 33. Bases: `Base`.
+Fuente: [finmate/state/models/thesis_review.py](../../../FinMate/finmate/state/models/thesis_review.py), línea 33. Bases: `Base`.
 
 Tabla: `domain_case_analysis_assessments`.
 
@@ -523,7 +523,7 @@ Tabla: `domain_case_analysis_assessments`.
 
 ### User
 
-Fuente: [finmate/state/models/user.py](../../../finmate/state/models/user.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/user.py](../../../FinMate/finmate/state/models/user.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_users`.
 
@@ -540,7 +540,7 @@ Tabla: `domain_users`.
 
 ### Position
 
-Fuente: [finmate/state/models/user.py](../../../finmate/state/models/user.py), línea 37. Bases: `Base`.
+Fuente: [finmate/state/models/user.py](../../../FinMate/finmate/state/models/user.py), línea 37. Bases: `Base`.
 
 Tabla: `domain_positions`.
 
@@ -559,7 +559,7 @@ Tabla: `domain_positions`.
 
 ### WatchlistItem
 
-Fuente: [finmate/state/models/user.py](../../../finmate/state/models/user.py), línea 57. Bases: `Base`.
+Fuente: [finmate/state/models/user.py](../../../FinMate/finmate/state/models/user.py), línea 57. Bases: `Base`.
 
 Tabla: `domain_watchlist_items`.
 
@@ -582,7 +582,7 @@ Restricciones/índices declarados:
 
 ### Valuation
 
-Fuente: [finmate/state/models/valuation.py](../../../finmate/state/models/valuation.py), línea 11. Bases: `Base`.
+Fuente: [finmate/state/models/valuation.py](../../../FinMate/finmate/state/models/valuation.py), línea 11. Bases: `Base`.
 
 Tabla: `domain_valuations`.
 
@@ -609,7 +609,7 @@ Restricciones/índices declarados:
 
 ### Instrument
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 26. Bases: `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 26. Bases: `Base`.
 
 Tabla: `instruments`.
 
@@ -622,7 +622,7 @@ Tabla: `instruments`.
 
 ### InstrumentObservation
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 35. Bases: `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 35. Bases: `Base`.
 
 Tabla: `instrument_observations`.
 
@@ -662,7 +662,7 @@ Restricciones/índices declarados:
 
 ### PriceBar
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 69. Bases: `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 69. Bases: `Base`.
 
 Tabla: `price_bars`.
 
@@ -682,7 +682,7 @@ Tabla: `price_bars`.
 
 ### FinancialFact
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 85. Bases: `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 85. Bases: `Base`.
 
 Tabla: `financial_facts`.
 
@@ -701,7 +701,7 @@ Tabla: `financial_facts`.
 
 ### MacroObservation
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 100. Bases: `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 100. Bases: `Base`.
 
 Tabla: `macro_observations`.
 
@@ -717,7 +717,7 @@ Tabla: `macro_observations`.
 
 ### _DerivedColumns
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 112. Bases: ninguna.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 112. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -728,7 +728,7 @@ Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 112. Bases
 
 ### CompanyProfile
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 119. Bases: `_DerivedColumns`, `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 119. Bases: `_DerivedColumns`, `Base`.
 
 Tabla: `company_profiles`.
 
@@ -758,7 +758,7 @@ Tabla: `company_profiles`.
 
 ### FundamentalsPeriod
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 145. Bases: `_DerivedColumns`, `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 145. Bases: `_DerivedColumns`, `Base`.
 
 Tabla: `fundamentals_periods`.
 
@@ -800,7 +800,7 @@ Tabla: `fundamentals_periods`.
 
 ### SymbolMetric
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 183. Bases: `_DerivedColumns`, `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 183. Bases: `_DerivedColumns`, `Base`.
 
 Tabla: `symbol_metrics_v2`.
 
@@ -833,7 +833,7 @@ Tabla: `symbol_metrics_v2`.
 
 ### SymbolCoverage
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 212. Bases: `_DerivedColumns`, `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 212. Bases: `_DerivedColumns`, `Base`.
 
 Tabla: `symbol_coverage`.
 
@@ -854,7 +854,7 @@ Tabla: `symbol_coverage`.
 
 ### SectorStat
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 229. Bases: `_DerivedColumns`, `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 229. Bases: `_DerivedColumns`, `Base`.
 
 Tabla: `sector_stats`.
 
@@ -869,7 +869,7 @@ Tabla: `sector_stats`.
 
 ### BenchmarkIndexDaily
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 240. Bases: `_DerivedColumns`, `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 240. Bases: `_DerivedColumns`, `Base`.
 
 Tabla: `benchmark_index_daily`.
 
@@ -881,7 +881,7 @@ Tabla: `benchmark_index_daily`.
 
 ### MacroLatest
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 248. Bases: `_DerivedColumns`, `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 248. Bases: `_DerivedColumns`, `Base`.
 
 Tabla: `macro_latest`.
 
@@ -894,7 +894,7 @@ Tabla: `macro_latest`.
 
 ### DerivationQueue
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 257. Bases: `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 257. Bases: `Base`.
 
 Tabla: `derivation_queue`.
 
@@ -917,7 +917,7 @@ Restricciones/índices declarados:
 
 ### DerivationState
 
-Fuente: [findata/models/v2.py](../../../findata/models/v2.py), línea 272. Bases: `Base`.
+Fuente: [findata/models/v2.py](../../../FinMate/findata/models/v2.py), línea 272. Bases: `Base`.
 
 Tabla: `derivation_state`.
 
@@ -935,7 +935,7 @@ Tabla: `derivation_state`.
 
 ### Argument
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 23. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 23. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -948,7 +948,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### Question
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 32. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 32. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -961,7 +961,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### Hypothesis
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 41. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 41. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -977,7 +977,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### ReasoningTarget
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 53. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 53. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -989,7 +989,7 @@ Validadores declarados: `part`.
 
 ### Premise
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 65. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 65. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1005,7 +1005,7 @@ Validadores declarados: `foundation`.
 
 ### HistoricalArgumentReference
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 83. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 83. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1014,7 +1014,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### StructuredArgument
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 88. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 88. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1030,7 +1030,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### DebateRelation
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 100. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 100. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1045,7 +1045,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### ObjectionTreatment
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 111. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 111. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1060,7 +1060,7 @@ Validadores declarados: `addressed_basis`.
 
 ### Conditions
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 126. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 126. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1074,7 +1074,7 @@ Validadores declarados: `price_context`.
 
 ### Assumption
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 142. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 142. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1088,7 +1088,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### Scenario
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 152. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 152. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1100,7 +1100,7 @@ Validadores declarados: `parameters`.
 
 ### Revision
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 165. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 165. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1120,7 +1120,7 @@ Validadores declarados: `graph`.
 
 ### Observation
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 221. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 221. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1133,7 +1133,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### AnalysisGap
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 230. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 230. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1149,7 +1149,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### Finding
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 242. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 242. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1160,7 +1160,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### ActionArguments
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 249. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 249. Bases: `Contract`.
 
 Shared financial choice; execution identity is supplied by the server.
 
@@ -1180,7 +1180,7 @@ Shared financial choice; execution identity is supplied by the server.
 
 ### NextAction
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 264. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 264. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1191,7 +1191,7 @@ Validadores declarados: `capability`.
 
 ### Continuation
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 275. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 275. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1202,7 +1202,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### ProblemConsideration
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 282. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 282. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1217,7 +1217,7 @@ Validadores declarados: `support`.
 
 ### ProblemFraming
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 297. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 297. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1230,7 +1230,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### AnalysisAssessment
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 306. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 306. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1251,7 +1251,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### Analysis
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 323. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 323. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1263,7 +1263,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### Synthesis
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 331. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 331. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1286,7 +1286,7 @@ Validadores declarados: `computed_numbers_are_rendered_by_code`.
 
 ### CaseRequest
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 355. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 355. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1311,7 +1311,7 @@ Validadores declarados: `price_update`, `normalize`.
 
 ### CaseTaskArgs
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 391. Bases: `Contract`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 391. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1323,7 +1323,7 @@ Validadores declarados: `bound_work`.
 
 ### StepArgs
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 405. Bases: `CaseTaskArgs`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 405. Bases: `CaseTaskArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1345,7 +1345,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### ValuationStepArgs
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 423. Bases: `StepArgs`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 423. Bases: `StepArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1353,7 +1353,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### PlanningStepArgs
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 427. Bases: `ActionArguments`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 427. Bases: `ActionArguments`.
 
 Public planner actions omit application-owned reservation payloads.
 
@@ -1365,7 +1365,7 @@ Public planner actions omit application-owned reservation payloads.
 
 ### PlanningValuationArgs
 
-Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py), línea 434. Bases: `PlanningStepArgs`.
+Fuente: [finmate/casefile/contracts.py](../../../FinMate/finmate/casefile/contracts.py), línea 434. Bases: `PlanningStepArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1375,7 +1375,7 @@ Fuente: [finmate/casefile/contracts.py](../../../finmate/casefile/contracts.py),
 
 ### AddHypothesis
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 10. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 10. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1384,7 +1384,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### UpdateHypothesis
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 15. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 15. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1396,7 +1396,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### RetireHypothesis
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 23. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 23. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1405,7 +1405,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### ReplaceHypothesis
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 28. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 28. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1415,7 +1415,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### PutArgument
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 34. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 34. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1425,7 +1425,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### PutQuestion
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 40. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 40. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1435,7 +1435,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### ReplaceScenarios
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 46. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 46. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1444,7 +1444,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### ReplaceReviewConditions
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 51. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 51. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1453,7 +1453,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### PutStructuredArgument
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 56. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 56. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1463,7 +1463,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### PutRelation
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 62. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 62. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1473,7 +1473,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### RetireReasoning
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 68. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 68. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1482,7 +1482,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### ReorderPremises
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 73. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 73. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1492,7 +1492,7 @@ Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), lí
 
 ### AnalysisChanges
 
-Fuente: [finmate/casefile/changes.py](../../../finmate/casefile/changes.py), línea 79. Bases: `Contract`.
+Fuente: [finmate/casefile/changes.py](../../../FinMate/finmate/casefile/changes.py), línea 79. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1509,7 +1509,7 @@ Validadores declarados: `typed_operations`.
 
 ### NumericObservation
 
-Fuente: [finmate/casefile/numbers.py](../../../finmate/casefile/numbers.py), línea 10. Bases: `Contract`.
+Fuente: [finmate/casefile/numbers.py](../../../FinMate/finmate/casefile/numbers.py), línea 10. Bases: `Contract`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1539,7 +1539,7 @@ Validadores declarados: `reproducible`.
 
 ### Fragment
 
-Fuente: [runtime_contracts/documents.py](../../../runtime_contracts/documents.py), línea 10. Bases: `BaseModel`.
+Fuente: [runtime_contracts/documents.py](../../../FinMate/runtime_contracts/documents.py), línea 10. Bases: `BaseModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1549,7 +1549,7 @@ Fuente: [runtime_contracts/documents.py](../../../runtime_contracts/documents.py
 
 ### DocumentSnapshot
 
-Fuente: [runtime_contracts/documents.py](../../../runtime_contracts/documents.py), línea 17. Bases: `BaseModel`.
+Fuente: [runtime_contracts/documents.py](../../../FinMate/runtime_contracts/documents.py), línea 17. Bases: `BaseModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1570,7 +1570,7 @@ Fuente: [runtime_contracts/documents.py](../../../runtime_contracts/documents.py
 
 ### ProfileFactInput
 
-Fuente: [finmate/profile/contracts.py](../../../finmate/profile/contracts.py), línea 33. Bases: `ClosedModel`.
+Fuente: [finmate/profile/contracts.py](../../../FinMate/finmate/profile/contracts.py), línea 33. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1581,7 +1581,7 @@ Validadores declarados: `validate_value`.
 
 ### ProfileGoalInput
 
-Fuente: [finmate/profile/contracts.py](../../../finmate/profile/contracts.py), línea 44. Bases: `ClosedModel`.
+Fuente: [finmate/profile/contracts.py](../../../FinMate/finmate/profile/contracts.py), línea 44. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1599,7 +1599,7 @@ Validadores declarados: `strip_text`, `normalize_currency`, `validate_goal`.
 
 ### ProfileUpdateArgs
 
-Fuente: [finmate/profile/contracts.py](../../../finmate/profile/contracts.py), línea 86. Bases: `OperatorArgs`.
+Fuente: [finmate/profile/contracts.py](../../../FinMate/finmate/profile/contracts.py), línea 86. Bases: `OperatorArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1614,7 +1614,7 @@ Validadores declarados: `validate_snapshot`.
 
 ### FactSpec
 
-Fuente: [finmate/profile/contracts.py](../../../finmate/profile/contracts.py), línea 110. Bases: `BaseModel`.
+Fuente: [finmate/profile/contracts.py](../../../FinMate/finmate/profile/contracts.py), línea 110. Bases: `BaseModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1630,7 +1630,7 @@ Fuente: [finmate/profile/contracts.py](../../../finmate/profile/contracts.py), l
 
 ### SelectionCriteriaV1
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 51. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 51. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1641,7 +1641,7 @@ Validadores declarados: `unique_dimensions`.
 
 ### SelectionCreateArgs
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 61. Bases: `ClosedArgs`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 61. Bases: `ClosedArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1656,7 +1656,7 @@ Validadores declarados: `strip_text`, `symbols_are_unique`.
 
 ### SelectionUpdateArgs
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 81. Bases: `ClosedArgs`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 81. Bases: `ClosedArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1673,7 +1673,7 @@ Validadores declarados: `strip_text`, `symbols_are_unique`.
 
 ### SelectionCompareArgs
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 104. Bases: `ClosedArgs`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 104. Bases: `ClosedArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1683,7 +1683,7 @@ Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py
 
 ### SelectionDecideArgs
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 109. Bases: `ClosedArgs`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 109. Bases: `ClosedArgs`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1702,7 +1702,7 @@ Validadores declarados: `strip_reason`.
 
 ### CandidateAssessment
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 127. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 127. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1717,7 +1717,7 @@ Validadores declarados: `concise_summary`, `concise_questions`.
 
 ### MaterialDifference
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 145. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 145. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1729,7 +1729,7 @@ Validadores declarados: `concise_explanation`.
 
 ### ComparisonConclusion
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 155. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 155. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1743,7 +1743,7 @@ Validadores declarados: `concise_explanation`, `concise_conditions`.
 
 ### SelectionComparisonResultV1
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 172. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 172. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1753,7 +1753,7 @@ Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py
 
 ### ReferencedFact
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 178. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 178. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1769,7 +1769,7 @@ Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py
 
 ### CoverageAssessment
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 190. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 190. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1779,7 +1779,7 @@ Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py
 
 ### FreshnessAssessment
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 196. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 196. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1788,7 +1788,7 @@ Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py
 
 ### CandidateInputV1
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 201. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 201. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1807,7 +1807,7 @@ Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py
 
 ### SelectionInputV1
 
-Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py), línea 216. Bases: `ClosedModel`.
+Fuente: [finmate/selection/contracts.py](../../../FinMate/finmate/selection/contracts.py), línea 216. Bases: `ClosedModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1826,7 +1826,7 @@ Fuente: [finmate/selection/contracts.py](../../../finmate/selection/contracts.py
 
 ### ReadMeta
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 13. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 13. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1838,7 +1838,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### ReadResult
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 45. Bases: `ContractModel`, `Generic[T]`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 45. Bases: `ContractModel`, `Generic[T]`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1847,7 +1847,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### Page
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 50. Bases: `ContractModel`, `Generic[T]`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 50. Bases: `ContractModel`, `Generic[T]`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1860,7 +1860,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### Coverage
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 59. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 59. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1872,7 +1872,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### CompanyListItem
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 67. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 67. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1889,7 +1889,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### UniverseSummary
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 80. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 80. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1900,7 +1900,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### CompanySnapshot
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 87. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 87. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1930,7 +1930,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### FundamentalPeriod
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 113. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 113. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1942,7 +1942,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### PricePoint
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 121. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 121. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1956,7 +1956,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### MetricDefinitionDTO
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 131. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 131. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1967,7 +1967,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### TrendPoint
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 138. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 138. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1976,7 +1976,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### MetricTrend
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 143. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 143. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -1991,7 +1991,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### SectorComparison
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 154. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 154. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2005,7 +2005,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### ScreenCandidateDTO
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 164. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 164. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2019,7 +2019,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### IndexPoint
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 174. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 174. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2028,7 +2028,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### MacroPoint
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 179. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 179. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2039,7 +2039,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### DCFInputsDTO
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 186. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 186. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2064,7 +2064,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### TrackResult
 
-Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), línea 207. Bases: `ContractModel`.
+Fuente: [findata/contracts/models.py](../../../FinMate/findata/contracts/models.py), línea 207. Bases: `ContractModel`.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2077,7 +2077,7 @@ Fuente: [findata/contracts/models.py](../../../findata/contracts/models.py), lí
 
 ### CompanyKnowledgeRequest
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 11. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 11. Bases: ninguna.
 
 The user-owned company scopes required by one observation.  ``consumer`` and work identity are provenance.  They never select SQL: the company recipe remains explicit and bounded by user and symbols.
 
@@ -2093,7 +2093,7 @@ The user-owned company scopes required by one observation.  ``consumer`` and wor
 
 ### KnowledgeDependency
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 28. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 28. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2104,7 +2104,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### CharacterizationFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 36. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 36. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2114,7 +2114,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### CompanyFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 43. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 43. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2128,7 +2128,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### ThesisFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 54. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 54. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2140,7 +2140,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### EvidenceFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 63. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 63. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2155,7 +2155,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### DirectiveFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 75. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 75. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2166,7 +2166,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### EventFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 83. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 83. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2179,7 +2179,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### ValuationFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 93. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 93. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2193,7 +2193,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### JobFact
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 104. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 104. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2203,7 +2203,7 @@ Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), lí
 
 ### CompanyKnowledgeView
 
-Fuente: [finmate/knowledge/models.py](../../../finmate/knowledge/models.py), línea 111. Bases: ninguna.
+Fuente: [finmate/knowledge/models.py](../../../FinMate/finmate/knowledge/models.py), línea 111. Bases: ninguna.
 
 A user- and symbol-scoped read model valid for one observation only.
 
@@ -2229,7 +2229,7 @@ A user- and symbol-scoped read model valid for one observation only.
 
 ### ContextBudget
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 14. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 14. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2240,7 +2240,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### ContextMessage
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 26. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 26. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2250,7 +2250,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### ContextReference
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 33. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 33. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2263,7 +2263,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### ContextRequest
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 43. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 43. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2277,7 +2277,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### ContextQuery
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 54. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 54. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2287,7 +2287,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### ContextItem
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 64. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 64. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2301,7 +2301,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### ContextResult
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 78. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 78. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2315,7 +2315,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### ContextSnapshot
 
-Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), línea 93. Bases: ninguna.
+Fuente: [engine/context/contracts.py](../../../FinMate/engine/context/contracts.py), línea 93. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2325,7 +2325,7 @@ Fuente: [engine/context/contracts.py](../../../engine/context/contracts.py), lí
 
 ### WorkingMemory
 
-Fuente: [engine/context/memory.py](../../../engine/context/memory.py), línea 9. Bases: ninguna.
+Fuente: [engine/context/memory.py](../../../FinMate/engine/context/memory.py), línea 9. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2338,7 +2338,7 @@ Fuente: [engine/context/memory.py](../../../engine/context/memory.py), línea 9.
 
 ### RunLimits
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 31. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 31. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2351,7 +2351,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 31. Bases: n
 
 ### WorkRequest
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 54. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 54. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2367,7 +2367,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 54. Bases: n
 
 ### WorkScope
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 74. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 74. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2377,7 +2377,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 74. Bases: n
 
 ### BoundWork
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 84. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 84. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2396,7 +2396,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 84. Bases: n
 
 ### WorkRequirement
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 108. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 108. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2407,7 +2407,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 108. Bases: 
 
 ### WorkBlocker
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 116. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 116. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2418,7 +2418,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 116. Bases: 
 
 ### WorkAssessment
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 124. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 124. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2430,7 +2430,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 124. Bases: 
 
 ### ActionPriority
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 137. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 137. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2440,7 +2440,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 137. Bases: 
 
 ### ActionCandidate
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 144. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 144. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2454,7 +2454,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 144. Bases: 
 
 ### WorkOpportunity
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 155. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 155. Bases: ninguna.
 
 A grounded continuation offered to the user after the current work.
 
@@ -2470,7 +2470,7 @@ A grounded continuation offered to the user after the current work.
 
 ### WorkObservation
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 171. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 171. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2484,7 +2484,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 171. Bases: 
 
 ### TaskSpec
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 194. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 194. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2499,7 +2499,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 194. Bases: 
 
 ### ConsistencyRule
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 212. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 212. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2508,7 +2508,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 212. Bases: 
 
 ### WorkStep
 
-Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 218. Bases: ninguna.
+Fuente: [engine/core/work.py](../../../FinMate/engine/core/work.py), línea 218. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2518,7 +2518,7 @@ Fuente: [engine/core/work.py](../../../engine/core/work.py), línea 218. Bases: 
 
 ### SurfaceSelection
 
-Fuente: [finmate/control/conversation/session.py](../../../finmate/control/conversation/session.py), línea 18. Bases: ninguna.
+Fuente: [finmate/control/conversation/session.py](../../../FinMate/finmate/control/conversation/session.py), línea 18. Bases: ninguna.
 
 | Campo | Tipo declarado | Declaración o valor por defecto |
 |---|---|---|
@@ -2531,7 +2531,7 @@ Fuente: [finmate/control/conversation/session.py](../../../finmate/control/conve
 
 ### SurfaceTurnResult
 
-Fuente: [finmate/control/conversation/session.py](../../../finmate/control/conversation/session.py), línea 28. Bases: ninguna.
+Fuente: [finmate/control/conversation/session.py](../../../FinMate/finmate/control/conversation/session.py), línea 28. Bases: ninguna.
 
 Committed results retained for the surface's two-turn window.
 
@@ -2542,7 +2542,7 @@ Committed results retained for the surface's two-turn window.
 
 ### Session
 
-Fuente: [finmate/control/conversation/session.py](../../../finmate/control/conversation/session.py), línea 36. Bases: ninguna.
+Fuente: [finmate/control/conversation/session.py](../../../FinMate/finmate/control/conversation/session.py), línea 36. Bases: ninguna.
 
 Conversation history plus working memory for the current turn.
 

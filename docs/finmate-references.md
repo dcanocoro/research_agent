@@ -17,8 +17,8 @@ contrastarla con el wheel efectivo antes de atribuir una capacidad a Research Ag
 | [Expediente](../../FinMate/docs/architecture/thesis-review.md) y [fuentes](../../FinMate/docs/architecture/thesis-inputs.md) | Revisiones, fundamentos y procedencia del producto; antecedentes, no schemas de A |
 
 FinMate dirige su ejecución mediante Engine y persiste efectos validados mediante
-UnitOfWork. A dirige un ciclo convencional de modelo/herramienta y escribe Markdown
-en un workspace acotado. Ambos pueden conservar evidencia, pero no comparten entidades,
+UnitOfWork. A dirige un ciclo convencional de modelo/herramienta y escribe Markdown, JSON, TXT
+y CSV en un estado acotado, con materiales originales y archivo de runs separados. Ambos pueden conservar evidencia, pero no comparten entidades,
 estados de tesis o mecanismos de persistencia del dominio. No sustituir uno por otro
 solo porque sus salidas se parezcan.
 

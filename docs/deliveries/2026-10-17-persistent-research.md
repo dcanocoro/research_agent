@@ -2,7 +2,7 @@
 
 Base Git: `5ae4e5d4651eff2dd8c17f6d8f2bc88c7570c815`. Implementación local sin commit/push.
 Contrato: [conservación y cierre](../architecture.md#conservación-y-cierre-de-la-investigación).
-Protocolo y evidencia: [E002](../experiments/E002-persistent-research/findings.md).
+Protocolo y evidencia: [E002](../experiments/README.md#antecedentes-e001-y-e002).
 
 ## Qué cambió y por qué
 
@@ -43,7 +43,7 @@ incluso al entrar por llamadas con minutos disponibles. Las dos fases agotaron e
 plazo. Tras acabar ambas intervenciones se corrigió para reservar 30 segundos de
 respuesta y utilizar el resto disponible, sin ampliar las dos llamadas de consolidación.
 La corrección final se probó localmente; **no se volvió a ejecutar con proveedores**.
-Los [hallazgos](../experiments/E002-persistent-research/findings.md) identifican
+Los [hallazgos](../experiments/README.md#antecedentes-e001-y-e002) identifican
 versiones ejecutadas, corrección posterior, IDs, hashes y límites numéricos observados.
 
 Evidencia completa en `artifacts/E002-persistent-research/attempt-01/`, local, ignorada

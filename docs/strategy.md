@@ -6,7 +6,7 @@
 ## Prioridad actual
 
 **Contrastar conservación y continuidad con un estado de archivos por experimento.**
-El plan aceptado el 2026-10-18 sustituye el almacén de expedientes por un único estado
+El [baseline acordado](baseline.md), basado en el plan aceptado el 2026-10-18, sustituye el almacén de expedientes por un único estado
 editable, materiales automáticos, instrucciones separadas y archivo por run. Git es
 manual; una prueba puede empezar vacía o continuar su propio estado. La
 [decisión local](decisions/0001-estado-por-experimento.md) y la
@@ -15,10 +15,12 @@ ni se aceptan semánticamente las evaluaciones por este cambio de representació
 
 El [mapa conceptual](finmate-concept-model/modelo-conocimiento-actual.md) y su
 [anexo](finmate-concept-model/estructuras-y-campos.md) siguen como referencia.
-[E001](experiments/E001-nvidia-casefile/findings.md) y
-[E002](experiments/E002-persistent-research/findings.md) conservan los resultados del
-candidato anterior. La nueva representación tiene verificación local controlada;
-una campaña con proveedores y evaluación semántica requiere otro encargo concreto.
+[E001](experiments/README.md#antecedentes-e001-y-e002) y
+[E002](experiments/README.md#antecedentes-e001-y-e002) conservan los resultados del
+candidato anterior. La nueva representación tiene verificación local controlada y
+una ejecución real de NVIDIA con [hallazgos retrospectivos](experiments/baseline-nvidia-2026-10-18/findings.md).
+No se ha ejecutado una comparación controlada ni una continuación real de ese estado;
+la revisión ante contradicción sigue sin observarse.
 Las variantes A0–A3 siguen siendo posteriores.
 
 El punto de partida es distinguir cuatro preguntas:
@@ -79,15 +81,16 @@ Cerrar con incertidumbres y comparaciones propuestas. La revisión humana confir
 que el mapa describe fielmente el sistema antes de seleccionar alternativas.
 No se realiza aquí ese análisis ni se modifica FinMate.
 
-E001 se ha ejecutado: sus [hallazgos](experiments/E001-nvidia-casefile/findings.md)
+E001 se ha ejecutado: sus [hallazgos](experiments/README.md#antecedentes-e001-y-e002)
 registran ausencia de guardado en ambos procesos y truncamiento del primer cierre.
-E002 se ha ejecutado: sus [hallazgos](experiments/E002-persistent-research/findings.md)
+E002 se ha ejecutado: sus [hallazgos](experiments/README.md#antecedentes-e001-y-e002)
 registran dos revisiones y recuperación tras reiniciar, con consolidación incompleta.
 El plazo de consolidación se corrigió después y solo tiene comprobación local. La
 representación nueva conserva esa corrección, pero elimina la publicación obligatoria.
 El siguiente contraste deberá evaluar consolidación y recuperación con archivos,
 sin presentar los resultados de E002 como evidencia del mecanismo nuevo. No se ha
-repetido E002 ni ejecutado una nueva campaña.
+repetido E002. El run nuevo de NVIDIA es una observación del baseline de archivos,
+no una repetición comparable de E002 ni una campaña controlada.
 
 ## Cómo usar los antecedentes
 

@@ -24,7 +24,8 @@ implementado. Las reflexiones orientan preguntas; no autorizan cambios de compor
 Este AGENTS adapta los principios de [FinMate](../FinMate/AGENTS.md) a este repositorio.
 Las reglas de ejecución del producto FinMate no convierten Engine en dependencia de A.
 
-La prioridad es comprender el modelo conceptual actual de FinMate; la
+El [baseline](docs/baseline.md) fija la implementación de referencia para contrastes;
+el mapa conceptual de FinMate conserva el contexto histórico. La
 [estrategia](docs/strategy.md) define el siguiente encargo. Esta agenda no autoriza
 ejecutar sus fases en una tarea distinta. No cambiar silenciosamente la estrategia
 o una decisión aceptada; plantear la discrepancia y actualizar su referencia al acordarla.

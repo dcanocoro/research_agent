@@ -5,6 +5,11 @@
 > Base Git: `651686c23921ee002f7b38be5f23101cc81a6d25`, rama `feature/tesis`, con cambios locales preexistentes.
 > Alcance: FinMate actual. «Research Lab» nombra el destino experimental indicado por el usuario; no se presupone su implementación.
 
+> Nota de ubicación, 2026-10-18: se corrigieron las rutas al repositorio hermano
+> FinMate. El contenido caracteriza el corte histórico indicado arriba; abrir una
+> fuente actual no confirma que conserve aquella revisión. Los metadatos originales
+> no incluidos en la copia se identifican como ausentes.
+
 ## Cómo leer este documento
 
 Este informe responde al primer paso del documento «FinMate — Rediseño del modelo de conocimiento y reconstrucción experimental de la arquitectura», de 17 de octubre de 2026: comprender qué representa FinMate hoy, cómo lo conserva, cómo cambia y qué consumen sus interfaces. No selecciona un modelo alternativo ni autoriza una migración.
@@ -17,7 +22,7 @@ Los tres entregables solicitados en aquella propuesta se reúnen aquí:
 | B. Relaciones y ciclos de vida | Secciones 13–18: diagramas, recorrido completo, historia y ejemplos |
 | C. Diagnóstico crítico | Secciones 19–24: observaciones, hipótesis y preguntas para el siguiente experimento |
 
-El [anexo de estructuras](estructuras-y-campos.md) permite descender a los campos de modelos SQLAlchemy y contratos de datos. El [manifiesto de fuentes](fuentes.json) identifica mediante SHA-256 los archivos inventariados. La [entrega](delivery.md) registra comprobaciones y límites. El anexo describe declaraciones de código; no es un volcado de una base de datos.
+El [anexo de estructuras](estructuras-y-campos.md) permite descender a los campos de modelos SQLAlchemy y contratos de datos. El manifiesto de fuentes original (`fuentes.json`, no incluido en esta copia) identifica mediante SHA-256 los archivos inventariados. La entrega original (`delivery.md`, no incluida en esta copia) registra comprobaciones y límites. El anexo describe declaraciones de código; no es un volcado de una base de datos.
 
 Para navegar por el informe:
 
@@ -62,7 +67,7 @@ La idea de «expediente vivo» se realiza mediante un agregado estable con punte
 
 Una consecuencia decisiva para Research Lab: el punto de comparación no es simplemente «grafo SQL frente a Markdown». El expediente vigente ya combina **contenedores relacionales, documentos JSON tipados, referencias internas y transiciones transaccionales**. El grafo argumentativo principal vive dentro de esos documentos, no en tablas separadas de nodos y aristas.
 
-Fuentes principales: [visión y límites](../../../docs/product/vision.md), [mapa de datos](../../../docs/architecture/data-map.md), [modelos del dominio](../../../finmate/state/models/__init__.py), [contratos del expediente](../../../finmate/casefile/contracts.py), [lecturas comunes](../../../finmate/casefile/reads.py).
+Fuentes principales: [visión y límites](../../../FinMate/docs/product/vision.md), [mapa de datos](../../../FinMate/docs/architecture/data-map.md), [modelos del dominio](../../../FinMate/finmate/state/models/__init__.py), [contratos del expediente](../../../FinMate/finmate/casefile/contracts.py), [lecturas comunes](../../../FinMate/finmate/casefile/reads.py).
 
 ## 2. Límites de la reconstrucción y corte observado
 
@@ -70,13 +75,13 @@ Fuentes principales: [visión y límites](../../../docs/product/vision.md), [map
 
 La raíz Git es `C:\Users\Daniel\Proyectos\FinMate`; el subdirectorio `finmate/` es un paquete. La inspección se ha realizado desde la raíz. Había modificaciones locales en Engine, Infra, auditoría, documentación y configuración, además de contratos compartidos y archivos del agente externo sin seguimiento. El informe caracteriza ese árbol de trabajo, no exclusivamente el commit base ni un despliegue.
 
-Las migraciones antiguas contienen entidades que ya no pertenecen al modelo activo. La migración [d1e2f3a4b5c6](../../../alembic/versions/d1e2f3a4b5c6_investment_case_reset.py) elimina, entre otras, las tablas de componentes de tesis, relaciones de componentes, revisiones de creencias, decisiones/propuestas de entrada y supuestos de valoración de la etapa anterior. Reconstruye el expediente con las tablas actuales y declara irreversible el reinicio.
+Las migraciones antiguas contienen entidades que ya no pertenecen al modelo activo. La migración [d1e2f3a4b5c6](../../../FinMate/alembic/versions/d1e2f3a4b5c6_investment_case_reset.py) elimina, entre otras, las tablas de componentes de tesis, relaciones de componentes, revisiones de creencias, decisiones/propuestas de entrada y supuestos de valoración de la etapa anterior. Reconstruye el expediente con las tablas actuales y declara irreversible el reinicio.
 
 Por tanto, encontrar `domain_belief_revisions` en una migración no demuestra que exista una capacidad actual de gestión de creencias. Tampoco deben interpretarse campos históricos como autoridades del runtime actual.
 
 ### 2.2. Relación con el laboratorio externo
 
-La guía local [Research Agent fuera de FinMate](../../../docs/development/research-agent.md) sitúa el agente extraído en un proyecto hermano llamado `research_agent`. El usuario denomina su proyecto experimental Research Lab. Este informe no intenta resolver la nomenclatura, auditar aquel proyecto ni trasladar archivos a él. El documento es portable y se conserva en FinMate para mantener trazabilidad con las fuentes examinadas.
+La guía local [Research Agent fuera de FinMate](../../../FinMate/docs/development/research-agent.md) sitúa el agente extraído en un proyecto hermano llamado `research_agent`. El usuario denomina su proyecto experimental Research Lab. Este informe no intenta resolver la nomenclatura, auditar aquel proyecto ni trasladar archivos a él. El documento es portable y se conserva en FinMate para mantener trazabilidad con las fuentes examinadas.
 
 ### 2.3. Lo que este trabajo puede afirmar
 
@@ -117,7 +122,7 @@ Hay varios tipos de identidad a la vez: identidad económica por símbolo, ident
 
 **Ciclo y operaciones.** Las rutas autenticadas resuelven el usuario; los repositorios consultan su estado. Los modelos privados utilizan referencias a `domain_users` y numerosas relaciones con borrado en cascada. La conservación histórica de un expediente no implica conservación frente al borrado de su propietario.
 
-**Límite.** La capa de contratos del modelo no admite convertir un `user_id` generado por el LLM en autoridad. Fuente: [usuario](../../../finmate/state/models/user.py), [contexto](../../../finmate/context/catalog.py).
+**Límite.** La capa de contratos del modelo no admite convertir un `user_id` generado por el LLM en autoridad. Fuente: [usuario](../../../FinMate/finmate/state/models/user.py), [contexto](../../../FinMate/finmate/context/catalog.py).
 
 ### 4.2. Perfil y hecho confirmado
 
@@ -131,7 +136,7 @@ Hay varios tipos de identidad a la vez: identidad económica por símbolo, ident
 
 **Ejemplo.** `investment_horizon=over_ten_years` expresa una preferencia confirmada. `Conditions.horizon_years=5` pertenece al contexto de un expediente. No hay que tratarlos como el mismo campo ni inferir una sincronización automática.
 
-Fuentes: [contrato](../../../finmate/profile/contracts.py), [modelos](../../../finmate/state/models/profile.py), [efectos](../../../finmate/domain/profile_effects.py).
+Fuentes: [contrato](../../../FinMate/finmate/profile/contracts.py), [modelos](../../../FinMate/finmate/state/models/profile.py), [efectos](../../../FinMate/finmate/domain/profile_effects.py).
 
 ### 4.3. Objetivo del usuario
 
@@ -143,11 +148,11 @@ El objetivo es una intención personal durable. No es `CaseRequest.question`, no
 
 `WatchlistItem` registra usuario, símbolo, estado `watching/exploring/archived`, notas y fechas. Las operaciones de seguimiento añaden, anotan, cambian estado o recuperan elementos. Lo consumen Inicio, Seguir, contexto y proyecciones de oportunidades.
 
-Representa atención o interés, no evidencia sobre la empresa. Una nota puede contener texto económico, pero no pasa automáticamente a una observación documental validada. Archivar seguimiento tampoco equivale a retirar un argumento ni cerrar una posición. Fuente: [modelo](../../../finmate/state/models/user.py), [operador](../../../finmate/operators/watchlist_operator.py).
+Representa atención o interés, no evidencia sobre la empresa. Una nota puede contener texto económico, pero no pasa automáticamente a una observación documental validada. Archivar seguimiento tampoco equivale a retirar un argumento ni cerrar una posición. Fuente: [modelo](../../../FinMate/finmate/state/models/user.py), [operador](../../../FinMate/finmate/operators/watchlist_operator.py).
 
 ### 4.5. Posición de cartera
 
-Existe `Position`: usuario, símbolo, acciones, coste medio, fecha de apertura/cierre y fechas de registro. Hay un [repositorio](../../../finmate/state/repositories/position_repository.py). Es una representación física de tenencia, distinta de la dirección `long/neutral` de una evaluación.
+Existe `Position`: usuario, símbolo, acciones, coste medio, fecha de apertura/cierre y fechas de registro. Hay un [repositorio](../../../FinMate/finmate/state/repositories/position_repository.py). Es una representación física de tenencia, distinta de la dirección `long/neutral` de una evaluación.
 
 El inventario de capacidades vigente declara que no existe una experiencia integrada de cartera, asignación u órdenes de bróker. En el catálogo inspeccionado no aparece un recorrido de gestión de posiciones comparable al del expediente. **Existencia de tabla y repositorio** es la afirmación demostrable; **gestión autónoma de cartera** no lo es.
 
@@ -169,7 +174,7 @@ La organización principal por `symbol` simplifica unir datos y expedientes. No 
 
 Estas estructuras describen datos recibidos; no incluyen argumento o juicio. Periodo económico, fecha de publicación e ingesta son dimensiones temporales diferentes. La fecha fiscal no acredita cuándo se conocía una cifra.
 
-**Matiz físico importante.** La clave de `FinancialFact` no incluye el hash ni la fecha de ingesta. [El writer](../../../findata/ingest/writer.py) usa `on_conflict_do_update` para la misma partida/proveedor/periodo. Conserva el dato vigente de esa clave, no todas sus versiones históricas. Ocurre una actualización análoga con barras de precio. En cambio, `InstrumentObservation` distingue contenidos por proveedor/símbolo/hash.
+**Matiz físico importante.** La clave de `FinancialFact` no incluye el hash ni la fecha de ingesta. [El writer](../../../FinMate/findata/ingest/writer.py) usa `on_conflict_do_update` para la misma partida/proveedor/periodo. Conserva el dato vigente de esa clave, no todas sus versiones históricas. Ocurre una actualización análoga con barras de precio. En cambio, `InstrumentObservation` distingue contenidos por proveedor/símbolo/hash.
 
 Por ello, «datos financieros con procedencia» no equivale a «almacén bitemporal completo de todas las correcciones de proveedores». La reproducción de una valoración privada depende de sus entradas congeladas, no de que Findata retenga indefinidamente cada versión recibida.
 
@@ -185,7 +190,7 @@ Los derivados incorporan `formula_version`, `derived_at`, `source_max_ingested_a
 
 Cobertura es conocimiento sobre disponibilidad de datos. La bandera de cobertura no sustituye el diagnóstico efectivo de entradas DCF ni la elegibilidad del modelo de negocio. Las lecturas v2 requieren PostgreSQL; que una prueba de dominio use SQLite no demuestra que reproduzca las consultas financieras v2.
 
-Fuentes: [modelos v2](../../../findata/models/v2.py), [contratos de lectura](../../../findata/contracts/models.py), [operación](../../../docs/operations/findata.md), [valoración](../../../findata/read/valuation.py).
+Fuentes: [modelos v2](../../../FinMate/findata/models/v2.py), [contratos de lectura](../../../FinMate/findata/contracts/models.py), [operación](../../../FinMate/docs/operations/findata.md), [valoración](../../../FinMate/findata/read/valuation.py).
 
 ## 6. Caracterización, dimensiones, análisis y evidencia compartida por recorridos
 
@@ -197,7 +202,7 @@ Produce tres clases de efectos: `Analysis` fundamental con `kind=company_charact
 
 Su vigencia se reconoce comparando `catalog_version`, que deriva de dimensiones, métricas, fórmulas, prompt y política de evidencia. El contrato no debe confundirse con una valoración completa de inversión. Aunque los priors procedan de una interpretación del modelo apoyada en datos, se guardan como `Evidence` con fuente `findata`. Esto muestra que la tabla de evidencia es más amplia que una colección homogénea de observaciones primarias.
 
-Fuentes: [productor](../../../finmate/operators/characterize_company.py), [vigencia](../../../finmate/domain/characterization.py).
+Fuentes: [productor](../../../FinMate/finmate/operators/characterize_company.py), [vigencia](../../../FinMate/finmate/domain/characterization.py).
 
 ### 6.2. Dimensión de análisis
 
@@ -213,7 +218,7 @@ El código admite `DimensionConflict`, pero `State.dimension_assessments` constr
 
 Este mecanismo sí usa pesos deterministas. Debe distinguirse de la argumentación del expediente, que no suma argumentos para obtener convicción. Los pesos no son probabilidades calibradas ni pruebas de verdad. Tampoco puede inferirse que todas las lecturas y publicaciones del expediente apliquen exactamente esta política: hay validaciones propias de referencias, contexto económico y caducidad.
 
-Fuentes: [dimensiones](../../../finmate/domain/attention.py), [calidad](../../../finmate/domain/evidence_quality.py), [estado](../../../finmate/domain/state.py).
+Fuentes: [dimensiones](../../../FinMate/finmate/domain/attention.py), [calidad](../../../FinMate/finmate/domain/evidence_quality.py), [estado](../../../FinMate/finmate/domain/state.py).
 
 ### 6.4. `Analysis` genérico
 
@@ -221,7 +226,7 @@ La tabla `domain_analyses` contiene tipo fundamental, técnico, sectorial, compe
 
 No es el mismo objeto que `Analysis` de `casefile/contracts.py`: este último es un contrato transitorio que reúne revisión, observaciones y assessment para validar una interpretación. Tampoco es la fila inmutable `CaseAnalysisAssessment`.
 
-La repetición del nombre es semánticamente relevante: una búsqueda de «analysis» devuelve al menos un artefacto persistido genérico, una propuesta de interpretación del expediente y una valoración de suficiencia del análisis. Fuentes: [tabla](../../../finmate/state/models/analysis.py), [contrato](../../../finmate/casefile/contracts.py).
+La repetición del nombre es semánticamente relevante: una búsqueda de «analysis» devuelve al menos un artefacto persistido genérico, una propuesta de interpretación del expediente y una valoración de suficiencia del análisis. Fuentes: [tabla](../../../FinMate/finmate/state/models/analysis.py), [contrato](../../../FinMate/finmate/casefile/contracts.py).
 
 ## 7. Expediente y revisión del conocimiento
 
@@ -255,7 +260,7 @@ La revisión es un documento completo del estado argumentativo/económico, no un
 
 No está todo el expediente en ese JSON. Documentos, evidencias, assessments, valoraciones y evaluaciones viven en otras filas. Intentos, presupuestos, reservas y cierre viven en el payload del encargo. Mensajes y foco de conversación viven en memoria. Una exportación que incluya solo `Revision` perdería parte sustancial de la continuidad.
 
-Fuentes: [agregado](../../../finmate/state/models/thesis.py), [revisiones](../../../finmate/state/models/thesis_review.py), [contrato](../../../finmate/casefile/contracts.py), [materialización](../../../finmate/casefile/changes.py), [efectos](../../../finmate/casefile/effects.py).
+Fuentes: [agregado](../../../FinMate/finmate/state/models/thesis.py), [revisiones](../../../FinMate/finmate/state/models/thesis_review.py), [contrato](../../../FinMate/finmate/casefile/contracts.py), [materialización](../../../FinMate/finmate/casefile/changes.py), [efectos](../../../FinMate/finmate/casefile/effects.py).
 
 ## 8. Hipótesis, argumentos, debate e incertidumbre
 
@@ -335,7 +340,7 @@ No hay una entidad única que concentre toda la incertidumbre. Aparece en estado
 
 Esto permite expresar tipos diferentes de desconocimiento, pero obliga a combinar varias fuentes para responder «¿qué no sabemos todavía?». También dificulta medir longitudinalmente si una incertidumbre concreta desapareció, se reformuló o se trasladó a otra representación.
 
-Fuentes de esta sección: [contratos](../../../finmate/casefile/contracts.py), [validación del razonamiento](../../../finmate/casefile/reasoning.py), [operaciones](../../../finmate/casefile/changes.py), [validación del commit](../../../finmate/casefile/effects.py), [ejemplos y pruebas](../../../tests/test_case_argumentation.py).
+Fuentes de esta sección: [contratos](../../../FinMate/finmate/casefile/contracts.py), [validación del razonamiento](../../../FinMate/finmate/casefile/reasoning.py), [operaciones](../../../FinMate/finmate/casefile/changes.py), [validación del commit](../../../FinMate/finmate/casefile/effects.py), [ejemplos y pruebas](../../../FinMate/tests/test_case_argumentation.py).
 
 ## 9. Fuente documental, observación y evidencia numérica
 
@@ -397,7 +402,7 @@ Las discrepancias entre fuentes no se resuelven mediante una verdad elegida por 
 
 Es un conjunto de entradas adecuado para una fórmula concreta; no sustituye el libro de observaciones numéricas ni toda la información económica de la empresa. La recopilación de datos financieros cotidianos puede existir sin snapshot DCF. A su vez, la búsqueda documental no actualiza automáticamente este snapshot.
 
-Fuentes: [documentos](../../../runtime_contracts/documents.py), [modelos de entrada](../../../finmate/state/models/thesis_inputs.py), [evidencia](../../../finmate/state/models/evidence.py), [citas](../../../finmate/casefile/citations.py), [números](../../../finmate/casefile/numbers.py), [DTO financieros](../../../findata/contracts/models.py), [lecturas](../../../finmate/casefile/reads.py).
+Fuentes: [documentos](../../../FinMate/runtime_contracts/documents.py), [modelos de entrada](../../../FinMate/finmate/state/models/thesis_inputs.py), [evidencia](../../../FinMate/finmate/state/models/evidence.py), [citas](../../../FinMate/finmate/casefile/citations.py), [números](../../../FinMate/finmate/casefile/numbers.py), [DTO financieros](../../../FinMate/findata/contracts/models.py), [lecturas](../../../FinMate/finmate/casefile/reads.py).
 
 ## 10. Análisis, hallazgos, valoración, evaluación y respuesta
 
@@ -425,7 +430,7 @@ Se guarda en el assessment. La bandera `CASE_PROBLEM_FRAMING_ENABLED` se congela
 
 Es un mecanismo experimental de orientación del razonamiento, no otro expediente ni una entidad SQL nueva. Su existencia y validación no demuestran una mejora de calidad. La ejecución local de pruebas mostró además que su activación importa para reproducir fixtures antiguos; véase la entrega.
 
-Fuente: [framing](../../../finmate/casefile/framing.py).
+Fuente: [framing](../../../FinMate/finmate/casefile/framing.py).
 
 ### 10.4. Condiciones personales y de precio
 
@@ -496,7 +501,7 @@ La respuesta calculada posterior al DCF puede diferir del assessment previo al c
 
 Un expediente puede tener: un análisis nuevo aplicable a una pregunta limitada; una evaluación anterior obsoleta; un DCF compatible reutilizable; y una última respuesta confirmada histórica. «Estado actual» no es elegir simplemente el registro con fecha más reciente entre todas las tablas.
 
-Fuentes: [contratos](../../../finmate/casefile/contracts.py), [economía](../../../finmate/casefile/economics.py), [publicación](../../../finmate/casefile/publication.py), [lecturas](../../../finmate/casefile/reads.py), [cálculo](../../../findata/read/valuation.py), [persistencia](../../../finmate/casefile/effects.py).
+Fuentes: [contratos](../../../FinMate/finmate/casefile/contracts.py), [economía](../../../FinMate/finmate/casefile/economics.py), [publicación](../../../FinMate/finmate/casefile/publication.py), [lecturas](../../../FinMate/finmate/casefile/reads.py), [cálculo](../../../FinMate/findata/read/valuation.py), [persistencia](../../../FinMate/finmate/casefile/effects.py).
 
 ## 11. Intención, encargo, investigación y estado del agente
 
@@ -571,7 +576,7 @@ El trabajo durable del expediente actual utiliza `CaseJob`, con contrato y recup
 
 Reanudar y continuar son diferentes: reanudar mantiene encargo/gasto; continuar abre otro mandato con presupuesto nuevo y referencia al origen. Una propuesta pendiente no concede permiso para ejecutarse sola.
 
-Fuentes: [solicitudes](../../../finmate/casefile/contracts.py), [tarea](../../../finmate/casefile/task.py), [flujo](../../../finmate/casefile/workflow.py), [investigación](../../../finmate/casefile/research.py), [continuación](../../../finmate/casefile/continuation.py), [jobs](../../../finmate/state/models/thesis_inputs.py), [directivas](../../../finmate/state/models/research_directive.py).
+Fuentes: [solicitudes](../../../FinMate/finmate/casefile/contracts.py), [tarea](../../../FinMate/finmate/casefile/task.py), [flujo](../../../FinMate/finmate/casefile/workflow.py), [investigación](../../../FinMate/finmate/casefile/research.py), [continuación](../../../FinMate/finmate/casefile/continuation.py), [jobs](../../../FinMate/finmate/state/models/thesis_inputs.py), [directivas](../../../FinMate/finmate/state/models/research_directive.py).
 
 ## 12. Otros recorridos que conservan conocimiento
 
@@ -581,19 +586,19 @@ Fuentes: [solicitudes](../../../finmate/casefile/contracts.py), [tarea](../../..
 
 Descubrir un evento, explicarlo e incorporarlo al expediente son transiciones distintas. El evento no actualiza automáticamente hipótesis ni evaluación. Una URL de noticia y una evidencia documental admitida tampoco son intercambiables.
 
-Fuentes: [evento](../../../finmate/state/models/event.py), [escaneo](../../../finmate/operators/event_scan.py), [análisis](../../../finmate/state/models/analysis.py).
+Fuentes: [evento](../../../FinMate/finmate/state/models/event.py), [escaneo](../../../FinMate/finmate/operators/event_scan.py), [análisis](../../../FinMate/finmate/state/models/analysis.py).
 
 ### 12.2. Exploración de métricas
 
 `MetricProbe` conserva usuario, símbolo, tipo `trend/compare`, métrica, especificación y resultado JSON. La comparación es frente al sector, no una comparación libre entre dos compañías. Las lecturas y cálculos proceden de Findata.
 
-Es un artefacto analítico durable, pero no tiene vínculo directo de tabla con la revisión actual de una tesis. Un resultado guardado no se convierte automáticamente en supuesto de valoración. Fuente: [modelo](../../../finmate/state/models/metric_probe.py), [operador](../../../finmate/operators/metric_probe.py).
+Es un artefacto analítico durable, pero no tiene vínculo directo de tabla con la revisión actual de una tesis. Un resultado guardado no se convierte automáticamente en supuesto de valoración. Fuente: [modelo](../../../FinMate/finmate/state/models/metric_probe.py), [operador](../../../FinMate/finmate/operators/metric_probe.py).
 
 ### 12.3. Búsqueda y screening guardados
 
 `SavedScreen` conserva parámetros, snapshot de resultados, interpretación, nombre y fecha de ejecución. Representa una exploración reproducible en sus entradas/resultados guardados; no una tesis sobre cada candidato.
 
-Volver a ejecutar puede producir otro resultado; guardar el screen no garantiza seguimiento de todas sus empresas. El snapshot de resultados y la interpretación conviven sin convertirse en una red de argumentos por empresa. Fuente: [modelo](../../../finmate/state/models/saved_screen.py).
+Volver a ejecutar puede producir otro resultado; guardar el screen no garantiza seguimiento de todas sus empresas. El snapshot de resultados y la interpretación conviven sin convertirse en una red de argumentos por empresa. Fuente: [modelo](../../../FinMate/finmate/state/models/saved_screen.py).
 
 ### 12.4. Selección de inversión
 
@@ -611,7 +616,7 @@ Es una decisión explícita de selección, separada de la preferencia generada y
 
 Una edición conserva comparaciones y decisiones previas como contexto histórico. La actualidad depende de revisión y compatibilidad, no de que el registro siga existiendo.
 
-Fuentes: [contratos de selección](../../../finmate/selection/contracts.py), [modelos](../../../finmate/state/models/selection.py), [efectos](../../../finmate/domain/selection_effects.py), [guía propietaria](../../../docs/architecture/investment-selection.md).
+Fuentes: [contratos de selección](../../../FinMate/finmate/selection/contracts.py), [modelos](../../../FinMate/finmate/state/models/selection.py), [efectos](../../../FinMate/finmate/domain/selection_effects.py), [guía propietaria](../../../FinMate/docs/architecture/investment-selection.md).
 
 ## 13. Relaciones conceptuales y jerarquías
 
@@ -766,7 +771,7 @@ En las mutaciones del producto, los operadores retornan efectos declarados; `Sql
 
 Esta regla no describe toda escritura externa de la aplicación: el pipeline de ingesta Findata posee sus propios commits. Es importante no convertir «solo UoW guarda efectos del dominio» en «ninguna otra parte de todo el repositorio persiste datos».
 
-Fuentes: [UoW](../../../infra/adapters/sqlalchemy_uow.py), [efectos](../../../finmate/casefile/effects.py), [writer Findata](../../../findata/ingest/writer.py), [migración del núcleo](../../../alembic/versions/d1e2f3a4b5c6_investment_case_reset.py), [assessment](../../../alembic/versions/e2f3a4b5c6d7_case_analysis_assessments.py), [evidencia numérica](../../../alembic/versions/f3a4b5c6d7e8_case_numeric_evidence.py).
+Fuentes: [UoW](../../../FinMate/infra/adapters/sqlalchemy_uow.py), [efectos](../../../FinMate/finmate/casefile/effects.py), [writer Findata](../../../FinMate/findata/ingest/writer.py), [migración del núcleo](../../../FinMate/alembic/versions/d1e2f3a4b5c6_investment_case_reset.py), [assessment](../../../FinMate/alembic/versions/e2f3a4b5c6d7_case_analysis_assessments.py), [evidencia numérica](../../../FinMate/alembic/versions/f3a4b5c6d7e8_case_numeric_evidence.py).
 
 ## 15. Ciclo completo: de intención a conocimiento persistente
 
@@ -897,7 +902,7 @@ Hay duplicación deliberada para reproducibilidad: datos de Findata se congelan 
 
 Hay solapamiento potencialmente más costoso: el encargo conserva análisis y referencias al assessment; varios assessments pueden repetir hallazgos; el estado de incertidumbre aparece en múltiples campos; los argumentos simples y estructurados pueden expresar conclusiones parecidas. La presencia del solapamiento está verificada; su coste neto y frecuencia en expedientes reales no se han medido.
 
-Fuentes: [ensamblado de interpretación](../../../finmate/casefile/interpretation_context.py), [observación de tarea](../../../finmate/casefile/task.py), [lecturas](../../../finmate/casefile/reads.py), [efectos](../../../finmate/casefile/effects.py).
+Fuentes: [ensamblado de interpretación](../../../FinMate/finmate/casefile/interpretation_context.py), [observación de tarea](../../../FinMate/finmate/casefile/task.py), [lecturas](../../../FinMate/finmate/casefile/reads.py), [efectos](../../../FinMate/finmate/casefile/effects.py).
 
 ## 17. Historia, actualidad y aplicabilidad
 
@@ -937,7 +942,7 @@ Las condiciones de revisión son texto; su presencia no equivale a un detector q
 
 ### 18.1. Renovaciones, poder de precios y margen
 
-El fixture de [argumentación](../../../tests/test_case_argumentation.py) construye esta representación:
+El fixture de [argumentación](../../../FinMate/tests/test_case_argumentation.py) construye esta representación:
 
 | Elemento | Ejemplo |
 |---|---|
@@ -969,7 +974,7 @@ Al mismo tiempo, este ejemplo no demuestra que toda explicación necesite cinco 
 
 Es evidencia de que el modelo actual no obliga a abrir hipótesis y DCF para cada respuesta financiera. Un rediseño no debe atribuirle artificialmente esa rigidez universal.
 
-Fuente: [recorrido flexible](../../../tests/test_case_flexible_reasoning.py).
+Fuente: [recorrido flexible](../../../FinMate/tests/test_case_flexible_reasoning.py).
 
 ### 18.3. DCF exploratorio sin postura
 
@@ -983,7 +988,7 @@ Si los supuestos son exploratorios, el resultado se marca como tal. Los valores 
 
 `test_repeated_price_updates_preserve_grounding_and_calculation` comprueba la reutilización con cambios de precio compatibles. Una actualización de precio no convierte en suficiente una evaluación anteriormente insuficiente.
 
-Fuente: [política y continuación](../../../tests/test_case_cut2.py).
+Fuente: [política y continuación](../../../FinMate/tests/test_case_cut2.py).
 
 ### 18.5. Cita inventada y conocimiento parcial preservado
 
@@ -991,7 +996,7 @@ Una cita que no aparece en el fragmento se rechaza. Si los documentos ya estaban
 
 El límite de atomicidad es la transacción del paso, no toda la investigación distribuida en múltiples commits. Esta diferencia explica por qué un intento fallido puede dejar material útil sin tener una entrega válida.
 
-Fuentes: `test_invalid_citation_preserves_sources_but_no_revision` en [expediente](../../../tests/test_investment_case.py) y `test_forged_research_quote_preserves_only_confirmed_reasoning` en [argumentación](../../../tests/test_case_argumentation.py).
+Fuentes: `test_invalid_citation_preserves_sources_but_no_revision` en [expediente](../../../FinMate/tests/test_investment_case.py) y `test_forged_research_quote_preserves_only_confirmed_reasoning` en [argumentación](../../../FinMate/tests/test_case_argumentation.py).
 
 ## 19. Presentación, conversación y recuperación del conocimiento
 
@@ -1003,7 +1008,7 @@ Fuentes: `test_invalid_citation_preserves_sources_but_no_revision` en [expedient
 
 `State` tampoco es un snapshot persistido: es una lente que consulta la base en cada método. Dos llamadas pueden observar valores diferentes. La vista batch de conocimiento, el estado vivo y el snapshot de contexto son objetos con garantías distintas.
 
-Fuentes: [modelos de lectura](../../../finmate/knowledge/models.py), [lector](../../../finmate/knowledge/reader.py), [loader](../../../finmate/knowledge/company_loader.py), [estado vivo](../../../finmate/domain/state.py).
+Fuentes: [modelos de lectura](../../../FinMate/finmate/knowledge/models.py), [lector](../../../FinMate/finmate/knowledge/reader.py), [loader](../../../FinMate/finmate/knowledge/company_loader.py), [estado vivo](../../../FinMate/finmate/domain/state.py).
 
 ### 19.2. Contexto del modelo
 
@@ -1021,7 +1026,7 @@ La política prioriza contenido obligatorio, deduplica por identidad/versiones y
 
 Hay por tanto dos continuidades distintas: **continuidad del expediente**, durable y estructurada; **continuidad conversacional**, temporal y local. La ausencia de la segunda no borra necesariamente la primera, pero puede dificultar reconstruir por qué se pidió algo no incluido en el mandato.
 
-Fuentes: [sesión](../../../finmate/control/conversation/session.py), [store](../../../finmate/control/conversation/store.py), [contexto](../../../docs/architecture/context-management.md).
+Fuentes: [sesión](../../../FinMate/finmate/control/conversation/session.py), [store](../../../FinMate/finmate/control/conversation/store.py), [contexto](../../../FinMate/docs/architecture/context-management.md).
 
 ### 19.4. Tarjetas y experiencia de expediente
 
@@ -1053,7 +1058,7 @@ Una card no es un agregado financiero. Un nodo visual no es necesariamente una e
 
 La composición y el frontend tienen estado propio: revisiones de superficie, selección, foco, expansión, caché y actividad de streaming. Sus identificadores no deben convertirse por inercia en el vocabulario central del nuevo modelo de conocimiento.
 
-Fuentes: [composición](../../../finmate/composition/thesis_review.py), [Presentation](../../../presentation/models.py), [experiencia](../../../frontend/src/surface/InvestmentCaseExperience.tsx), [razonamiento](../../../frontend/src/surface/CaseReasoning.tsx), [respuesta](../../../frontend/src/surface/CaseAnswer.tsx), [tipos cliente](../../../frontend/src/types.ts).
+Fuentes: [composición](../../../FinMate/finmate/composition/thesis_review.py), [Presentation](../../../FinMate/presentation/models.py), [experiencia](../../../FinMate/frontend/src/surface/InvestmentCaseExperience.tsx), [razonamiento](../../../FinMate/frontend/src/surface/CaseReasoning.tsx), [respuesta](../../../FinMate/frontend/src/surface/CaseAnswer.tsx), [tipos cliente](../../../FinMate/frontend/src/types.ts).
 
 ## 20. Ejecución genérica y observabilidad: qué representan y qué no
 
@@ -1069,7 +1074,7 @@ Logs, trazas, capturas LLM y Experience Audit conservan evidencia sobre ejecuci�
 
 Para rediseñar el estado conviene distinguir tres autoridades: **estado de producto**, **contexto que vio el modelo** y **registro de lo que ejecutó el sistema**. La auditabilidad requiere poder correlacionarlos, no fundirlos en un solo documento indiferenciado.
 
-Fuentes: [Engine](../../../engine/ARCHITECTURE.md), [trabajo](../../../engine/core/work.py), [argumentación genérica](../../../engine/argumentation/model.py), [semántica](../../../engine/argumentation/semantics.py), [registro de dominio](../../../finmate/registry.py), [auditoría](../../../docs/operations/experience-audit.md).
+Fuentes: [Engine](../../../FinMate/engine/ARCHITECTURE.md), [trabajo](../../../FinMate/engine/core/work.py), [argumentación genérica](../../../FinMate/engine/argumentation/model.py), [semántica](../../../FinMate/engine/argumentation/semantics.py), [registro de dominio](../../../FinMate/finmate/registry.py), [auditoría](../../../FinMate/docs/operations/experience-audit.md).
 
 ## 21. Diagnóstico crítico: observaciones verificadas
 
@@ -1188,14 +1193,14 @@ Las pruebas locales seleccionadas utilizan SQLite y proveedores/modelos controla
 | Pregunta | Fuente primaria |
 |---|---|
 | ¿Qué campos tiene cada concepto? | [Anexo de estructuras y campos](estructuras-y-campos.md) |
-| ¿Qué puede escribir el modelo? | [Cambios tipados](../../../finmate/casefile/changes.py) |
-| ¿Qué valida la revisión? | [Contratos](../../../finmate/casefile/contracts.py), [razonamiento](../../../finmate/casefile/reasoning.py), [efectos](../../../finmate/casefile/effects.py) |
-| ¿Cómo se admite una cita? | [Citas](../../../finmate/casefile/citations.py) |
-| ¿Cómo se representa y calcula una cifra? | [Números](../../../finmate/casefile/numbers.py), [Findata](../../../findata/read/valuation.py) |
-| ¿Qué limita una postura? | [Economía](../../../finmate/casefile/economics.py), [publicación](../../../finmate/casefile/publication.py) |
-| ¿Qué se recupera como actual? | [Lecturas comunes](../../../finmate/casefile/reads.py), [lector de conocimiento](../../../finmate/knowledge/reader.py) |
-| ¿Qué conserva un encargo? | [Modelos](../../../finmate/state/models/thesis_inputs.py), [efectos](../../../finmate/casefile/effects.py), [tarea](../../../finmate/casefile/task.py) |
-| ¿Qué sabe la conversación? | [Contexto](../../../docs/architecture/context-management.md), [sesión](../../../finmate/control/conversation/session.py) |
-| ¿Qué consume la interfaz? | [Experiencia de expediente](../../../frontend/src/surface/InvestmentCaseExperience.tsx), [composición](../../../finmate/composition/thesis_review.py) |
-| ¿Qué cambió respecto a la etapa previa? | [Reinicio del expediente](../../../alembic/versions/d1e2f3a4b5c6_investment_case_reset.py) |
-| ¿Qué se comprobó en este trabajo? | [Entrega y evidencia](delivery.md) |
+| ¿Qué puede escribir el modelo? | [Cambios tipados](../../../FinMate/finmate/casefile/changes.py) |
+| ¿Qué valida la revisión? | [Contratos](../../../FinMate/finmate/casefile/contracts.py), [razonamiento](../../../FinMate/finmate/casefile/reasoning.py), [efectos](../../../FinMate/finmate/casefile/effects.py) |
+| ¿Cómo se admite una cita? | [Citas](../../../FinMate/finmate/casefile/citations.py) |
+| ¿Cómo se representa y calcula una cifra? | [Números](../../../FinMate/finmate/casefile/numbers.py), [Findata](../../../FinMate/findata/read/valuation.py) |
+| ¿Qué limita una postura? | [Economía](../../../FinMate/finmate/casefile/economics.py), [publicación](../../../FinMate/finmate/casefile/publication.py) |
+| ¿Qué se recupera como actual? | [Lecturas comunes](../../../FinMate/finmate/casefile/reads.py), [lector de conocimiento](../../../FinMate/finmate/knowledge/reader.py) |
+| ¿Qué conserva un encargo? | [Modelos](../../../FinMate/finmate/state/models/thesis_inputs.py), [efectos](../../../FinMate/finmate/casefile/effects.py), [tarea](../../../FinMate/finmate/casefile/task.py) |
+| ¿Qué sabe la conversación? | [Contexto](../../../FinMate/docs/architecture/context-management.md), [sesión](../../../FinMate/finmate/control/conversation/session.py) |
+| ¿Qué consume la interfaz? | [Experiencia de expediente](../../../FinMate/frontend/src/surface/InvestmentCaseExperience.tsx), [composición](../../../FinMate/finmate/composition/thesis_review.py) |
+| ¿Qué cambió respecto a la etapa previa? | [Reinicio del expediente](../../../FinMate/alembic/versions/d1e2f3a4b5c6_investment_case_reset.py) |
+| ¿Qué se comprobó en este trabajo? | Entrega y evidencia original (`delivery.md`, no incluida en esta copia) |

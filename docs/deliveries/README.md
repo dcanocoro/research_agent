@@ -5,6 +5,8 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-18 — Documentación del baseline](2026-10-18-baseline-documentation.md):
+  referencia actual, run NVIDIA, enlaces y límites; sin cambios de comportamiento.
 - [2026-10-18 — Estado por experimento](2026-10-18-experiment-state.md): archivos,
   materiales automáticos, crear/continuar y Git manual; verificación local controlada.
 - [2026-10-17 — Conservación y E002](2026-10-17-persistent-research.md): cierre con
