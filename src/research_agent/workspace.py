@@ -1,18 +1,26 @@
 from __future__ import annotations
 from typing import Any
-"""Bounded Markdown workspace; artifacts and instructions live elsewhere."""
+"""Bounded UTF-8 state; original materials are owned by tools."""
 import hashlib
 import os
+import json
+import tempfile
 from pathlib import Path
 
 
+def reject_constant(value: str) -> None:
+    raise ValueError("Non-standard JSON constant.")
+
+
 class Workspace:
-    def __init__(self, root: Path) -> None:
+    extensions = frozenset({".md", ".json", ".txt", ".csv"})
+
+    def __init__(self, root: Path, *, create: bool = True) -> None:
         self.root = root.absolute()
         self._check_links(self.root)
-        self.root.mkdir(parents=True, exist_ok=True)
-        for name in ("memory", "notes", "reports"):
-            self.path(name).mkdir(exist_ok=True)
+        if create:
+            self.root.mkdir(parents=True, exist_ok=True)
+            self.path("materiales").mkdir(exist_ok=True)
 
     @staticmethod
     def _check_links(path: Path) -> None:
@@ -25,6 +33,15 @@ class Workspace:
         name = Path(relative)
         if name.is_absolute() or name.drive or ".." in name.parts or ":" in relative:
             raise ValueError("Path escapes the workspace.")
+        if any(part.startswith(".") for part in name.parts):
+            raise ValueError("Hidden paths are not accessible.")
+        for part in name.parts:
+            if part.endswith((".", " ")) or part.split(".")[0].lower() in {
+                "con", "prn", "aux", "nul", *(f"com{i}" for i in range(10)), *(f"lpt{i}" for i in range(10))
+            }:
+                raise ValueError("Invalid Windows path component.")
+        if len(name.parts) > 3:
+            raise ValueError("State supports at most two directory levels.")
         path = self.root / name
         self._check_links(path)
         if path.resolve() != self.root.resolve() and self.root.resolve() not in path.resolve().parents:
@@ -43,6 +60,8 @@ class Workspace:
         if offset < 0 or not 1 <= max_bytes <= 32768:
             raise ValueError("Invalid read window.")
         source = self.path(path)
+        if source.suffix.lower() not in self.extensions:
+            raise ValueError("Unsupported text format.")
         with source.open("rb") as stream:
             stream.seek(offset)
             data = stream.read(max_bytes)
@@ -63,26 +82,48 @@ class Workspace:
                 "next_offset": next_offset if next_offset < source.stat().st_size else None}
 
     def write_markdown(self, path: str, content: str) -> dict[str, Any]:
-        target = self.path(path)
-        if target.suffix.lower() != ".md":
+        if Path(path).suffix.lower() != ".md":
             raise ValueError("Only Markdown writes are allowed.")
+        return self.write_file(path, content)
+
+    def write_file(self, path: str, content: str) -> dict[str, Any]:
+        target = self.path(path)
+        if target.suffix.lower() not in self.extensions:
+            raise ValueError("Allowed formats: Markdown, JSON, TXT and CSV.")
+        if Path(path).parts[0].casefold() == "materiales":
+            raise ValueError("Original materials are read-only for the agent.")
         if len(content.encode("utf-8")) > 128 * 1024:
-            raise ValueError("Markdown exceeds the write limit.")
+            raise ValueError("File exceeds the write limit.")
+        if target.suffix.lower() == ".json":
+            try:
+                json.loads(content, parse_constant=reject_constant)
+            except ValueError:
+                raise ValueError("Invalid JSON content.") from None
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
+        with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(content.encode("utf-8"))
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            temporary.replace(target)
+        finally:
+            temporary.unlink(missing_ok=True)
         return {"path": path, "bytes": target.stat().st_size,
                 "sha256": hashlib.sha256(target.read_bytes()).hexdigest()}
 
     def search_files(self, query: str, path: str = ".") -> dict[str, Any]:
         matches = []
         for directory, children, files in os.walk(self.path(path), followlinks=False):
+            children[:] = [child for child in children if not child.startswith(".")]
             for child in children:
-                self._check_links(Path(directory) / child)
+                self.path((Path(directory) / child).relative_to(self.root).as_posix())
             for name in sorted(files):
                 file = Path(directory) / name
                 self._check_links(file)
-                if file.suffix.lower() != ".md":
+                if file.suffix.lower() not in self.extensions:
                     continue
+                self.path(file.relative_to(self.root).as_posix())
                 with file.open(encoding="utf-8") as stream:
                     for line, text in enumerate(stream, 1):
                         if query.casefold() in text.casefold():
@@ -91,14 +132,30 @@ class Workspace:
                                 return {"matches": matches, "limited": True}
         return {"matches": matches, "limited": False}
 
-    def snapshot(self) -> dict[str, str]:
+    def snapshot(self, errors: list[dict[str, str]] | None = None) -> dict[str, str]:
         result = {}
-        for directory, children, files in os.walk(self.root, followlinks=False):
-            for child in children:
-                self._check_links(Path(directory) / child)
+        def walk_error(exc: OSError) -> None:
+            if errors is None:
+                raise exc
+            errors.append({"operation": "state_snapshot", "error_type": type(exc).__name__})
+        for directory, children, files in os.walk(self.root, followlinks=False, onerror=walk_error):
+            for child in list(children):
+                try:
+                    self.path((Path(directory) / child).relative_to(self.root).as_posix())
+                except ValueError as exc:
+                    if errors is None:
+                        raise
+                    children.remove(child)
+                    errors.append({"operation": "state_snapshot", "path": str(child), "error_type": type(exc).__name__})
             for name in files:
                 path = Path(directory) / name
-                self._check_links(path)
-                if path.suffix.lower() == ".md":
-                    result[path.relative_to(self.root).as_posix()] = path.read_text(encoding="utf-8")
+                if path.suffix.lower() in self.extensions:
+                    relative = path.relative_to(self.root).as_posix()
+                    try:
+                        self.path(relative)
+                        result[relative] = path.read_text(encoding="utf-8")
+                    except (ValueError, OSError) as exc:
+                        if errors is None:
+                            raise
+                        errors.append({"operation": "state_snapshot", "path": relative, "error_type": type(exc).__name__})
         return result

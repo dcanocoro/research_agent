@@ -1,249 +1,145 @@
 # Arquitectura implementada
 
-> Estado: implementación local, incluido el modo experimental de expedientes. Revisión: 2026-10-17.
-> Autoridad: `src/research_agent/`, schemas registrados y biblioteca compartida instalada.
+> Estado local a 2026-10-18. Autoridad: código, schemas y wheel instalado.
 
-## Frontera y estructura
+## Frontera y componentes
+
+A posee un único ciclo modelo → herramienta → modelo → respuesta. No importa
+`finmate`, `engine` ni `api`; Findata, Infra y los contratos comunes se consumen desde
+el wheel instalado. Findata abre transacciones PostgreSQL de solo lectura, sin ingestas
+ni migraciones. No hay DCF, cartera, grafo obligatorio ni variantes A0–A3.
+
+| Componente | Responsabilidad |
+|---|---|
+| [AgentA](../src/research_agent/agent.py) | Contexto, replay del proveedor, presupuestos y cierre |
+| [Workspace](../src/research_agent/workspace.py) | Estado UTF-8 acotado y materiales originales |
+| [ToolRegistry](../src/research_agent/tools.py) | Schemas, despacho, materiales y entrega paginada |
+| [RunRecorder](../src/research_agent/recording.py) | Manifest, eventos, respuesta y snapshots |
+| [Experimentos](../src/research_agent/experiments.py) | Crear/continuar, bloqueo y observación de Git |
+| [build_agent](../src/research_agent/bootstrap.py) | Composición de A con las bibliotecas compartidas |
+| [capture_traces](../src/research_agent/tracing.py) | Logs y payloads locales del proveedor |
+
+## Estado, instrucciones y ejecuciones
+
+Cada experimento CLI tiene su propio estado y puede recibir varios runs:
 
 ```text
-research_agent/
-  pyproject.toml          distribución y comando research-agent
-  src/research_agent/    ciclo, archivos, registro e integraciones
-    prompts/             instrucciones Markdown instalables
-    integrations/        funciones de Findata, Tavily, archivos y cálculo
-  scenarios/             estímulos y checks de experimentos
-  tests/                 verificación controlada y frontera de imports
-  docs/                  referencias de arquitectura, investigación y desarrollo
-  artifacts/             datos locales ignorados, separados del código
+experimento/
+  instrucciones/
+    agente.md
+    investigacion-financiera.md
+  estado/
+    indice.md
+    evaluacion.md
+    materiales/
+      2026-10-18-inicial-01-read-document.json
+  ejecuciones/
+    2026-10-18-inicial/
+      peticion.md
+      respuesta.md
+      manifiesto.json
+      resultado.json
+      conversacion.json
+      eventos.jsonl
+      estado-inicial.json
+      estado-final.json
+      git-final.json
+      trazas/
+        modelo-0001.json.gz
 ```
 
-El núcleo no importa `finmate`, `engine` o `api`; la prueba en subprocess bloquea
-su carga durante ejecución de A y Audit. No utiliza el backend del producto. Las
-bibliotecas compartidas se instalan desde wheel; sus fuentes siguen en FinMate.
-El [manual de desarrollo](development.md) explica dependencias, instalación y configuración.
+La profundidad máxima de carpetas es tres desde la raíz del experimento, sin contar
+los internos de Git. Evaluación y pendientes son nombres sugeridos, no una plantilla.
+Los nombres de runs son humanos, con fecha local y sufijo consecutivo ante colisiones;
+los IDs técnicos permanecen dentro de los registros.
 
-## Componentes y contratos
+Hay tres estados distintos: archivos persistentes, contexto transitorio de A y evidencia
+de ejecución. Solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
+explícita; el resto se consulta bajo demanda. La CLI crea una instancia nueva por run:
+continuar reutiliza archivos, sin restaurar el chat. Audit conserva su instancia entre
+mensajes del escenario y mantiene su organización propia, compatible con su wheel.
 
-| Componente | Responsabilidad y autoridad |
-|---|---|
-| [AgentA](../src/research_agent/agent.py) | Conversación, ciclo, presupuestos e historial del proveedor |
-| [ToolRegistry](../src/research_agent/tools.py) | Catálogo, schema de argumentos, ejecución y resultados |
-| [Workspace](../src/research_agent/workspace.py) | Acceso acotado a archivos del agente |
-| [RunRecorder](../src/research_agent/recording.py) | Manifest, eventos, transcript y artefactos recuperables |
-| [FindataTools](../src/research_agent/integrations/findata_tools.py) | Adaptación financiera con sesiones breves de solo lectura |
-| [build_agent](../src/research_agent/bootstrap.py) | Componer modelo, herramientas, workspace y captura de configuración |
-| [capture_traces](../src/research_agent/tracing.py) | Captura local de logs y payloads de los adaptadores compartidos |
+Las instrucciones CLI son copias editables de los prompts al crear el experimento;
+los runs usan esas copias, conservando texto y hashes efectivos en el manifiesto.
+Las fuentes y archivos del estado son datos, nunca instrucciones de desarrollo.
+Un bloqueo de proceso excluye runs simultáneos del mismo experimento y se libera al
+morir el proceso. El archivo `.run.lock` no debe borrarse para resolver contención.
 
-[AgentRequest](../src/research_agent/contracts.py) contiene mensaje, identidad del workspace,
-conversación, instrucciones y metadatos. `AgentLimits` controla recursos.
-`AgentResult` devuelve identidad, respuesta opcional, estado operativo, motivo de
-cierre, contadores, error seguro y referencias. Ninguno es una entidad financiera.
-
-`ConversationClient` y los mensajes proceden de `runtime_contracts`. Se conserva el
-replay, incluidos elementos opacos del proveedor; no se aplana a simples textos.
-
-## Flujo de una intervención
-
-```mermaid
-flowchart TD
-    R[Petición y configuración] --> P[Instrucciones e índice de memoria]
-    P --> M[Modelo]
-    M --> C{¿Solicita herramienta?}
-    C -->|Sí| T[Validar, ejecutar y registrar]
-    T --> M
-    C -->|No| F[Guardar respuesta y cerrar]
-    M --> L[Control de recursos]
-    L -->|Cerca del límite| S[Síntesis sin herramientas]
-    S --> F
-```
-
-El modelo elige investigación y terminación; no hay planificador o crítico separados.
-Cada respuesta puede solicitar una herramienta, conforme al contrato actual del cliente.
-Se añade su resultado al historial y se vuelve a llamar. Errores de herramienta se
-devuelven de forma segura cuando es posible; una dependencia fallida no cuenta como
-evidencia obtenida. Fallos operativos, timeout y cancelación conservan resultados parciales.
-
-`completed` significa que se obtuvo una respuesta, aunque sea limitada por presupuesto.
-No significa suficiencia financiera. Otros estados son `interrupted`, `failed` y
-`cancelled`; el motivo de terminación se conserva separado. No hay publicación de tesis.
-
-## Herramientas y validaciones
+## Herramientas y materiales
 
 | Grupo | Herramientas |
 |---|---|
+| Archivos | `list_files`, `read_file`, `search_files`, `write_file` |
+| Compatibilidad | `write_markdown`, `read_artifact` |
 | Findata | `search_companies`, `read_company`, `read_financials`, `read_metric_trend` |
-| Tavily | `search_web`, `read_document` |
-| Workspace | `list_files`, `read_file`, `search_files`, `write_markdown` |
-| Evidencia y cálculo | `read_artifact`, `calculate` |
-| Expedientes, solo modo cases | `list_cases`, `read_case`, `save_case`, `list_case_revisions` |
+| Web | `search_web`, `read_document` |
+| Cálculo | `calculate` (aritmética determinista con referencias) |
 
-Findata conserva metadatos y ausencias; exige PostgreSQL, transacción de solo lectura
-y timeout por sentencia. No ingiere ni escribe. Buscar fuentes no equivale a leerlas:
-Tavily conserva contenido extraído, fragmentos y procedencia, posiblemente parciales.
+`write_file` admite Markdown, JSON válido, TXT y CSV UTF-8 hasta 128 KiB. Reemplaza
+atómicamente cada archivo. Lecturas paginadas hasta 32 KiB; búsquedas literales acotadas.
+No se permite escapar del estado, acceder a rutas ocultas, streams de Windows,
+enlaces o junctions, escribir formatos ejecutables o sobrescribir `materiales/`.
+Estas comprobaciones no son un sandbox frente a procesos externos concurrentes.
 
-La calculadora ejecuta aritmética y registra entradas, fórmula y referencias.
-No valida que la referencia respalde los números ni que sean comparables. La existencia
-de citas, una llamada exitosa o un resultado numérico no certifica la inferencia económica.
-No hay SQL libre, shell, Python arbitrario o DCF.
+Las siete herramientas de Findata/web/cálculo conservan automáticamente cada resultado
+satisfactorio completo en `materiales/`, con nombres por run, secuencia y herramienta.
+El contenido mantiene el schema y metadatos originales, incluidas ausencias y recortes.
+El registro asocia argumentos, herramienta, hash y productor. Errores quedan en las trazas.
+Cada resultado devuelve `material_ref` y el alias `artifact_ref`; referencias relativas
+al estado permiten continuar después de trasladar el experimento. Los resultados grandes
+no se truncan en disco: se entregan referencias para leerlos por páginas.
 
-Las herramientas de archivos solo escriben Markdown dentro del workspace. Se rechazan escapes,
-streams de Windows, enlaces y junctions. Workspace, archivo de ejecuciones e instrucciones
-deben estar separados. Estos controles no son un sandbox contra procesos externos
-que modifiquen simultáneamente el sistema de archivos.
-
-## Estado de dominio y tres clases de estado técnico
-
-El estado de dominio que estudia la [estrategia](strategy.md) expresa qué conoce,
-cree, pretende, evalúa o ha decidido FinMate. No equivale a la memoria del harness
-(el entorno que ejecuta el agente). Una evaluación puede estar escrita en Markdown;
-el archivo es su representación, no su significado financiero. A no impone hoy ese
-modelo de dominio. Su implementación conserva tres clases de estado técnico:
-
-1. **Historial de conversación:** en memoria de la instancia de A; incorpora llamadas,
-   resultados y continuaciones. Una instancia pertenece a una conversación.
-2. **Memoria persistente:** archivos Markdown del workspace, editables por el agente.
-   Se carga automáticamente solo `memory/index.md`; el resto se consulta bajo demanda.
-3. **Archivo experimental:** evidencia del sistema fuera del workspace; el agente puede
-   consultar artefactos por referencia, pero no editar los registros con sus herramientas.
-
-La CLI crea una instancia por invocación. Repetir `--conversation` no restaura un chat
-de otro proceso: la continuidad entre procesos procede de los Markdown. Audit conserva
-la instancia entre mensajes de un escenario; otros escenarios tienen workspaces aislados.
-No existe un gestor autónomo de recuerdos, embeddings o compactación.
-
-El archivo incluye `manifest.json`, `transcript.json`, `events.jsonl`, `result.json`,
-respuesta Markdown si existe, resultados y snapshots inicial/final. Los artefactos se
-identifican por hash y se verifican al leer. Los de ejecuciones anteriores pueden
-recuperarse desde el mismo archivo si coincide el fingerprint del workspace. Este
-fingerprint depende de su ruta absoluta: mover memorias y archivos históricos requiere
-revisar esa recuperación, aunque los Markdown sigan siendo legibles.
-
-## Recursos y trazabilidad
-
-Defaults en `AgentLimits`, por intervención y no por campaña:
-
-| Recurso | Límite |
-|---|---|
-| Llamadas lógicas al cliente | 18 |
-| Herramientas | 30 |
-| Tiempo | 300 segundos |
-| Reserva para cierre | Una llamada y ventana de 45 segundos |
-| Contexto serializado | 256 KiB; no es una medida en tokens |
-| Índice de memoria automático | 8 KiB, con continuación explícita si falta contenido |
-| Lectura de archivo o artefacto | Hasta 32 KiB, offsets en bytes |
-
-Los resultados grandes de herramientas se guardan completos y se leen por páginas.
-Al acercarse al presupuesto se pide una síntesis con herramientas deshabilitadas.
-Si el contexto ya excede el límite, puede registrarse interrupción sin llamar otra vez.
-No se oculta ese límite mediante recortes silenciosos. Las políticas de red del cliente
-son compartidas; un reintento de transporte no es una nueva decisión del agente.
-
-Se correlacionan conversación, intervención, ejecución y llamada lógica. Los eventos
-`engine.llm`, `engine.llm_call` y `engine.llm_attempt` conservan su nombre histórico;
-no implican importar Engine. `lab.*` registra acciones del agente. OpenTelemetry sigue
-instalado, pero el laboratorio no configura exportadores. La captura usa configuración
-global temporal: las campañas se ejecutan secuencialmente dentro de un proceso.
-
-## Especialización y límites actuales
-
-La [CLI](../src/research_agent/cli.py) y Audit añaden
-[guía financiera básica](../src/research_agent/prompts/financial_research.md) al
-[prompt general](../src/research_agent/prompts/agent_a.md). `--instructions` añade texto;
-no sustituye esos prompts. `AGENTS.md` guía al desarrollador y no se carga automáticamente
-como prompt del agente. La matriz A0–A3 requiere cambios experimentales aún no implementados.
-
-Vanilla no impone expediente. El modo `cases` implementa el contrato experimental
-descrito a continuación. No hay grafo argumentativo, estados de postura, DCF, cartera,
-aprendizaje persistente ni vigilancia proactiva. La disposición `cases/<empresa>/`
-de los ejemplos antiguos no es el almacenamiento implementado.
-
-## Modo experimental de expedientes
-
-[CaseStore](../src/research_agent/cases.py) añade identidad y revisiones para probar
-recuperación longitudinal; copiar notas libremente no ofrece revisión esperada ni
-publicación consistente. El significado y la calidad del contenido siguen abiertos.
-Se activa desde CLI con `--knowledge-mode cases --case-store RUTA`; vanilla es el
-valor predeterminado. `build_agent(..., case_store=Path(...))` registra las cuatro
-herramientas y añade el prompt del dominio mediante instrucciones de instancia.
-La llamada existente de Audit sigue construyendo vanilla; no se cambia su wheel.
-
-Expediente: UUID, activo, pregunta original, fecha y puntero vigente. Revisión: UUID,
-antecedente, fecha, explicación, referencias a artefactos, run productor y hash del
-Markdown. Los contratos Pydantic son mínimos; evaluación, argumentos, supuestos,
-objeciones y dudas permanecen en texto. No se impone plantilla ni guardado automático.
-El servicio asigna identidades y fechas; activo y pregunta original son inmutables.
-Otra pregunta puede abrir otro expediente del mismo activo.
-
-El almacén contiene `binding.json`, `.lock` y `<case_id>/case.json` junto a
-`revisions/<revision_id>.json` y `.md`. Se vincula a sus rutas absolutas, workspace y
-archivo; rechaza otra vinculación. Debe ser disjunto de workspace, runs y código o
-instrucciones. No se admite traslado automático ni acceso multiusuario. El control
-de enlaces/junctions tiene los mismos límites frente a procesos externos que Workspace.
-
-Un bloqueo del sistema operativo serializa operaciones y se libera al morir el proceso.
-Cada actualización exige revisión esperada. Primero se escriben archivos nuevos con
-creación exclusiva y flush; después se reemplaza atómicamente `case.json`. No hay
-transacción contra cortes físicos de energía de todo el sistema de archivos. Un
-fallo anterior al reemplazo conserva el puntero anterior y deja restos diagnosticables.
-La lectura histórica sigue únicamente antecedentes publicados; detecta ciclos,
-identidades inconsistentes y contenido Markdown con hash diferente. No expone huérfanos
-como revisiones válidas ni los limpia automáticamente.
-
-Las referencias aceptadas son `artifacts/<sha256>.json`, verificadas en el archivo del
-workspace, incluidas ejecuciones previas. No se valida literalidad de citas ni soporte
-económico de la inferencia. Las fuentes y cifras mantienen sus contratos existentes.
-El prompt recomienda citar pasajes/periodos dentro del contenido y conservar límites.
-Resultados grandes de expedientes pasan por la paginación existente de `read_artifact`.
-
-El núcleo de A conserva un solo ciclo. El registro ofrece lectores genéricos de estado:
-`state_before.json` y `state_after.json` capturan todos los punteros del almacén y
-restos no publicados, sin incorporarlos automáticamente al contexto del modelo. Un
-error de captura se identifica como tal. Los eventos `lab.case.*` correlacionan lecturas,
-revisión seleccionada y cambios con la ejecución; el manifiesto identifica modo y almacén.
-Las herramientas y snapshots complementan el archivo, no convierten `completed` en
-calidad financiera. El primer protocolo es [E001](experiments/E001-nvidia-casefile/protocol.md).
+Los resultados de herramientas de archivos y otras operaciones permanecen en el archivo
+de ejecución; `read_artifact` es un adaptador para materiales y resultados archivados.
+Las referencias del archivo técnico siguen acotadas al workspace del run; para continuidad
+portable deben usarse los materiales. Guardar un resultado no incorpora su interpretación
+a una evaluación, ni una cita certifica inferencias o comparabilidad numérica.
 
 ## Conservación y cierre de la investigación
 
-El modo `cases` incorpora el candidato [E002](experiments/E002-persistent-research/protocol.md).
-El prompt pide conservar una primera interpretación provisional y actualizarla ante
-cambios materiales, con fundamentos y pendientes; no impone una plantilla o un guardado
-por herramienta. La respuesta final breve no sustituye al expediente ni se guarda como
-revisión automáticamente.
+Con los defaults hay 18 llamadas al cliente, 30 herramientas, 300 segundos y 256 KiB
+de contexto serializado. Se reservan hasta dos llamadas de consolidación y una de respuesta.
+Consolidación se adelanta cuando quedan 45 segundos, dos herramientas o 32 KiB de contexto
+(como máximo un cuarto en límites pequeños). Se conserva la corrección temporal de E002:
+al entrar antes por llamadas/contexto puede usar el tiempo restante salvo la reserva de
+respuesta, sin imponer un tope fijo prematuro de 15 segundos.
 
-Antes de cada decisión, `execution_budget` comunica fase, llamadas, herramientas y
-tiempo disponibles. Se incluye en transcript, eventos y cómputo de contexto. Vanilla
-recibe esta información sin cambiar su política de cierre. En cases hay fases
-irreversibles de investigación, consolidación y respuesta, con hasta 15, 2 y una llamada
-respectivamente bajo el límite total actual de 18. Puede finalizar antes tras publicar.
+Consolidación ofrece solo lectura, búsqueda y escritura del estado, incluidos los aliases.
+Una escritura no fuerza el cierre; una respuesta sin escritura es válida. No se exige
+publicar ni modificar una evaluación para resolver una consulta breve. Con presupuestos
+menores de cuatro llamadas o dos herramientas se conserva el cierre básico con respuesta
+reservada, sin intentar la fase adicional de consolidación. Los eventos registran recursos,
+fases, timeout y fallos; el replay del proveedor permanece completo.
 
-Se adelanta consolidación cuando quedan 45 segundos, dos oportunidades de herramienta
-o 32 KiB de contexto (en límites pequeños se reserva como máximo un cuarto del contexto).
-En la ventana temporal final se dedica hasta un tercio a consolidación y se reservan
-dos tercios a respuesta; con los defaults son 15 y 30 segundos. Si la consolidación se activa antes por llamadas
-o contexto, puede utilizar el tiempo global disponible salvo la reserva de respuesta;
-no se le impone un tope fijo de 15 segundos cuando quedan minutos. La investigación no
-puede consumir la ventana reservada; un timeout de fase se registra y permite avanzar
-si quedan recursos. Un límite duro conserva lo disponible, sin prometer guardado.
+`AgentResult.state` contiene `files_written`, `materials` y `capture_errors`. No significa
+completitud del conocimiento ni aceptación financiera. `completed` indica respuesta obtenida;
+fallo, cancelación e interrupción conservan los archivos y capturas disponibles.
 
-La integración inyecta las herramientas permitidas en consolidación y un verificador
-de publicaciones; el núcleo sigue siendo general. El registro filtra schemas y despacho
-efectivo. Durante consolidación no se permite búsqueda externa; se puede consultar
-expediente, recuperar artefactos y guardar. Dos oportunidades permiten releer o corregir
-un guardado rechazado; al confirmar una nueva publicación se pasa a responder. Un texto
-temprano sin publicación se archiva en `drafts/` y ofrece consolidación, sin mostrarse
-automáticamente como respuesta final ni convertirse en expediente.
+`respuesta.md` guarda automáticamente la entrega; no actualiza el estado. Los snapshots
+conservan contenidos iniciales/finales de los cuatro formatos, con errores identificados.
+No reconstruyen cada edición intermedia. El archivo se mantiene fuera del alcance de
+escritura del agente. CLI agrupa eventos del ciclo y payloads del proveedor dentro del run;
+Audit mantiene su captura externa existente. No ejecutar capturas simultáneas en un proceso,
+porque el adaptador compartido emplea configuración global temporal.
 
-`AgentResult.persistence` es opcional (`null` en vanilla). Contiene estado
-`confirmed/unconfirmed/verification_failed`, pares expediente/revisión publicados por
-el run actual, `response_delivered` y categoría segura de error si falla la comprobación.
-Se obtiene de la historia publicada en disco, verificando integridad y referencias;
-excluye huérfanos y revisiones de otros runs. Confirmación técnica no significa que la
-revisión incorpore todo lo material; eso requiere evaluación semántica. CLI imprime el
-resumen y `result.json` lo conserva, incluso cuando falla la entrega posterior.
+## Git manual e interfaces
 
-Los códigos de salida y `completed` conservan su significado operativo para compatibilidad.
-Los eventos de fase/presupuesto, borradores y snapshots permiten revisar el comportamiento.
-No se modifica el wheel compartido ni se introduce otro ciclo o agente.
-E002 se ejecutó con un tope fijo inicial incorrecto; sus [hallazgos](experiments/E002-persistent-research/findings.md)
-separan ese candidato del ajuste temporal posterior, verificado únicamente con pruebas locales.
+Git es una herramienta humana para versionar estado e instrucciones, separada del Git
+del código. Se registra commit y cambios iniciales/finales solo si el experimento tiene
+repositorio propio; sin `.git` propio se indica ausencia, aunque exista un padre Git.
+No se ejecuta init, add, commit, checkout, reset, push ni creación de ramas.
+Las capturas inicial/final permiten auditar runs realizados con cambios sin commit.
+
+`build_agent(workspace, runs, limits)` mantiene el contrato de Audit; los argumentos
+opcionales `experiment` y `run_name` sirven al organizador CLI. Los nombres de archivos
+técnicos del consumidor básico permanecen compatibles. CLI usa la organización española.
+La operación y los comandos están en [desarrollo](development.md).
+
+## Modo experimental de expedientes
+
+El modo `cases`, `CaseStore`, sus herramientas y su contrato de publicación se retiraron
+al adoptar el estado de archivos. No hay migración automática. Los protocolos y resultados
+históricos de [E001](experiments/E001-nvidia-casefile/findings.md) y
+[E002](experiments/E002-persistent-research/findings.md) describen el candidato ejecutado
+entonces; permanecen intactos. La [decisión](decisions/0001-estado-por-experimento.md)
+registra el cambio local, sin elegir la arquitectura final de FinMate.

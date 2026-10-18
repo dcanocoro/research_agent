@@ -1,11 +1,13 @@
 from __future__ import annotations
-"""Immutable per-run artifacts, plus a structured event journal."""
-import hashlib
+"""Per-run evidence; editable knowledge and original materials live in Workspace."""
 import json
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
 from .contracts import serializable
+from .experiments import git_state, human_name
+from .workspace import Workspace
 
 
 def encoded(value: Any) -> bytes:
@@ -13,68 +15,90 @@ def encoded(value: Any) -> bytes:
 
 
 class RunRecorder:
-    def __init__(self, root: Path) -> None:
+    names = {"manifest.json": "manifiesto.json", "result.json": "resultado.json",
+             "transcript.json": "conversacion.json", "events.jsonl": "eventos.jsonl",
+             "workspace_before.json": "estado-inicial.json", "workspace_after.json": "estado-final.json",
+             "answer.md": "respuesta.md"}
+
+    def __init__(self, root: Path, *, experiment: Path | None = None, run_name: str = "intervencion") -> None:
         self.root = root.absolute()
+        Workspace._check_links(self.root)
+        self.experiment, self.run_name = experiment, human_name(run_name)
         self.events: list[dict[str, Any]] = []
         self.current: Path | None = None
+        self.workspace: Workspace | None = None
         self.workspace_fingerprint: str | None = None
+        self.sequence = 0
+        self.capture_errors: list[dict[str, str]] = []
+
+    def filename(self, name: str) -> str:
+        return self.names.get(name, name) if self.experiment is not None else name
 
     def start(self, run_id: str, metadata: dict[str, Any]) -> None:
-        self.current = self.root / run_id
-        self.current.mkdir(parents=True, exist_ok=False)
-        self.events = []
+        self.root.mkdir(parents=True, exist_ok=True)
+        stem = f"{datetime.now(ZoneInfo('Europe/Madrid')):%Y-%m-%d}-{self.run_name}"
+        for i in range(1, 100000):
+            current = self.root / (stem if i == 1 else f"{stem}-{i:02d}")
+            try:
+                current.mkdir(exist_ok=False)
+                break
+            except FileExistsError:
+                continue
+        else:
+            raise ValueError("Run name exhausted.")
+        self.current = current
+        self.events, self.capture_errors, self.sequence = [], [], 0
         self.workspace_fingerprint = metadata.get("workspace_fingerprint")
-        self.save("manifest.json", metadata)
+        self.save("manifest.json", {**metadata, "run_directory": current.name,
+                                    "git_initial": git_state(self.experiment)})
 
     def save(self, name: str, value: Any) -> str:
         if self.current is None:
             raise RuntimeError("No active recording.")
+        name = self.filename(name)
+        relative = Path(name)
+        if relative.is_absolute() or ".." in relative.parts or len(relative.parts) > 2:
+            raise ValueError("Invalid recording path.")
         path = self.current / name
+        Workspace._check_links(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(encoded(value))
         return name
 
+    def text(self, name: str, content: str) -> None:
+        assert self.current is not None
+        (self.current / self.filename(name)).write_text(content, encoding="utf-8")
+
     def artifact(self, value: Any) -> str:
-        data = encoded(value)
-        name = f"artifacts/{hashlib.sha256(data).hexdigest()}.json"
+        assert self.current is not None
+        self.sequence += 1
+        name = f"trazas/resultado-herramienta-{self.sequence:04d}.json"
         self.save(name, value)
-        return name
+        return f"archivo/{self.current.name}/{Path(name).name}"
 
     def read_artifact(self, reference: str, offset: int = 0, max_bytes: int = 32768) -> dict[str, Any]:
-        if (self.current is None or not reference.startswith("artifacts/")
-                or len(reference.split("/")) != 2 or not reference.endswith(".json")
-                or not 1 <= max_bytes <= 32768 or offset < 0):
-            raise ValueError("Invalid artifact read.")
-        name = reference.split("/")[1][:-5]
-        if len(name) != 64 or any(c not in "0123456789abcdef" for c in name):
-            raise ValueError("Invalid artifact identity.")
-        source = self.current / reference
-        if not source.is_file() and self.workspace_fingerprint:
-            for manifest in sorted(self.root.glob("*/manifest.json")):
-                try:
-                    matching = json.loads(manifest.read_bytes()).get("workspace_fingerprint") == self.workspace_fingerprint
-                except (OSError, ValueError):
-                    continue
-                candidate = manifest.parent / reference
-                if matching and candidate.is_file():
-                    source = candidate
-                    break
-        data = source.read_bytes()
-        if hashlib.sha256(data).hexdigest() != name:
-            raise ValueError("Artifact hash mismatch.")
-        chunk = data[offset:offset + max_bytes]
-        for trim in range(4):
-            try:
-                selected = chunk[:len(chunk)-trim] if trim else chunk
-                text = selected.decode("utf-8")
-                break
-            except UnicodeDecodeError:
-                if trim == 3:
-                    raise ValueError("Offset is not a UTF-8 character boundary.") from None
-        else:
-            text = ""
-        end = offset + len(selected)
-        return {"reference": reference, "text": text, "next_offset": end if end < len(data) else None}
+        if reference.startswith("materiales/") and self.workspace is not None:
+            return {"reference": reference, **self.workspace.read_file(reference, offset, max_bytes)}
+        parts = reference.split("/")
+        if len(parts) != 3 or parts[0] != "archivo" or any(p in {"", ".", ".."} or ":" in p or "\\" in p for p in parts):
+            raise ValueError("Invalid artifact reference.")
+        bounded = Workspace(self.root, create=False)
+        run = bounded.path(parts[1])
+        bounded.path(f"{parts[1]}/trazas/{parts[2]}")
+        manifest = run / self.filename("manifest.json")
+        Workspace._check_links(manifest)
+        metadata = json.loads(manifest.read_bytes())
+        if metadata.get("workspace_fingerprint") != self.workspace_fingerprint:
+            raise FileNotFoundError("Artifact belongs to another workspace.")
+        return {"reference": reference, **Workspace(run / "trazas", create=False).read_file(parts[2], offset, max_bytes)}
+
+    def snapshot(self, workspace: Workspace) -> dict[str, Any]:
+        try:
+            return workspace.snapshot(errors=self.capture_errors)
+        except Exception as exc:
+            issue = {"operation": "state_snapshot", "error_type": type(exc).__name__}
+            self.capture_errors.append(issue)
+            return {"capture_error": issue}
 
     def event(self, name: str, **fields: Any) -> None:
         from observability_context import current_interaction_context
@@ -87,5 +111,5 @@ class RunRecorder:
                  "sequence": len(self.events) + 1, **fields}
         self.events.append(event)
         if self.current is not None:
-            with (self.current / "events.jsonl").open("ab") as stream:
+            with (self.current / self.filename("events.jsonl")).open("ab") as stream:
                 stream.write(encoded(event) + b"\n")

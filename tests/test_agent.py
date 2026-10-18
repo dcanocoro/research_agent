@@ -108,7 +108,7 @@ def test_large_result_can_be_read_without_recursion(tmp_path):
     assert result.payload["value"]["limited"]
     read = a.recorder.read_artifact(reference)
     assert read["next_offset"] == 32768
-    assert len(list((a.recorder.current / "tools").glob("*.json"))) == 1
+    assert len(list((a.recorder.current / "trazas").glob("herramienta-*.json"))) == 1
 
 
 def test_workspace_utf8_pagination_and_restrictions(tmp_path):
@@ -117,7 +117,7 @@ def test_workspace_utf8_pagination_and_restrictions(tmp_path):
     first = space.read_file("memory/index.md", max_bytes=8191)
     rest = space.read_file("memory/index.md", offset=first["next_offset"])
     assert first["text"] + rest["text"] == "á" * 5000
-    for path in ("../outside.md", "C:/outside.md", "notes/a.txt", "file.md:stream"):
+    for path in ("../outside.md", "C:/outside.md", "notes/a.exe", "file.md:stream"):
         with pytest.raises(ValueError):
             space.write_markdown(path, "bad")
     assert space.search_files("á")["matches"]
@@ -223,13 +223,6 @@ async def check():
             assert (await agent.run(AgentRequest('hello','space','conversation'))).status=='completed'
             assert 'save_case' not in {s.name for s in agent.tools.specs()}
             assert agent.instructions == ()
-        async with build_agent(root/'case-workspace',root/'case-runs',case_store=root/'cases') as agent:
-            agent.client=Fake()
-            assert 'save_case' in {s.name for s in agent.tools.specs()}
-            assert len(agent.instructions)==1
-            assert (await agent.run(AgentRequest('hello','space','case-chat'))).status=='completed'
-            assert 'case_research.md' in (agent.recorder.current/'manifest.json').read_text()
-            assert (agent.recorder.current/'state_after.json').exists()
         from contextlib import asynccontextmanager
         @asynccontextmanager
         async def builder(workspace,runs,limits):

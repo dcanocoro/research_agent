@@ -1,6 +1,6 @@
 # Visión y propósito
 
-> Dirección de producto e hipótesis de investigación. Revisión: 2026-10-17.
+> Dirección de producto e hipótesis de investigación. Revisión: 2026-10-18.
 > No modifica el comportamiento del agente ni los contratos de FinMate.
 
 ## Para qué existe FinMate
@@ -30,9 +30,9 @@ Preservar una capacidad no exige conservar su implementación. Cada mecanismo de
 justificarse por el problema que resuelve, la alternativa más sencilla y cómo comprobar
 su aportación. La arquitectura resultante será una conclusión revisable.
 
-Hoy solo está implementado A: ciclo de modelo y herramientas, memoria Markdown,
-Findata de solo lectura, Tavily, aritmética y captura experimental. Un modo opcional
-añade expedientes versionados con Markdown y referencias, como candidato experimental.
+Hoy solo está implementado A: ciclo de modelo y herramientas, estado de archivos por
+experimento, Findata de solo lectura, Tavily, aritmética y captura experimental.
+El estado sustituye al candidato anterior de expedientes; Git se gestiona manualmente.
 No administra cartera ni ejecuta inversiones; no dispone de DCF o vigilancia
 programada. El contrato vigente está en [arquitectura](architecture.md).
 

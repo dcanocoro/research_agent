@@ -86,9 +86,9 @@ conocimiento: son factores distintos, que conviene estudiar por separado.
 
 ## Ejemplo de representación por contrastar
 
-Vanilla no exige schema o carpeta de casos. El modo opcional `cases` tiene el contrato
-descrito en [arquitectura](architecture.md#modo-experimental-de-expedientes). La siguiente
-convención histórica es una alternativa de organización textual, no su almacén actual:
+El estado actual no exige schema financiero ni carpeta de casos. El modo `cases` fue
+retirado; sus antecedentes se describen en [arquitectura](architecture.md#modo-experimental-de-expedientes).
+La siguiente convención histórica es una alternativa textual, no el mapa físico actual:
 
 ```text
 workspace/cases/nvidia/

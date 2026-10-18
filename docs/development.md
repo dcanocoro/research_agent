@@ -115,61 +115,56 @@ Extraer Findata o Audit como distribuciones independientes sigue siendo una deci
 futura. Puede hacerse si su evolución lo justifica; no es requisito del agente actual.
 Las referencias documentales entre carpetas hermanas no son dependencias de ejecución.
 
-## Ejecutar A
+## Ejecutar A: nuevo experimento o continuación
 
-Desde la raíz de Research Agent, con su `.venv` y configuración local. No modificar
-fuentes de FinMate ni ejecutar migraciones para arrancar A.
-
-```powershell
-.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA: fundamentos, riesgos y límites de los datos, sin DCF" --workspace ./artifacts/workspace --runs ./artifacts/runs
-```
-
-La CLI imprime la respuesta y `run_id`; devuelve 0 cuando el estado es `completed`,
-1 para otros estados operativos y 2 ante determinados errores de entrada.
-Revisar `result.json` y el motivo de cierre, no solo el código de salida.
-`--timeout-seconds` cambia el presupuesto temporal. `--instructions archivo.md` puede
-repetirse y añade instrucciones a las incluidas. No sirve para seleccionar el futuro A0.
-
-### Modo experimental de expedientes
-
-`--knowledge-mode` admite `vanilla` (predeterminado) o `cases`. Este último exige
-`--case-store`; proporcionar almacén en vanilla es un error. Ejemplo desde la raíz:
+La CLI exige una operación explícita y un nombre humano:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --knowledge-mode cases --case-store ./artifacts/example/cases --workspace ./artifacts/example/workspace --runs ./artifacts/example/runs
+.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --experiment ./artifacts/nvidia-conservacion --new --run-name investigacion-inicial
+.\.venv\Scripts\python.exe -m research_agent "Continúa desde lo conservado" --experiment ./artifacts/nvidia-conservacion --continue --run-name revision-documental
 ```
 
-Otro proceso con las mismas tres rutas recupera memoria y expedientes, sin restaurar
-el chat. El prompt de expedientes se añade automáticamente; no pasar manualmente una
-copia por `--instructions`. El almacén debe ser disjunto de workspace, runs, código e
-instrucciones; queda ligado a las rutas originales y no se comparte entre workspaces.
-No borrar `.lock` para resolver contención: el bloqueo real lo mantiene el sistema
-operativo y se libera al terminar el proceso. Un conflicto exige releer la revisión.
-Los snapshots de estado identifican restos de escrituras no publicadas; conservarlos
-para diagnóstico. No borrar o promover automáticamente esos archivos.
+`--new` rechaza cualquier ruta existente. `--continue` exige `estado/`, `instrucciones/`
+y `ejecuciones/`, preserva archivos y arranca otro proceso sin recuperar el chat anterior.
+Otra ruta con `--new` inicia una prueba independiente. No hay copia de estados en esta versión.
+Las colisiones de nombres de run reciben sufijo consecutivo. Solo un run por experimento
+puede estar activo; no borrar `.run.lock` para resolver contención.
 
-El esquema y límites están en [arquitectura](architecture.md#modo-experimental-de-expedientes).
-La investigación y continuación acordadas tienen el [protocolo E001](experiments/E001-nvidia-casefile/protocol.md).
-Se usa la CLI en procesos separados, porque Audit mantiene una instancia por escenario
-y su configuración actual no selecciona este modo ni garantiza un reinicio entre pasos.
-La dependencia directa Pydantic se declara en el proyecto. Mypy comprueba el código local
-y omite los imports sin marcadores de tipado del wheel compartido, mediante overrides
-explícitos; no implica comprobar internamente las bibliotecas compartidas.
+Las instrucciones iniciales se copian de los recursos instalados. `--instructions archivo.md`
+puede repetirse únicamente con `--new`; luego editar explícitamente los Markdown de
+`instrucciones/`. Los manifiestos registran el contenido efectivo de cada run, por lo que
+cambiar instrucciones entre continuaciones es visible y altera la condición experimental.
+`--conversation` conserva correlación; no restaura memoria de proceso.
+`--timeout-seconds` ajusta el límite temporal. Las demás reservas están en
+[arquitectura](architecture.md#conservación-y-cierre-de-la-investigación).
 
-En la revisión E002, cases reserva hasta dos llamadas para consolidación y una para
-respuesta; requiere al menos cuatro llamadas al modelo y dos herramientas de presupuesto.
-El catálogo y despacho se restringen durante consolidación. Los defaults siguen siendo
-18 llamadas, 30 herramientas y 300 segundos, y el máximo de salida depende del perfil
-compartido, que esta revisión no modifica. La CLI añade una línea `persistence=...` con
-publicaciones confirmadas por disco y entrega de respuesta. El código de salida continúa
-reflejando estado operativo: comprobar persistencia por separado. `drafts/` conserva
-textos tempranos que no llegaron a ser respuesta final. Véanse [contrato de cierre](architecture.md#conservación-y-cierre-de-la-investigación)
-y [protocolo E002](experiments/E002-persistent-research/protocol.md).
+La CLI imprime respuesta, `run_id` técnico y resumen `state`. Retorna 0 si hay respuesta
+(`completed`), 1 para otros resultados operativos y 2 para entradas inválidas. Revisar
+`resultado.json`, motivo de cierre y `state.capture_errors`, no solo el código de salida.
+`respuesta.md` es la entrega; `estado/` contiene lo recuperable para continuar.
+No se permite al agente editar materiales originales, instrucciones ni archivo de runs.
 
-Workspace y archivo de ejecuciones deben ser disjuntos y estar fuera del código/prompts.
-La memoria Markdown persiste; el historial del proceso CLI no. Actualizar el índice
-permite descubrir las notas en la siguiente intervención; no carga automáticamente
-todos los informes. Véanse las tres clases de estado en [arquitectura](architecture.md).
+Los argumentos antiguos `--workspace`, `--runs`, `--knowledge-mode` y `--case-store`
+se rechazan con la nueva sintaxis. No apuntar la CLI nueva a E001/E002 para convertirlos:
+sus capturas y fuentes congeladas son históricas y permanecen intactas.
+
+### Versionar el estado manualmente
+
+El sistema no inicializa ni modifica Git. Opcionalmente, crear un repositorio propio
+para el experimento; los comandos siguientes los ejecuta la persona cuando proceda:
+
+```powershell
+git -C ./artifacts/nvidia-conservacion init
+git -C ./artifacts/nvidia-conservacion add estado instrucciones .gitignore
+git -C ./artifacts/nvidia-conservacion commit -m "Conservar estado de la investigacion"
+```
+
+El `.gitignore` inicial excluye `ejecuciones/`, `.run.lock` y archivos `.env`.
+Revisar los datos antes de añadirlos. Este repositorio de datos es distinto del Git
+del código y no tiene remoto configurado por el sistema. Los runs registran commit y
+cambios pendientes al inicio/final, sin atribuirse el repositorio padre. No tener Git
+es válido. Git manual conserva solo versiones que se hayan registrado; los snapshots
+del run conservan sus extremos, sin prometer todas las ediciones intermedias.
 
 ## Campañas nativas de Experience Audit
 
@@ -210,7 +205,7 @@ id: lab_revision_example
 title: Revisión de una conclusión sintética
 requirements: [llm]
 memory:
-  memory/index.md: "Caso ficticio; consulta notes/source.md."
+  indice.md: "Caso ficticio; consulta notes/source.md."
   notes/source.md: "Beneficio 20, de los cuales 12 son extraordinarios."
 messages:
   - Lee la nota y explica qué permite concluir sobre el beneficio recurrente.
@@ -291,7 +286,7 @@ paso, sin duplicar el diseño. Los [protocolos y hallazgos](experiments/README.m
 conservan lo aprendido; las [decisiones](decisions/README.md), las elecciones duraderas.
 La prioridad vigente está en [estrategia](strategy.md).
 
-No versionar `.env`, payloads privados, bases locales ni workspaces reales. `artifacts/`
+No incorporar `.env`, payloads privados o estados reales al Git del código. El Git local del experimento es una elección humana con revisión de sus materiales. `artifacts/`
 está ignorado; citar una ruta allí no hace portable la evidencia. Las guías pueden
 describir el procedimiento, mientras las capturas completas se conservan localmente.
 No realizar commit, push o despliegue sin autorización del usuario.

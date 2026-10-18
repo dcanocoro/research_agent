@@ -8,6 +8,8 @@ from dataclasses import asdict
 from importlib.resources import files
 from time import monotonic
 from uuid import uuid4
+from contextlib import ExitStack
+from .experiments import disjoint, git_state
 from runtime_contracts.execution import RunContext, bind_run_context
 from runtime_contracts.llm import ConversationClient, ConversationItem, ConversationMessage, ConversationContext
 from observability_context import bind_interaction_context, interaction_context_for
@@ -26,11 +28,6 @@ class AgentA:
         self.history: list[ConversationItem] = []
         self._conversation_id: str | None = None
         self.instructions = instructions
-        if tools.publication_reader is not None:
-            if tools.consolidation_tools is None:
-                raise ValueError("Persistence requires an injected consolidation tool set.")
-            if limits.max_llm_calls < 4 or limits.max_tool_calls < 2:
-                raise ValueError("Persistence requires at least four model calls and two tools.")
 
     async def run(self, request: AgentRequest) -> AgentResult:
         if self._conversation_id not in (None, request.conversation_id):
@@ -38,17 +35,17 @@ class AgentA:
         self._conversation_id = request.conversation_id
         instructions = (*self.instructions, *request.instructions)
         protected = [Path(str(files("research_agent"))), *instructions]
+        disjoint(self.workspace.root, self.recorder.root)
         for path in protected:
-            if self.workspace.root.resolve() == path.resolve() or self.workspace.root.resolve() in path.resolve().parents:
-                raise ValueError("Workspace must not contain instructions or package code.")
-            for root in self.tools.protected_roots:
-                a, b = root.resolve(), path.resolve()
-                if a == b or a in b.parents or b in a.parents:
-                    raise ValueError("State stores must be disjoint from instructions and package code.")
+            disjoint(self.workspace.root, path)
+            disjoint(self.recorder.root, path)
+        self.tools.reset()
         run_id, interaction_id = str(uuid4()), str(uuid4())
         deadline = monotonic() + self.limits.timeout_seconds
         base = files("research_agent").joinpath("prompts/agent_a.md").read_text(encoding="utf-8")
-        prompts = {"agent_a.md": base, **{str(p): p.read_text(encoding="utf-8") for p in instructions}}
+        prompts = {str(p): p.read_text(encoding="utf-8") for p in instructions}
+        if self.recorder.experiment is None:
+            prompts = {"agent_a.md": base, **prompts}
         system = "\n\n".join(prompts.values())
         self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id,
             "conversation_id": request.conversation_id, "workspace_id": request.workspace_id,
@@ -59,19 +56,20 @@ class AgentA:
                                "response_seconds": self.limits.finalization_seconds * 2 / 3,
                                "context_reserve_bytes": min(32768, self.limits.max_context_bytes // 4),
                                "consolidation_tools": sorted(self.tools.consolidation_tools or ())}
-                              if self.tools.publication_reader is not None else None,
+                              if self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
             "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
             "tools": self.tools.specs()})
         calls = tool_calls = 0
         answer = error = None
         status: Literal["completed", "interrupted", "failed", "cancelled"] = "interrupted"
         reason = "budget"
-        persistent = self.tools.publication_reader is not None
-        phase = "research" if persistent else "vanilla"
+        can_consolidate = self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2
+        phase = "research"
         consolidation_calls = 0
         consolidation_deadline = deadline
         response_seconds = self.limits.finalization_seconds * 2 / 3
-        draft_refs: list[str] = []
+        captures = ExitStack()
+        captured: list[dict[str, Any]] = []
 
         def transition(target: str, cause: str) -> None:
             nonlocal phase, consolidation_deadline, reason
@@ -85,7 +83,7 @@ class AgentA:
                 text = ("Runtime consolidation: research is ending. Use only the available persistence/artifact tools "
                         "to preserve relevant advances, foundations, uncertainty and pending work. Do not begin new research. "
                         "You have at most two model calls for consolidation, then a brief final response. "
-                        "Only a published revision verified from the store counts as saved.")
+                        "Saving files is optional; preserve what is useful, without claiming completeness.")
             else:
                 text = ("Runtime final response: tools are disabled. Deliver a brief answer in the user's language, "
                         "identify what was saved and what remains unfinished. Do not repeat the full investigation. "
@@ -101,11 +99,14 @@ class AgentA:
         with bind_run_context(context), bind_interaction_context(interaction):
             self.recorder.event("lab.run.started", **request.metadata)
             try:
-                self.recorder.save("workspace_before.json", self.workspace.snapshot())
-                if self.tools.state_readers:
-                    self.recorder.save("state_before.json", self.tools.snapshot_state())
-                index = self.workspace.path("memory/index.md")
-                memory = self.workspace.read_file("memory/index.md", max_bytes=8192) if index.exists() else {"text": ""}
+                if self.recorder.experiment is not None:
+                    from .tracing import capture_traces
+                    assert self.recorder.current is not None
+                    captured = captures.enter_context(capture_traces(self.recorder.current / "trazas", flat=True))
+                self.recorder.text("peticion.md", request.message)
+                self.recorder.save("workspace_before.json", self.recorder.snapshot(self.workspace))
+                index = self.workspace.path("indice.md")
+                memory = self.workspace.read_file("indice.md", max_bytes=8192) if index.exists() else {"text": ""}
                 self.history.append(ConversationContext({"memory_index": memory}))
                 self.history.append(ConversationMessage("user", request.message))
                 while calls < self.limits.max_llm_calls:
@@ -114,7 +115,7 @@ class AgentA:
                         reason = "timeout"
                         break
                     size = len(encoded({"system": system, "input": self.history, "tools": self.tools.specs()}))
-                    if persistent:
+                    if can_consolidate:
                         margin = min(32768, self.limits.max_context_bytes // 4)
                         if (remaining <= response_seconds or calls >= self.limits.max_llm_calls - 1
                                 or tool_calls >= self.limits.max_tool_calls):
@@ -141,16 +142,15 @@ class AgentA:
                             reason = "context_limit" if size >= self.limits.max_context_bytes - 4096 else "budget"
                             self.history.append(ConversationMessage("user", "Execution resources are ending. Deliver the best supported answer from available evidence, state limitations and unfinished work. Do not call tools."))
                     specs = self.tools.specs(allowed)
-                    publication = self.tools.persistence(run_id)
                     phase_capacity = (0 if closing else min(2 - consolidation_calls,
                                       self.limits.max_llm_calls - calls - 1) if phase == "consolidation"
-                                      else self.limits.max_llm_calls - calls - (3 if persistent else 1))
+                                      else self.limits.max_llm_calls - calls - (3 if can_consolidate else 1))
                     budget = {"phase": phase, "llm_calls_available": self.limits.max_llm_calls - calls,
                               "tool_calls_available": self.limits.max_tool_calls - tool_calls,
                               "phase_tool_opportunities": max(0, min(phase_capacity, self.limits.max_tool_calls - tool_calls)),
                               "seconds_remaining": round(max(0, deadline - monotonic()), 3),
                               "phase_seconds_remaining": round(max(0, call_deadline - monotonic()), 3),
-                              "persistence_status": publication.status if publication else None}
+                              "files_written": len(self.tools.files_written), "materials_saved": len(self.tools.materials)}
                     self.history.append(ConversationContext({"execution_budget": budget}))
                     self.recorder.event("lab.budget", **budget)
                     if len(encoded({"system": system, "input": self.history, "tools": specs})) > self.limits.max_context_bytes:
@@ -165,7 +165,7 @@ class AgentA:
                                 tools=specs, allow_tools=not closing,
                                 timeout=max(0.001, call_deadline - monotonic()))
                     except TimeoutError:
-                        if not persistent or closing:
+                        if not can_consolidate or closing:
                             raise
                         self.recorder.event("lab.phase.timeout", phase=phase, operation="model")
                         transition("consolidation" if phase == "research" else "response", "budget")
@@ -173,17 +173,6 @@ class AgentA:
                     self.history.extend(turn.output_items)
                     if turn.function_call is None:
                         if turn.text.strip():
-                            publication = self.tools.persistence(run_id)
-                            if persistent and not closing and publication is not None and publication.status != "confirmed":
-                                draft_ref = f"drafts/{calls:04d}.json"
-                                self.recorder.save(draft_ref, {"text": turn.text, "phase": phase, "llm_call": calls})
-                                draft_refs.append(draft_ref)
-                                self.recorder.event("lab.answer.drafted", artifact_ref=draft_ref, phase=phase)
-                                if phase == "research":
-                                    transition("consolidation", "early_answer")
-                                else:
-                                    self.history.append(ConversationMessage("user", "Runtime: no publication has been confirmed. Use any remaining consolidation opportunity to save; otherwise report that limitation."))
-                                continue
                             answer, status = turn.text, "completed"
                             if not closing:
                                 reason = "answered"
@@ -194,7 +183,7 @@ class AgentA:
                         reason = "tools_disabled"
                         break
                     tool_calls += 1
-                    tool_time = (call_deadline - monotonic() if persistent else
+                    tool_time = (call_deadline - monotonic() if can_consolidate else
                                  deadline - monotonic() - self.limits.finalization_seconds)
                     try:
                         async with asyncio.timeout(max(0.001, tool_time)):
@@ -205,11 +194,6 @@ class AgentA:
                                             {"ok": False, "error_type": "timeout"})
                         self.recorder.event("lab.phase.timeout", phase=phase, operation="tool")
                     self.history.append(result)
-                    if phase == "consolidation":
-                        after = self.tools.persistence(run_id)
-                        if (after is not None and after.status == "confirmed" and
-                                (publication is None or after.revisions != publication.revisions)):
-                            transition("response", "saved")
             except asyncio.CancelledError:
                 status, reason = "cancelled", "cancelled"
                 raise
@@ -218,18 +202,39 @@ class AgentA:
             except Exception as exc:
                 status, reason, error = "failed", "operational_failure", type(exc).__name__
             finally:
-                self.recorder.save("transcript.json", self.history)
-                self.recorder.save("workspace_after.json", self.workspace.snapshot())
-                if self.tools.state_readers:
-                    self.recorder.save("state_after.json", self.tools.snapshot_state())
-                outcome = AgentResult(run_id, status, answer, reason,
-                    ("manifest.json", "transcript.json", "workspace_before.json", "workspace_after.json", "events.jsonl",
-                     *(("state_before.json", "state_after.json") if self.tools.state_readers else ()), *draft_refs),
-                    calls, tool_calls, error, self.tools.persistence(run_id, answer is not None))
-                self.recorder.save("result.json", outcome)
-                if answer is not None and self.recorder.current is not None:
-                    (self.recorder.current / "answer.md").write_text(answer, encoding="utf-8")
+                def save(name: str, value: Any) -> str | None:
+                    try:
+                        return self.recorder.save(name, value)
+                    except Exception as exc:
+                        self.recorder.capture_errors.append({"operation": name, "error_type": type(exc).__name__})
+                        return None
+                try:
+                    captures.close()
+                except Exception as exc:
+                    self.recorder.capture_errors.append({"operation": "provider_capture", "error_type": type(exc).__name__})
+                for event in captured:
+                    for field in ("archive_error", "capture_error"):
+                        if event.get(field):
+                            self.recorder.capture_errors.append({"operation": "provider_payload", "error_type": str(event[field])})
+                refs = [ref for ref in (save("transcript.json", self.history),
+                        save("workspace_after.json", self.recorder.snapshot(self.workspace)),
+                        save("git-final.json", git_state(self.recorder.experiment))) if ref]
+                if answer is not None:
+                    try:
+                        self.recorder.text("answer.md", answer)
+                    except Exception as exc:
+                        self.recorder.capture_errors.append({"operation": "answer_capture", "error_type": type(exc).__name__})
                 terminal = "completed" if status == "completed" else "failed" if status == "failed" else "interrupted"
-                self.recorder.event(f"lab.run.{terminal}", status=status, stop_reason=reason, llm_calls=calls, tool_calls=tool_calls,
-                                    persistence=outcome.persistence)
+                try:
+                    self.recorder.event(f"lab.run.{terminal}", status=status, stop_reason=reason, llm_calls=calls, tool_calls=tool_calls)
+                except Exception as exc:
+                    self.recorder.capture_errors.append({"operation": "terminal_event", "error_type": type(exc).__name__})
+                refs = [self.recorder.filename(n) for n in ("manifest.json", "workspace_before.json", "events.jsonl")] + refs
+                if answer is not None:
+                    refs.append(self.recorder.filename("answer.md"))
+                outcome = AgentResult(run_id, status, answer, reason, tuple(refs),
+                                      calls, tool_calls, error, self.tools.summary())
+                if save("result.json", outcome) is None:
+                    from dataclasses import replace
+                    outcome = replace(outcome, state=self.tools.summary())
         return outcome

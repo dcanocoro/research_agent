@@ -4,15 +4,14 @@ Laboratorio para descubrir qué mecanismos de conocimiento, investigación y rev
 necesita el futuro FinMate. La aspiración es mantener evaluaciones de inversión
 fundamentadas y revisables; su arquitectura se decidirá mediante experimentos.
 
-**Prioridad actual:** explorar un expediente mínimo versionado a partir de la
-[arqueología de FinMate](docs/finmate-concept-model/modelo-conocimiento-actual.md).
-La [estrategia](docs/strategy.md) define alcance y criterios de avance; el primer
-[protocolo](docs/experiments/E001-nvidia-casefile/protocol.md) investiga NVIDIA y
-continúa en un proceso nuevo.
+**Prioridad actual:** contrastar conservación y continuidad con un estado de archivos
+por experimento, a partir de la [arqueología de FinMate](docs/finmate-concept-model/modelo-conocimiento-actual.md).
+La [estrategia](docs/strategy.md) define alcance y criterios de avance.
 
-Hoy implementa el agente A: modelo → herramienta → modelo → respuesta, con memoria
-Markdown y herramientas financieras y web. El modo opcional `cases` añade expedientes
-versionados. No incorpora DCF, cartera o grafo obligatorio.
+Hoy implementa A: modelo → herramienta → modelo → respuesta, con estado Markdown,
+JSON, TXT y CSV, materiales automáticos e instrucciones y ejecuciones separadas.
+Permite empezar una prueba vacía o continuar su estado; Git es manual.
+No incorpora DCF, cartera o grafo obligatorio. E001/E002 son antecedentes históricos.
 
 El proyecto vive fuera de FinMate. Reutiliza bibliotecas compartidas instaladas desde
 un wheel local; sus fuentes permanecen en FinMate. No importa `finmate`, `engine` o `api`.
@@ -26,8 +25,8 @@ Las instrucciones para trabajar en este repositorio están en [AGENTS.md](AGENTS
 Con el entorno y `.env` preparados según [desarrollo e instalación](docs/development.md):
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA sin DCF" --workspace ./artifacts/workspace --runs ./artifacts/runs
-.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --knowledge-mode cases --case-store ./artifacts/example/cases --workspace ./artifacts/example/workspace --runs ./artifacts/example/runs
+.\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --experiment ./artifacts/nvidia-conservacion --new --run-name investigacion-inicial
+.\.venv\Scripts\python.exe -m research_agent "Continúa desde lo conservado" --experiment ./artifacts/nvidia-conservacion --continue --run-name revision-documental
 $auditRoot = Join-Path $PWD.Path "artifacts/audit"
 .\.venv\Scripts\python.exe -m experience_audit lab ./scenarios --output $auditRoot
 ```
@@ -40,4 +39,4 @@ La CLI y Audit cargan guía financiera básica; no representan todavía el A0 si
 específica de la [matriz propuesta A0–A3](docs/experiments.md). Una ejecución completada
 o un check aprobado no demuestra suficiencia financiera ni rentabilidad.
 
-Revisión documental: 2026-10-17. [Entregas y comprobaciones fechadas](docs/deliveries/README.md).
+Revisión documental: 2026-10-18. [Entregas y comprobaciones fechadas](docs/deliveries/README.md).

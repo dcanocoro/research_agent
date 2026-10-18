@@ -1,20 +1,25 @@
 # Estrategia de investigación
 
-> Agenda de referencia a 2026-10-17, sintetizada de los documentos aportados por el usuario.
+> Agenda revisada el 2026-10-18 con el plan de estado por experimento aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
 ## Prioridad actual
 
-**Conseguir conservación y continuidad del expediente mínimo.** El
-[mapa conceptual](finmate-concept-model/modelo-conocimiento-actual.md) y su
-[anexo](finmate-concept-model/estructuras-y-campos.md) reconstruyen el corte de FinMate
-que se toma como referencia. El usuario ha autorizado implementar y explorar el
-candidato inicial [E001](experiments/E001-nvidia-casefile/protocol.md): Markdown versionado,
-metadatos mínimos y cuatro herramientas. Tras observar ausencia de guardado, ha autorizado
-[E002](experiments/E002-persistent-research/protocol.md): presupuesto visible, guardado
-provisional y consolidación con escritura, con investigación y continuación de NVIDIA.
-Es una elección experimental local, no una arquitectura final ni una aceptación
-semántica general de toda la arqueología. Las variantes A0–A3 siguen siendo posteriores.
+**Contrastar conservación y continuidad con un estado de archivos por experimento.**
+El plan aceptado el 2026-10-18 sustituye el almacén de expedientes por un único estado
+editable, materiales automáticos, instrucciones separadas y archivo por run. Git es
+manual; una prueba puede empezar vacía o continuar su propio estado. La
+[decisión local](decisions/0001-estado-por-experimento.md) y la
+[arquitectura](architecture.md) fijan el alcance. No se elige la arquitectura final
+ni se aceptan semánticamente las evaluaciones por este cambio de representación.
+
+El [mapa conceptual](finmate-concept-model/modelo-conocimiento-actual.md) y su
+[anexo](finmate-concept-model/estructuras-y-campos.md) siguen como referencia.
+[E001](experiments/E001-nvidia-casefile/findings.md) y
+[E002](experiments/E002-persistent-research/findings.md) conservan los resultados del
+candidato anterior. La nueva representación tiene verificación local controlada;
+una campaña con proveedores y evaluación semántica requiere otro encargo concreto.
+Las variantes A0–A3 siguen siendo posteriores.
 
 El punto de partida es distinguir cuatro preguntas:
 
@@ -78,9 +83,11 @@ E001 se ha ejecutado: sus [hallazgos](experiments/E001-nvidia-casefile/findings.
 registran ausencia de guardado en ambos procesos y truncamiento del primer cierre.
 E002 se ha ejecutado: sus [hallazgos](experiments/E002-persistent-research/findings.md)
 registran dos revisiones y recuperación tras reiniciar, con consolidación incompleta.
-El plazo de consolidación se corrigió después y solo tiene comprobación local. El
-siguiente contraste propuesto debe comprobar actualización completa con ese ajuste,
-antes de añadir entidades; no se ha repetido E002 ni ejecutado una nueva campaña.
+El plazo de consolidación se corrigió después y solo tiene comprobación local. La
+representación nueva conserva esa corrección, pero elimina la publicación obligatoria.
+El siguiente contraste deberá evaluar consolidación y recuperación con archivos,
+sin presentar los resultados de E002 como evidencia del mecanismo nuevo. No se ha
+repetido E002 ni ejecutado una nueva campaña.
 
 ## Cómo usar los antecedentes
 

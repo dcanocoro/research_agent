@@ -28,3 +28,7 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 |---|---|---|
 | E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Concluido: sin expediente; primera entrega fallida, segunda por presupuesto. [Protocolo](E001-nvidia-casefile/protocol.md), [hallazgos](E001-nvidia-casefile/findings.md) |
 | E002 | ¿Presupuesto visible, guardado provisional y cierre con escritura permiten conservar y continuar? | Concluido: dos revisiones, recuperación observada y consolidación parcial. [Protocolo](E002-persistent-research/protocol.md), [hallazgos](E002-persistent-research/findings.md) |
+
+E001/E002 conservan protocolos y hallazgos del modo de expedientes retirado. No son
+evidencia del estado de archivos adoptado el 2026-10-18. Para un contraste nuevo,
+crear un experimento separado con la [CLI vigente](../development.md#ejecutar-a-nuevo-experimento-o-continuación).

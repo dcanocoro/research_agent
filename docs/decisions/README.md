@@ -1,8 +1,11 @@
 # Decisiones arquitectónicas
 
 Registrar aquí solo elecciones duraderas que afecten conceptos, fronteras, contratos
-o garantías. No hay ADRs locales registrados en este corte. La
+o garantías. La
 [estrategia](../strategy.md) orienta la agenda; no implica que un modelo esté aceptado.
+
+- [ADR-0001 — Estado de archivos por experimento](0001-estado-por-experimento.md):
+  aceptada el 2026-10-18 para el laboratorio, con Git manual.
 
 Usar `0001-nombre-breve.md`, con número consecutivo y este contenido mínimo:
 

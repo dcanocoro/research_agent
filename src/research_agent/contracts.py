@@ -30,11 +30,10 @@ class AgentRequest:
 
 
 @dataclass(frozen=True)
-class PersistenceResult:
-    status: Literal["confirmed", "unconfirmed", "verification_failed"]
-    revisions: tuple[dict[str, str], ...]
-    response_delivered: bool
-    error: str | None = None
+class StateSummary:
+    files_written: tuple[str, ...] = ()
+    materials: tuple[str, ...] = ()
+    capture_errors: tuple[dict[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -47,7 +46,7 @@ class AgentResult:
     llm_calls: int
     tool_calls: int
     error: str | None = None
-    persistence: PersistenceResult | None = None
+    state: StateSummary = field(default_factory=StateSummary)
 
 
 def serializable(value: Any) -> Any:

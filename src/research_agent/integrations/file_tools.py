@@ -3,12 +3,15 @@ from ..tools import ToolRegistry
 
 
 def register_files(registry: ToolRegistry, workspace: Workspace) -> None:
+    registry.workspace = workspace
+    registry.recorder.workspace = workspace
     string = {"type": "string"}
     window = {"offset": {"type": "integer", "minimum": 0},
               "max_bytes": {"type": "integer", "minimum": 4, "maximum": 32768}}
     registry.register("list_files", "List workspace files and directories.", {"path": string}, workspace.list_files)
     registry.register("read_file", "Read UTF-8 text; byte pagination, follow next_offset.", {"path": string, **window}, workspace.read_file)
-    registry.register("search_files", "Find literal text in workspace Markdown.", {"query": string, "path": string}, workspace.search_files)
+    registry.register("search_files", "Find literal text in state Markdown, JSON, TXT and CSV.", {"query": string, "path": string}, workspace.search_files)
+    registry.register("write_file", "Write UTF-8 Markdown, JSON, TXT or CSV. Original materiales/ are read-only.", {"path": string, "content": string}, workspace.write_file)
     registry.register("write_markdown", "Write or replace a workspace Markdown file.", {"path": string, "content": string}, workspace.write_markdown)
     registry.register("read_artifact", "Read a full stored tool result as JSON text with byte pagination.",
                       {"reference": string, **window}, registry.recorder.read_artifact)

@@ -41,9 +41,10 @@ La prioridad vigente se consulta en estrategia, no en la última campaña record
 - **Hallazgo:** observación fechada con base, evidencia y límites; interpretación separada.
 - **Decisión:** elección explícita con estado y justificación; no consecuencia automática de un check.
 
-Hoy existe solo A, con herramientas, memoria Markdown y modo opcional de expediente
-versionado. CLI y Audit cargan una guía financiera básica; A0–A3, DCF y cartera no
-están implementados. Audit usa vanilla; la CLI permite seleccionar `cases`.
+Hoy existe solo A, con herramientas y estado de archivos por experimento; instrucciones,
+materiales y ejecuciones están separados. CLI permite crear o continuar una prueba.
+Audit conserva su interfaz instalada. Ambos cargan guía financiera básica; A0–A3, DCF
+y cartera no están implementados. E001/E002 documentan el mecanismo anterior.
 Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
 La documentación de sus fuentes puede diferir del wheel instalado: verificar antes
-de atribuir capacidades. Reorganización revisada el 2026-10-17.
+de atribuir capacidades. Estado revisado el 2026-10-18.
