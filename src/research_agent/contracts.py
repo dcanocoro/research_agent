@@ -30,6 +30,14 @@ class AgentRequest:
 
 
 @dataclass(frozen=True)
+class PersistenceResult:
+    status: Literal["confirmed", "unconfirmed", "verification_failed"]
+    revisions: tuple[dict[str, str], ...]
+    response_delivered: bool
+    error: str | None = None
+
+
+@dataclass(frozen=True)
 class AgentResult:
     run_id: str
     status: Literal["completed", "interrupted", "failed", "cancelled"]
@@ -39,6 +47,7 @@ class AgentResult:
     llm_calls: int
     tool_calls: int
     error: str | None = None
+    persistence: PersistenceResult | None = None
 
 
 def serializable(value: Any) -> Any:

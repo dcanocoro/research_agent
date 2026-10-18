@@ -5,6 +5,8 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-17 — Conservación y E002](2026-10-17-persistent-research.md): cierre con
+  escritura, persistencia confirmada, continuidad y límites de consolidación observados.
 - [2026-10-17 — Expedientes y NVIDIA](2026-10-17-casefile.md): modo opcional,
   verificaciones y resultado del primer intento real, sin continuidad conseguida.
 - [2026-10-17 — Reorganización documental](2026-10-17-documentation.md): visión,

@@ -131,6 +131,8 @@ def test_crash_before_head_publication_keeps_old_head_and_diagnoses_orphans(tmp_
     assert reopened.read_case(first["case"]["case_id"])["revision"]["revision_id"] == first["case"]["current_revision"]
     snapshot = reopened.snapshot()
     assert len(snapshot["unpublished_files"]) == 2
+    assert len(reopened.publications(store.recorder.current.name)) == 1
+    assert reopened.publications(str(uuid4())) == []
     orphan = Path(snapshot["unpublished_files"][0]).stem
     with pytest.raises(ValueError, match="not in published"):
         reopened.read_case(first["case"]["case_id"], orphan)
@@ -203,8 +205,13 @@ def test_case_tools_state_partial_failure_and_fresh_instance(tmp_path):
     reopened = CaseStore(store.root, store.workspace, RunRecorder(store.recorder.root))
 
     class Fresh:
+        calls = 0
+
         async def respond(self, **kwargs):
-            assert len(kwargs["input_items"]) == 2  # memory index + new user message only
+            # Only fresh memory/user input and runtime budget; no prior conversation replay.
+            self.calls += 1
+            if self.calls == 1:
+                assert len(kwargs["input_items"]) == 3
             assert initial_run != reopened.recorder.current.name
             case = reopened.list_cases("NVDA")["cases"][0]
             assert reopened.read_case(case["case_id"])["revision"]["references"] == [reference]
@@ -214,7 +221,9 @@ def test_case_tools_state_partial_failure_and_fresh_instance(tmp_path):
     fresh_registry = ToolRegistry(reopened.recorder)
     register_cases(fresh_registry, reopened)
     fresh = AgentA(Fresh(), fresh_registry, workspace, reopened.recorder, instructions=(prompt,))
-    assert asyncio.run(fresh.run(AgentRequest("Continue", "workspace", "new-chat"))).answer == "Recovered"
+    recovered = asyncio.run(fresh.run(AgentRequest("Continue", "workspace", "new-chat")))
+    assert recovered.answer == "Recovered"
+    assert recovered.persistence.status == "unconfirmed"  # Prior run writes do not count as new publication.
 
 
 @pytest.mark.parametrize("extra", [["--knowledge-mode", "cases"], ["--case-store", "cases"],

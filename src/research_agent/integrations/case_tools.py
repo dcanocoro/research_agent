@@ -20,3 +20,5 @@ def register_cases(registry: ToolRegistry, store: CaseStore) -> None:
                        "expected_revision": nullable_id, "change": {**text, "maxLength": 4000}}, store.save_case)
     registry.state_readers["cases"] = store.snapshot
     registry.protected_roots.append(store.root)
+    registry.consolidation_tools = frozenset({"list_cases", "read_case", "list_case_revisions", "read_artifact", "save_case"})
+    registry.publication_reader = store.publications

@@ -5,12 +5,14 @@
 
 ## Prioridad actual
 
-**Contrastar un primer expediente mínimo sobre la arqueología disponible.** El
+**Conseguir conservación y continuidad del expediente mínimo.** El
 [mapa conceptual](finmate-concept-model/modelo-conocimiento-actual.md) y su
 [anexo](finmate-concept-model/estructuras-y-campos.md) reconstruyen el corte de FinMate
 que se toma como referencia. El usuario ha autorizado implementar y explorar el
-candidato [E001](experiments/E001-nvidia-casefile/protocol.md): Markdown versionado,
-metadatos mínimos y cuatro herramientas, con investigación y continuación de NVIDIA.
+candidato inicial [E001](experiments/E001-nvidia-casefile/protocol.md): Markdown versionado,
+metadatos mínimos y cuatro herramientas. Tras observar ausencia de guardado, ha autorizado
+[E002](experiments/E002-persistent-research/protocol.md): presupuesto visible, guardado
+provisional y consolidación con escritura, con investigación y continuación de NVIDIA.
 Es una elección experimental local, no una arquitectura final ni una aceptación
 semántica general de toda la arqueología. Las variantes A0–A3 siguen siendo posteriores.
 
@@ -74,8 +76,11 @@ No se realiza aquí ese análisis ni se modifica FinMate.
 
 E001 se ha ejecutado: sus [hallazgos](experiments/E001-nvidia-casefile/findings.md)
 registran ausencia de guardado en ambos procesos y truncamiento del primer cierre.
-El siguiente contraste propuesto estudia cuándo persistir, antes de añadir entidades;
-no se ha ejecutado ni implica autorización para modificar la política silenciosamente.
+E002 se ha ejecutado: sus [hallazgos](experiments/E002-persistent-research/findings.md)
+registran dos revisiones y recuperación tras reiniciar, con consolidación incompleta.
+El plazo de consolidación se corrigió después y solo tiene comprobación local. El
+siguiente contraste propuesto debe comprobar actualización completa con ese ajuste,
+antes de añadir entidades; no se ha repetido E002 ni ejecutado una nueva campaña.
 
 ## Cómo usar los antecedentes
 

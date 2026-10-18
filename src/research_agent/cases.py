@@ -245,6 +245,27 @@ class CaseStore:
             self._record("saved", case, previous_revision=str(old.current_revision) if old else None)
             return {"case": case.model_dump(mode="json"), "revision": revision.model_dump(mode="json")}
 
+    def publications(self, run_id: str) -> list[dict[str, str]]:
+        """Confirm this run's published revisions from disk, excluding orphan writes."""
+        producer = UUID(run_id)
+        revisions = []
+        with self._lock():
+            for entry in sorted(self.root.iterdir()):
+                if not entry.is_dir():
+                    continue
+                try:
+                    identity = str(UUID(entry.name))
+                except ValueError:
+                    continue
+                if not self._path(identity, "case.json").exists():
+                    continue
+                for revision in self._history(self._case(identity)):
+                    if revision.run_id == producer:
+                        for reference in revision.references:
+                            self.recorder.read_artifact(reference, max_bytes=4)
+                        revisions.append({"case_id": identity, "revision_id": str(revision.revision_id)})
+        return revisions
+
     def snapshot(self) -> dict[str, Any]:
         """Heads and uncommitted leftovers, not extra context injected into the LLM."""
         with self._lock():

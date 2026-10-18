@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import Any
 from jsonschema import Draft202012Validator
 from runtime_contracts.llm import ResponseFunctionCall, ToolResult, ToolSpec
-from .contracts import serializable
+from .contracts import PersistenceResult, serializable
 from .recording import RunRecorder, encoded
 
 
@@ -17,6 +17,17 @@ class ToolRegistry:
         self._tools: dict[str, tuple[ToolSpec, Callable[..., Any]]] = {}
         self.state_readers: dict[str, Callable[[], Any]] = {}
         self.protected_roots: list[Path] = []
+        self.consolidation_tools: frozenset[str] | None = None
+        self.publication_reader: Callable[[str], list[dict[str, str]]] | None = None
+
+    def persistence(self, run_id: str, response_delivered: bool = False) -> PersistenceResult | None:
+        if self.publication_reader is None:
+            return None
+        try:
+            revisions = tuple(self.publication_reader(run_id))
+            return PersistenceResult("confirmed" if revisions else "unconfirmed", revisions, response_delivered)
+        except Exception as exc:
+            return PersistenceResult("verification_failed", (), response_delivered, type(exc).__name__)
 
     def snapshot_state(self) -> dict[str, Any]:
         result = {}
@@ -35,12 +46,14 @@ class ToolRegistry:
         Draft202012Validator.check_schema(schema)
         self._tools[name] = (ToolSpec(name, description, schema), function)
 
-    def specs(self) -> list[ToolSpec]:
-        return [spec for spec, _ in self._tools.values()]
+    def specs(self, allowed_names: frozenset[str] | None = None) -> list[ToolSpec]:
+        return [spec for spec, _ in self._tools.values() if allowed_names is None or spec.name in allowed_names]
 
-    async def execute(self, call: ResponseFunctionCall) -> ToolResult:
+    async def execute(self, call: ResponseFunctionCall, *, allowed_names: frozenset[str] | None = None) -> ToolResult:
         self.recorder.event("lab.tool.started", call_id=call.call_id, tool_name=call.name, arguments=call.arguments)
         try:
+            if allowed_names is not None and call.name not in allowed_names:
+                raise ValueError("Tool is unavailable in this execution phase.")
             if call.name not in self._tools:
                 raise ValueError("Unknown tool.")
             spec, function = self._tools[call.name]

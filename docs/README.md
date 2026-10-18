@@ -2,7 +2,8 @@
 
 Research Agent es el laboratorio para estudiar los mecanismos de conocimiento,
 investigación y revisión del futuro FinMate. La [arqueología conceptual](finmate-concept-model/modelo-conocimiento-actual.md)
-sirve de base al primer [experimento de expedientes](experiments/E001-nvidia-casefile/protocol.md).
+sirve de base al primer [experimento de expedientes](experiments/E001-nvidia-casefile/protocol.md)
+y al siguiente [contraste de conservación](experiments/E002-persistent-research/protocol.md).
 La agenda y los límites de esta elección provisional están en [estrategia](strategy.md).
 
 ## Cinco referencias principales

@@ -202,3 +202,48 @@ error de captura se identifica como tal. Los eventos `lab.case.*` correlacionan 
 revisión seleccionada y cambios con la ejecución; el manifiesto identifica modo y almacén.
 Las herramientas y snapshots complementan el archivo, no convierten `completed` en
 calidad financiera. El primer protocolo es [E001](experiments/E001-nvidia-casefile/protocol.md).
+
+## Conservación y cierre de la investigación
+
+El modo `cases` incorpora el candidato [E002](experiments/E002-persistent-research/protocol.md).
+El prompt pide conservar una primera interpretación provisional y actualizarla ante
+cambios materiales, con fundamentos y pendientes; no impone una plantilla o un guardado
+por herramienta. La respuesta final breve no sustituye al expediente ni se guarda como
+revisión automáticamente.
+
+Antes de cada decisión, `execution_budget` comunica fase, llamadas, herramientas y
+tiempo disponibles. Se incluye en transcript, eventos y cómputo de contexto. Vanilla
+recibe esta información sin cambiar su política de cierre. En cases hay fases
+irreversibles de investigación, consolidación y respuesta, con hasta 15, 2 y una llamada
+respectivamente bajo el límite total actual de 18. Puede finalizar antes tras publicar.
+
+Se adelanta consolidación cuando quedan 45 segundos, dos oportunidades de herramienta
+o 32 KiB de contexto (en límites pequeños se reserva como máximo un cuarto del contexto).
+En la ventana temporal final se dedica hasta un tercio a consolidación y se reservan
+dos tercios a respuesta; con los defaults son 15 y 30 segundos. Si la consolidación se activa antes por llamadas
+o contexto, puede utilizar el tiempo global disponible salvo la reserva de respuesta;
+no se le impone un tope fijo de 15 segundos cuando quedan minutos. La investigación no
+puede consumir la ventana reservada; un timeout de fase se registra y permite avanzar
+si quedan recursos. Un límite duro conserva lo disponible, sin prometer guardado.
+
+La integración inyecta las herramientas permitidas en consolidación y un verificador
+de publicaciones; el núcleo sigue siendo general. El registro filtra schemas y despacho
+efectivo. Durante consolidación no se permite búsqueda externa; se puede consultar
+expediente, recuperar artefactos y guardar. Dos oportunidades permiten releer o corregir
+un guardado rechazado; al confirmar una nueva publicación se pasa a responder. Un texto
+temprano sin publicación se archiva en `drafts/` y ofrece consolidación, sin mostrarse
+automáticamente como respuesta final ni convertirse en expediente.
+
+`AgentResult.persistence` es opcional (`null` en vanilla). Contiene estado
+`confirmed/unconfirmed/verification_failed`, pares expediente/revisión publicados por
+el run actual, `response_delivered` y categoría segura de error si falla la comprobación.
+Se obtiene de la historia publicada en disco, verificando integridad y referencias;
+excluye huérfanos y revisiones de otros runs. Confirmación técnica no significa que la
+revisión incorpore todo lo material; eso requiere evaluación semántica. CLI imprime el
+resumen y `result.json` lo conserva, incluso cuando falla la entrega posterior.
+
+Los códigos de salida y `completed` conservan su significado operativo para compatibilidad.
+Los eventos de fase/presupuesto, borradores y snapshots permiten revisar el comportamiento.
+No se modifica el wheel compartido ni se introduce otro ciclo o agente.
+E002 se ejecutó con un tope fijo inicial incorrecto; sus [hallazgos](experiments/E002-persistent-research/findings.md)
+separan ese candidato del ajuste temporal posterior, verificado únicamente con pruebas locales.

@@ -156,6 +156,16 @@ La dependencia directa Pydantic se declara en el proyecto. Mypy comprueba el có
 y omite los imports sin marcadores de tipado del wheel compartido, mediante overrides
 explícitos; no implica comprobar internamente las bibliotecas compartidas.
 
+En la revisión E002, cases reserva hasta dos llamadas para consolidación y una para
+respuesta; requiere al menos cuatro llamadas al modelo y dos herramientas de presupuesto.
+El catálogo y despacho se restringen durante consolidación. Los defaults siguen siendo
+18 llamadas, 30 herramientas y 300 segundos, y el máximo de salida depende del perfil
+compartido, que esta revisión no modifica. La CLI añade una línea `persistence=...` con
+publicaciones confirmadas por disco y entrega de respuesta. El código de salida continúa
+reflejando estado operativo: comprobar persistencia por separado. `drafts/` conserva
+textos tempranos que no llegaron a ser respuesta final. Véanse [contrato de cierre](architecture.md#conservación-y-cierre-de-la-investigación)
+y [protocolo E002](experiments/E002-persistent-research/protocol.md).
+
 Workspace y archivo de ejecuciones deben ser disjuntos y estar fuera del código/prompts.
 La memoria Markdown persiste; el historial del proceso CLI no. Actualizar el índice
 permite descubrir las notas en la siguiente intervención; no carga automáticamente

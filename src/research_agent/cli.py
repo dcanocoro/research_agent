@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 from importlib.resources import files, as_file
 from pathlib import Path
 from .bootstrap import build_agent
@@ -41,4 +42,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.exit(2, f"research-agent: {exc}\n")
     print(result.answer or f"{result.status}: {result.stop_reason}")
     print(f"run_id={result.run_id}")
+    if result.persistence is not None:
+        from dataclasses import asdict
+        print("persistence=" + json.dumps(asdict(result.persistence), ensure_ascii=False))
     return 0 if result.status == "completed" else 1

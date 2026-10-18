@@ -7,8 +7,10 @@
 
 La [arqueología](finmate-concept-model/modelo-conocimiento-actual.md) reconstruye el
 modelo conceptual de FinMate. La [estrategia](strategy.md) ha avanzado al candidato
-exploratorio [E001](experiments/E001-nvidia-casefile/protocol.md), autorizado por el
-usuario: expediente versionado con investigación de NVIDIA y continuación tras reinicio.
+exploratorio [E001](experiments/E001-nvidia-casefile/protocol.md): expediente versionado
+con investigación de NVIDIA y continuación tras reinicio. Sus pérdidas de continuidad
+motivan el siguiente candidato autorizado, [E002](experiments/E002-persistent-research/protocol.md),
+que cambia conjuntamente instrucciones y cierre para estudiar persistencia efectiva.
 Después se podrán comparar candidatos narrativo, argumentativo y financiero-argumentativo
 con los mismos ejemplos y operaciones. Son familias propuestas de representación del
 conocimiento, no variantes de A implementadas ni tres sistemas que debamos construir.
@@ -148,7 +150,7 @@ usuario; el agente actual no administra cartera. Rentabilidad superior requiere 
 evaluación: muchas decisiones, tiempo, benchmarks, costes, control de riesgo y ausencia
 de información futura. No inferirla de una campaña local o un dossier coherente.
 
-El siguiente paso autorizado es E001, con su protocolo y guía previos a ejecutar.
+El siguiente paso autorizado es E002, con su protocolo y guía previos a ejecutar.
 Sus hallazgos orientarán una comparación posterior. Esta exploración no incluye
-control ni permite atribuir mejoras causales a la representación. No hay autorización
+control ni permite atribuir mejoras causales a cambios individuales. No hay autorización
 implícita para construir toda la agenda.

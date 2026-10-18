@@ -27,3 +27,4 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 | ID | Pregunta | Registro |
 |---|---|---|
 | E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Concluido: sin expediente; primera entrega fallida, segunda por presupuesto. [Protocolo](E001-nvidia-casefile/protocol.md), [hallazgos](E001-nvidia-casefile/findings.md) |
+| E002 | ¿Presupuesto visible, guardado provisional y cierre con escritura permiten conservar y continuar? | Concluido: dos revisiones, recuperación observada y consolidación parcial. [Protocolo](E002-persistent-research/protocol.md), [hallazgos](E002-persistent-research/findings.md) |
