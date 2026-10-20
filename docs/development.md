@@ -167,6 +167,82 @@ cambios pendientes al inicio/final, sin atribuirse el repositorio padre. No tene
 es válido. Git manual conserva solo versiones que se hayan registrado; los snapshots
 del run conservan sus extremos, sin prometer todas las ediciones intermedias.
 
+## Benchmark piloto
+
+Desde la raíz del repositorio:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent.benchmark validate benchmarks/pilot-v1
+.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/pilot-v1 --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/pilot-v1 --case E2 --output artifacts/benchmark
+```
+
+`validate` no construye clientes ni consulta servicios. `run` llama al agente real y
+requiere la configuración de proveedor, Findata y Tavily habitual; no realiza ingestas
+ni migraciones. Ejecuta una sesión por subprocess, en secuencia, conservando archivos
+sin restaurar el chat. Los límites son los actuales de A. No modifica prompts,
+Experience Audit ni el wheel instalado. El [protocolo](experiments/benchmark-pilot-v1/protocol.md)
+posee definiciones, rúbricas y límites de interpretación.
+
+Cada invocación crea una carpeta de campaña nueva bajo `--output` e imprime su ruta.
+`--case` elige un ID exacto; sin filtro, el orden es B1, E2, F3 y G2. No hay resume ni
+reintentos automáticos de sesiones. Una sesión fallida o con captura incompleta bloquea
+las siguientes de su caso; los otros casos continúan. Ctrl+C conserva lo disponible.
+Retornos: 0 = todas las sesiones completadas con captura íntegra; 1 = fallo operativo,
+interrupción o captura incompleta; 2 = argumentos/definiciones inválidos. No son notas
+de calidad financiera.
+
+Consultar primero `LEEME.md` y `resumen.json`, que incluye los metadatos de cada sesión
+y apunta a `casos/ID/ejecuciones/`. Al cerrar la campaña se consolida la captura nativa,
+sin cambiar el agente. Cada sesión completa contiene cinco archivos: `ejecucion.json`
+(petición, configuración, resultado y hashes), `trayectoria.jsonl.gz`, `respuesta.md`
+y los dos snapshots. Las instrucciones efectivas se congelan por hash bajo
+`definiciones/instrucciones/`; fuentes y rúbricas también permanecen fuera del estado.
+La revisión de calidad sigue siendo humana/Codex, con criterios y citas de evidencia;
+el índice no inventa puntuaciones ni explicaciones de acciones.
+
+La trayectoria reúne eventos, entradas/salidas del modelo y ejecuciones de herramientas.
+Conserva separadamente el resultado original y el entregado al modelo, aunque pueda
+reconstruir ambos desde un único contenido. Los snapshots conservan texto del conocimiento
+y referencias verificadas a materiales. Las citas históricas de resultados siguen
+disponibles mediante `read_artifact`; no apuntan necesariamente a archivos individuales.
+No se guarda conversación, stdout correcto ni errores vacíos como copias adicionales.
+Si hay captura incompleta, se retienen los originales nativos y diagnósticos.
+
+Para exportar una campaña anterior a otra carpeta, conservando el origen intacto:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent.benchmark compact artifacts/benchmark/ID --output artifacts/benchmark-compact/ID
+```
+
+El destino debe ser nuevo y separado del origen. La conversión verifica reconstrucción
+de resultados de herramientas y snapshots antes de retirar copias en el destino. No
+consulta proveedores. `recording_format` identifica cada sesión; capturas antiguas y
+compactas son consultables por el mismo extractor.
+
+Para regenerar la vista breve sin ejecutar el agente:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent.benchmark extract RUTA_DE_CAMPAÑA
+```
+
+`pasos.jsonl` incluye caso, sesión, run, acción, identificadores disponibles, fragmentos
+breves y referencias al original. No estima razonamiento privado ni puntúa respuestas.
+En formato compacto una herramienta y su resultado comparten un registro `tool_execution`;
+`line` identifica la secuencia descomprimida de `trayectoria.jsonl.gz`.
+`extraccion.json` informa de capturas ausentes o dañadas al regenerar, sin modificar
+los registros originales de sesión.
+Los campos desconocidos permanecen nulos; los hashes detectan modificaciones de las
+entradas publicadas. No hay Excel ni evaluación automática en esta versión.
+`artifacts/` es local e ignorado; conservar el archivo completo para revisar o trasladar
+evidencia, previa revisión de datos privados.
+
+Para inspección detallada desde Python, las funciones públicas del módulo
+`research_agent.benchmark_archive` son `records(run)`, `full_result(campaign, record)`,
+`delivered_result(campaign, record)` y `restore_snapshot(campaign, snapshot)`.
+Las dos últimas reconstruyen lo efectivamente entregado y el estado histórico, sin
+inferencias. Las referencias a materiales e instrucciones comprueban sus hashes.
+
 ## Campañas nativas de Experience Audit
 
 Usar `lab`, no el atajo del runner de recorridos del producto:

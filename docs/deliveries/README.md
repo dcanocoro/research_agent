@@ -5,6 +5,10 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-20 — Evidencia compacta](2026-10-20-compact-evidence.md): trayectoria por
+  sesión, materiales referenciados y exportación con verificación de fidelidad.
+- [2026-10-20 — Benchmark piloto](2026-10-20-benchmark-pilot.md): cuatro casos,
+  sesiones por proceso y evidencia nativa; sin campaña real ni aceptación semántica.
 - [2026-10-18 — Documentación del baseline](2026-10-18-baseline-documentation.md):
   referencia actual, run NVIDIA, enlaces y límites; sin cambios de comportamiento.
 - [2026-10-18 — Estado por experimento](2026-10-18-experiment-state.md): archivos,

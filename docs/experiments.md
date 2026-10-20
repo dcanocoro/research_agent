@@ -40,6 +40,12 @@ define cómo fijar cada protocolo y conservar hallazgos, fallos y límites.
 
 ## Qué podemos ejecutar hoy
 
+El [benchmark piloto v1](experiments/benchmark-pilot-v1/protocol.md) añade cuatro casos
+con sesiones en procesos nuevos, entradas publicadas entre sesiones y herramientas
+reales. Su controlador prepara archivos, invoca la CLI y recoge evidencia; no cambia
+el ciclo de A ni usa jueces automáticos. Tiene verificación local con servicios
+simulados, sin campaña real. Web y PostgreSQL siguen siendo variables externas.
+
 El directorio [scenarios](../scenarios) contiene investigación de empresa, comparación
 de periodos, continuidad de memoria, fallo documental y agotamiento de recursos.
 Sus YAML fijan mensajes y checks, pero los escenarios que usan fuentes remotas no

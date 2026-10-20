@@ -1,0 +1,14 @@
+id: F3
+title: Información irrelevante
+context: "Empresa: Microsoft. Los anuncios de laboratorio son hipótesis explícitas; no noticias reales."
+competencies: [materialidad, adaptacion, memoria]
+difficulty: "Alta: recuperar fundamentos y resistir una actualización innecesaria ante ruido."
+rubric: rubric.md
+sessions:
+  - id: sesion-01
+    message: "¿Cómo evaluarías hoy el negocio de Microsoft?"
+    publish: {}
+  - id: sesion-02
+    message: "¿Cambia tu evaluación tras entradas/anuncio.md?"
+    publish:
+      entradas/anuncio.md: inputs/anuncio.md

@@ -1,0 +1,7 @@
+schema_version: benchmark-v1
+id: investment-pilot-v1
+cases:
+  - B1/case.yaml
+  - E2/case.yaml
+  - F3/case.yaml
+  - G2/case.yaml
