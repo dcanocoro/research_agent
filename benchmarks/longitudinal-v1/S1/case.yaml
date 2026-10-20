@@ -1,0 +1,42 @@
+id: S1
+title: ASML — Construcción y profundización de una tesis
+context: Universo simulado de ASML. Todos los documentos y precios son ficticios. Responde exclusivamente dentro de este universo con los archivos publicados en entradas/; no incorpores datos reales externos. Las fechas son del reloj simulado y se indican en cada documento. Cada sesión conserva archivos, pero no el historial conversacional. No se presupone ninguna conclusión ni formato de memoria.
+competencies:
+- investigacion
+- juicio
+- revision
+- memoria
+- incertidumbre
+- eficiencia
+difficulty: 'Alta: priorización, dos consultas, comparabilidad y cambio aislado del precio.'
+rubric: rubric.md
+sessions:
+- id: sesion-01
+  message: Investiga ASML y determina si representa una oportunidad atractiva de inversión.
+  publish:
+    entradas/base.md: inputs/base.md
+- id: sesion-02
+  message: ¿Qué necesitas investigar ahora para mejorar tu evaluación?
+  publish: {}
+- id: sesion-03
+  message: Dispones únicamente de dos consultas documentales adicionales. El catálogo está en entradas/catalogo.md; leerlo no consume consulta. Elige y consulta como máximo dos documentos de ese catálogo. ¿Qué aportan a tu evaluación?
+  publish:
+    entradas/catalogo.md: inputs/catalogo.md
+    entradas/doc-a.md: inputs/doc-a.md
+    entradas/doc-b.md: inputs/doc-b.md
+    entradas/doc-c.md: inputs/doc-c.md
+    entradas/doc-d.md: inputs/doc-d.md
+    entradas/doc-e.md: inputs/doc-e.md
+    entradas/doc-f.md: inputs/doc-f.md
+- id: sesion-04
+  message: Han llegado entradas/informe-demanda.md y entradas/nota-entregas.md. ¿Cómo afectan a tu evaluación?
+  publish:
+    entradas/informe-demanda.md: inputs/informe-demanda.md
+    entradas/nota-entregas.md: inputs/nota-entregas.md
+- id: sesion-05
+  message: El único cambio nuevo está en entradas/precio.md. ¿Cómo evaluarías ahora la oportunidad de inversión?
+  publish:
+    entradas/precio.md: inputs/precio.md
+- id: sesion-06
+  message: ¿Cuál es tu evaluación actual de ASML, qué ha cambiado desde el inicio y qué deberíamos investigar a continuación?
+  publish: {}

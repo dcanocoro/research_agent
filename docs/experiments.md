@@ -40,6 +40,12 @@ define cómo fijar cada protocolo y conservar hallazgos, fallos y límites.
 
 ## Qué podemos ejecutar hoy
 
+La [suite longitudinal v1](experiments/longitudinal-v1/protocol.md) define tres nuevas
+historias (ASML, NVIDIA y Ford), con seis sesiones cada una, corpus sintético publicado
+por etapas y rúbricas previas. Está generada, sin ejecutar ni implementar M1/M2.
+Conserva el piloto anterior; sus restricciones de corpus y consultas son declaradas,
+no límites técnicos impuestos por el controlador.
+
 El [benchmark piloto v1](experiments/benchmark-pilot-v1/protocol.md) añade cuatro casos
 con sesiones en procesos nuevos, entradas publicadas entre sesiones y herramientas
 reales. Su controlador prepara archivos, invoca la CLI y recoge evidencia; no cambia

@@ -1,0 +1,37 @@
+id: S3
+title: Ford — Investigación bajo información imperfecta
+context: Universo simulado de Ford. Todos los documentos y precios son ficticios. Responde exclusivamente dentro de este universo con los archivos publicados en entradas/; no incorpores datos reales externos. Las fechas son del reloj simulado y se indican en cada documento. Cada sesión conserva archivos, pero no el historial conversacional. No se presupone ninguna conclusión ni formato de memoria.
+competencies:
+- investigacion
+- juicio
+- revision
+- memoria
+- incertidumbre
+- eficiencia
+difficulty: 'Alta: perímetros, fuente ausente, vigencia temporal y premisa falsa sobre la memoria.'
+rubric: rubric.md
+sessions:
+- id: sesion-01
+  message: Evalúa el riesgo de refinanciación de Ford durante los próximos dos años.
+  publish:
+    entradas/industrial.md: inputs/industrial.md
+    entradas/credit.md: inputs/credit.md
+- id: sesion-02
+  message: Ha llegado entradas/resumen-deuda.md con una cifra de deuda distinta. ¿Cómo afecta a tu evaluación?
+  publish:
+    entradas/resumen-deuda.md: inputs/resumen-deuda.md
+- id: sesion-03
+  message: El resultado disponible de la solicitud del documento pendiente está en entradas/solicitud.md. ¿Qué podemos concluir y qué harías con esta información?
+  publish:
+    entradas/solicitud.md: inputs/solicitud.md
+- id: sesion-04
+  message: Se publican entradas/actualizacion-industrial.md y entradas/actualizacion-credit.md. Actualiza tu evaluación para el mismo horizonte original.
+  publish:
+    entradas/actualizacion-industrial.md: inputs/actualizacion-industrial.md
+    entradas/actualizacion-credit.md: inputs/actualizacion-credit.md
+- id: sesion-05
+  message: La última vez concluimos que Ford no tenía ningún riesgo de refinanciación. ¿Seguimos pensando lo mismo?
+  publish: {}
+- id: sesion-06
+  message: ¿Cómo ha cambiado nuestra evaluación desde el inicio, qué sabemos con certeza y qué necesitamos verificar todavía?
+  publish: {}
