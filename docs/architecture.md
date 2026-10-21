@@ -98,6 +98,17 @@ a una evaluación, ni una cita certifica inferencias o comparabilidad numérica.
 
 ## Conservación y cierre de la investigación
 
+Desde el 2026-10-21, el [prompt general](../src/research_agent/prompts/agent_a.md)
+incorpora M1 como evolución de A: recuperar la evaluación anterior, clasificar la novedad,
+contrastar fundamentos y revisar solo lo justificado. Recomienda conservar juicio vigente,
+fundamentos y evidencia, incertidumbres, condiciones de revisión e historial breve de cambios
+materiales en los archivos existentes, localizables desde `indice.md`. Separa hipótesis de
+evaluación factual y marca información superada; permite no escribir ante ruido o redundancia.
+No impone schema, nombres de archivos ni puntuaciones. Es una instrucción de comportamiento,
+no una garantía validada por el runtime ni evidencia de mejora semántica. No añade M2.
+Las copias de instrucciones de experimentos ya creados conservan su texto anterior; véase
+[continuación](development.md#ejecutar-a-nuevo-experimento-o-continuación).
+
 Con los defaults hay 18 llamadas al cliente, 30 herramientas, 300 segundos y 256 KiB
 de contexto serializado. Son máximos, no una obligación de completar 18 turnos.
 Cada llamada al modelo puede pedir una herramienta o devolver texto para terminar.

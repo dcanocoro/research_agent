@@ -135,6 +135,11 @@ Las instrucciones iniciales se copian de los recursos instalados. `--instruction
 puede repetirse únicamente con `--new`; luego editar explícitamente los Markdown de
 `instrucciones/`. Los manifiestos registran el contenido efectivo de cada run, por lo que
 cambiar instrucciones entre continuaciones es visible y altera la condición experimental.
+La evolución M1 del 2026-10-21 está integrada en `prompts/agent_a.md`: se copia al crear
+experimentos nuevos y se usa directamente en la interfaz básica. No sustituye las copias
+de experimentos existentes. Para adoptarla en una continuación, actualizar explícitamente
+su `instrucciones/agente.md` desde el prompt vigente, conservando las personalizaciones
+que correspondan y la versión anterior en Git; no sobrescribir capturas históricas.
 `--conversation` conserva correlación; no restaura memoria de proceso.
 `--timeout-seconds` ajusta el límite temporal. Las demás reservas están en
 [arquitectura](architecture.md#conservación-y-cierre-de-la-investigación).

@@ -5,6 +5,8 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-21 — M1 en el prompt de A](2026-10-21-m1.md): revisión deliberativa en
+  los archivos existentes; sin cambios del benchmark ni campaña de aceptación.
 - [2026-10-20 — Evidencia compacta](2026-10-20-compact-evidence.md): trayectoria por
   sesión, materiales referenciados y exportación con verificación de fidelidad.
 - [2026-10-20 — Benchmark piloto](2026-10-20-benchmark-pilot.md): cuatro casos,
