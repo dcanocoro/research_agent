@@ -1,6 +1,6 @@
 # Desarrollo y operación
 
-> Operación y dependencias del proyecto externo. Revisión: 2026-10-18.
+> Operación y dependencias del proyecto externo. Revisión: 2026-10-22.
 > Los detalles del wheel corresponden al corte del 2026-10-16; verificar el entorno efectivo.
 
 ## Dependencias y frontera de instalación
@@ -49,7 +49,13 @@ web, modelos remotos o configuración; verificar el entorno antes de comparar.
 
 ## Instalación
 
-Desde la raíz del proyecto, con Python >=3.11; el corte anterior se verificó con 3.12:
+Para instalar en otro ordenador, seguir [instalación reproducible](installation.md):
+Windows x86-64, Python 3.12, dependencias con hashes, wheel privado aprobado e
+instalación offline. Incluye preparación del paquete, `.env.example`, pruebas y
+traslado de experimentos. Es la ruta comprobada para reproducir el entorno.
+
+El procedimiento histórico siguiente permite resolver un entorno de desarrollo
+con Python >=3.11, pero no garantiza los mismos artefactos que el lock vigente:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -64,7 +70,9 @@ Crear `.env` con la configuración indicada abajo solo si no existe. No sobrescr
 una configuración existente ni sustituir el wheel por un homónimo de un índice público.
 
 `constraints.txt` conserva versiones del corte de extracción: limita la resolución,
-no instala todo su contenido ni es un lock con hashes. El wheel inicial quedó en
+no instala todo su contenido ni es un lock con hashes. Para el entorno reproducible
+se usa `requirements-windows-py312.lock`, sin combinarlo con esas constraints.
+El wheel inicial quedó en
 `../FinMate/artifacts/experience-audit-validation/relocation-2026-10-16/wheels/`;
 es evidencia local ignorada y puede no existir en otra máquina. Para trasladar el proyecto,
 conservar también el wheel aprobado o reconstruirlo desde la revisión correspondiente.
@@ -181,21 +189,22 @@ del run conservan sus extremos, sin prometer todas las ediciones intermedias.
 
 ## Benchmark piloto
 
-El catálogo piloto es histórico y ya no está en el árbol. Los ejemplos siguientes
-utilizan `longitudinal-v1`, disponible con tres casos y 18 sesiones. Para el prototipo
-controlado v2, seguir [preparación argumentativa](#preparación-argumentativa-experimental).
+El catálogo piloto, longitudinal-v1 y longitudinal-v2 son históricos y ya no están
+en el árbol. Los ejemplos siguientes utilizan `longitudinal-v2-1`, disponible con
+tres casos y 18 sesiones. Exige un perfil explícito y usa corpus cerrado; preparar
+`RUTA_PERFIL.json` según [preparación argumentativa](#preparación-argumentativa-experimental).
 
 Desde la raíz del repositorio:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v1
-.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v1 --output artifacts/benchmark
-.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v1 --case S2 --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v2-1
+.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v2-1 --condition A0 --profile RUTA_PERFIL.json --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v2-1 --condition A0 --profile RUTA_PERFIL.json --case S2 --output artifacts/benchmark
 ```
 
 `validate` no construye clientes ni consulta servicios. `run` llama al agente real y
-requiere la configuración de proveedor, Findata y Tavily habitual; no realiza ingestas
-ni migraciones. Ejecuta una sesión por subprocess, en secuencia, conservando archivos
+requiere el proveedor LLM; v2.1 no construye Findata ni Tavily por usar corpus cerrado.
+No realiza ingestas ni migraciones. Ejecuta una sesión por subprocess, en secuencia, conservando archivos
 sin restaurar el chat. Los límites son los actuales de A. No modifica prompts
 ni el wheel instalado. El [protocolo](experiments/benchmark-pilot-v1/protocol.md)
 posee definiciones, rúbricas y límites de interpretación.
@@ -279,7 +288,7 @@ operativas adicionales y su base en `conocimiento/`, sin migrar estados antiguos
 Comprobación offline del nuevo catálogo (no llama al modelo):
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v2
+.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v2-1
 ```
 
 Para una campaña futura, `benchmark run` admite `--condition A0|A1` y

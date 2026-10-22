@@ -5,6 +5,10 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-22 — Portabilidad e instalación reproducible](2026-10-22-portability.md):
+  lock con hashes, guía de traslado, configuración de ejemplo y verificación con wheel
+  en entorno limpio; sin llamadas a servicios remotos.
+
 - [2026-10-22 — Simplificación del laboratorio](2026-10-22-simplification.md):
   campañas separadas, retirada de Audit y configuración, captura y herramientas más explícitas.
 

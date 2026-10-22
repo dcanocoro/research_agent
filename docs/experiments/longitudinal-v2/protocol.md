@@ -1,5 +1,11 @@
 # Longitudinal v2 — expediente argumentativo experimental
 
+> Disponibilidad revisada el 2026-10-22: solo `longitudinal-v2-1` permanece
+> en el árbol actual. Las rutas históricas de v1, v2 y la prueba corta se consultan
+> con `git show c75dd01:benchmarks/NOMBRE/ARCHIVO`; los comandos históricos
+> correspondientes requieren recuperar esa definición. Esta nota no cambia
+> el protocolo ni afirma que se haya ejecutado una campaña nueva.
+
 Estado: preparado e integrado, sin campaña real. Fecha: 2026-10-22.
 Encargo aceptado: endurecer benchmark, construir prototipo y verificar offline.
 No autoriza ejecutar campañas ni adoptar este mecanismo en FinMate.
@@ -13,14 +19,14 @@ La guía financiera, M1 + M2 y límites son comunes; A1 añade solo instruccione
 operación del expediente. El tratamiento incluye representación, herramientas y
 validaciones; esta primera comparación no atribuirá resultados a cada pieza aislada.
 
-La [suite](../../../benchmarks/longitudinal-v2/suite.yaml) fija tres casos de seis
+La suite (`benchmarks/longitudinal-v2/suite.yaml`) fija tres casos de seis
 sesiones, con fuentes íntegramente sintéticas y reloj 2030. Conserva v1 intacta.
 
 | Caso | Definición y rúbrica privada | Dificultad añadida |
 |---|---|---|
-| ASML | [Caso](../../../benchmarks/longitudinal-v2/S1/case.yaml), [rúbrica](../../../benchmarks/longitudinal-v2/S1/rubric.md) | Cartera creciente, menor conversión próxima y mayor concentración, con efecto aislado del precio. |
-| NVIDIA | [Caso](../../../benchmarks/longitudinal-v2/S2/case.yaml), [rúbrica](../../../benchmarks/longitudinal-v2/S2/rubric.md) | Piloto y despliegue competitivo, logística y calendarios con distintos horizontes. |
-| Ford | [Caso](../../../benchmarks/longitudinal-v2/S3/case.yaml), [rúbrica](../../../benchmarks/longitudinal-v2/S3/rubric.md) | Reexpresión de liquidez y flujos con deuda y perímetro Credit intactos. |
+| ASML | Caso (`benchmarks/longitudinal-v2/S1/case.yaml`), rúbrica (`benchmarks/longitudinal-v2/S1/rubric.md`) | Cartera creciente, menor conversión próxima y mayor concentración, con efecto aislado del precio. |
+| NVIDIA | Caso (`benchmarks/longitudinal-v2/S2/case.yaml`), rúbrica (`benchmarks/longitudinal-v2/S2/rubric.md`) | Piloto y despliegue competitivo, logística y calendarios con distintos horizontes. |
+| Ford | Caso (`benchmarks/longitudinal-v2/S3/case.yaml`), rúbrica (`benchmarks/longitudinal-v2/S3/rubric.md`) | Reexpresión de liquidez y flujos con deuda y perímetro Credit intactos. |
 
 Las rúbricas identifican fuentes disponibles por sesión, dependencias privadas,
 alternativas admisibles, controles numéricos y errores materiales. Quedan fuera del

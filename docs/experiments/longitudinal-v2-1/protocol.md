@@ -1,5 +1,11 @@
 # Longitudinal v2.1 — recuperación y uso material del expediente
 
+> Disponibilidad revisada el 2026-10-22: solo `longitudinal-v2-1` permanece
+> en el árbol actual. Las rutas históricas de v1, v2 y la prueba corta se consultan
+> con `git show c75dd01:benchmarks/NOMBRE/ARCHIVO`; los comandos históricos
+> correspondientes requieren recuperar esa definición. Esta nota no cambia
+> el protocolo ni afirma que se haya ejecutado una campaña nueva.
+
 Estado: preparado para ejecución manual, sin campaña nueva. Fecha: 2026-10-22.
 Encargo: corregir recuperación, precisar la operación de A1 y reparar la ambigüedad
 de ASML; no ejecutar proveedores ni modificar campañas previas.
@@ -27,12 +33,12 @@ presupuestos coincide byte por byte con v2. La suite v2 y sus campañas se conse
 
 ## Prueba corta antes de comparar
 
-[argumentative-continuity-v1](../../../benchmarks/argumentative-continuity-v1/suite.yaml)
+argumentative-continuity-v1 (`benchmarks/argumentative-continuity-v1/suite.yaml`)
 prepara un caso sintético de cuatro sesiones: crear evaluación, recuperar tras
 reiniciar, incorporar corrección y comparar revisión anterior/vigente. Es una prueba
 operacional dirigida, no evidencia de autonomía financiera ni comparación A0/A1.
 Publica solo dos documentos y mantiene proceso nuevo por sesión.
-Su [rúbrica privada](../../../benchmarks/argumentative-continuity-v1/C1/rubric.md)
+Su rúbrica privada (`benchmarks/argumentative-continuity-v1/C1/rubric.md`)
 requiere revisar operaciones y contenido, no solo completed o existencia de SQLite.
 
 Ejecutar manualmente, desde la raíz, con el perfil elegido por el usuario:

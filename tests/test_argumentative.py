@@ -293,20 +293,13 @@ asyncio.run(execute())
         verify_capture(run)
 
 
-def test_corrected_catalog_preserves_original_and_short_probe(tmp_path):
-    original = load_suite(ROOT / "benchmarks/longitudinal-v2")
+def test_current_catalog_preserves_session_controls():
     corrected = load_suite(ROOT / "benchmarks/longitudinal-v2-1")
     assert corrected.id == "longitudinal-v2-1" and len(corrected.cases) == 3
     assert all(len(c.sessions) == 6 for c in corrected.cases)
-    # No other stimulus, rubric or budget changed in the new version.
-    for path in original.files():
-        relative = path.relative_to(original.root)
-        if relative.as_posix() not in {"suite.yaml", "S1/inputs/cartera.md"}:
-            assert path.read_bytes() == (corrected.root / relative).read_bytes()
-    assert corrected.execution == original.execution
-    probe = load_suite(ROOT / "benchmarks/argumentative-continuity-v1")
-    assert len(probe.cases) == 1 and len(probe.cases[0].sessions) == 4
-    assert probe.execution == corrected.execution
+    assert corrected.execution == {"tool_profile": "closed-corpus", "limits": asdict(AgentLimits())}
+    session = corrected.cases[0].sessions[2]
+    assert session.document_limit == 2 and len(session.document_paths) == 6
 
 
 def test_new_operating_instructions_are_copied_without_updating_old_experiments(tmp_path):
@@ -414,7 +407,7 @@ def test_closed_bootstrap_never_builds_remote_tools(tmp_path, monkeypatch):
 
 def test_v2_controls_and_budget_survive_runner(tmp_path):
     from support import fake_cli
-    suite = load_suite(ROOT / "benchmarks/longitudinal-v2")
+    suite = load_suite(ROOT / "benchmarks/longitudinal-v2-1")
     assert len(suite.cases) == 3 and all(len(c.sessions) == 6 for c in suite.cases)
     with pytest.raises(ValueError, match="explicit"):
         run_suite(suite, tmp_path / "missing")

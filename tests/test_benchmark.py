@@ -30,7 +30,7 @@ class Block:
             raise AssertionError(fullname)
 sys.meta_path.insert(0, Block())
 from research_benchmarks.runner import main
-raise SystemExit(main(['validate', 'benchmarks/longitudinal-v1']))
+raise SystemExit(main(['validate', 'benchmarks/longitudinal-v2-1']))
 """
     result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
@@ -174,7 +174,8 @@ def test_all_longitudinal_cases_with_simulated_agent_and_no_providers(tmp_path):
         if exp.name == "S2":
             assert (state / "entradas/hipotesis.md").exists() == (session >= "sesion-03")
         return fake_cli(command, out, err)
-    campaign, code = run_suite(load_suite(ROOT / "benchmarks/longitudinal-v1"), tmp_path / "out", launcher=worker, compact=False)
+    profile = {"provider": "openai", "model": "simulated", "reasoning_effort": "medium", "max_output_tokens": 4000}
+    campaign, code = run_suite(load_suite(ROOT / "benchmarks/longitudinal-v2-1"), tmp_path / "out", launcher=worker, compact=False, profile=profile)
     assert code == 0 and len(attempted) == 18
     assert [c for c, _ in attempted] == ["S1"]*6 + ["S2"]*6 + ["S3"]*6
 

@@ -26,7 +26,7 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 
 | ID | Pregunta | Registro |
 |---|---|---|
-| Longitudinal v2.1 / recuperación A1 | ¿La reparación permite recuperar y mantener el expediente material? | [Protocolo y comandos](longitudinal-v2-1/protocol.md), suite corregida y prueba corta; sin ejecutar. |
+| Longitudinal v2.1 / recuperación A1 | ¿La reparación permite recuperar y mantener el expediente material? | [Protocolo y comandos](longitudinal-v2-1/protocol.md), suite corregida vigente; prueba corta histórica recuperable desde Git, sin campaña nueva. |
 | Longitudinal v2 / prototipo argumentativo | ¿Mejora la continuidad y revisión frente a Markdown con M1 + M2? | [Protocolo original](longitudinal-v2/protocol.md) y [hallazgos](longitudinal-v2/findings.md): A1 apenas adopta SQLite y falla al recuperar IDs; capturas locales, una tentativa por condición. |
 | Longitudinal v1 | ¿Cómo combina A investigación, revisión y memoria en tres historias exigentes? | Tres escenarios de seis sesiones; [protocolo original](longitudinal-v1/protocol.md). Campañas locales posteriores del 20–21 de octubre y sus límites se describen como antecedentes en el [protocolo v2](longitudinal-v2/protocol.md); capturas no portables en Git. |
 | Benchmark piloto v1 | ¿Qué hace A ante contradicción, continuidad, ruido y fuentes fallidas? | Cuatro casos preparados; [protocolo](benchmark-pilot-v1/protocol.md). Verificación local con servicios simulados; sin campaña real ni aceptación semántica. |

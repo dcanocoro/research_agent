@@ -1,5 +1,11 @@
 # Tres escenarios longitudinales — v1
 
+> Disponibilidad revisada el 2026-10-22: solo `longitudinal-v2-1` permanece
+> en el árbol actual. Las rutas históricas de v1, v2 y la prueba corta se consultan
+> con `git show c75dd01:benchmarks/NOMBRE/ARCHIVO`; los comandos históricos
+> correspondientes requieren recuperar esa definición. Esta nota no cambia
+> el protocolo ni afirma que se haya ejecutado una campaña nueva.
+
 Estado: escenarios preparados, sin ejecutar. Fecha: 2026-10-20.
 Encargo limitado a generar las tres historias del documento aportado por el usuario.
 No implementa M1/M2, variantes A0–A3, nuevos agentes, cambios de herramientas ni campaña.
@@ -8,11 +14,11 @@ No implementa M1/M2, variantes A0–A3, nuevos agentes, cambios de herramientas 
 
 | Escenario | Definición | Rúbrica | Secuencia de seis sesiones |
 |---|---|---|---|
-| S1 ASML | [YAML](../../../benchmarks/longitudinal-v1/S1/case.yaml) | [Revisión](../../../benchmarks/longitudinal-v1/S1/rubric.md) | Inicio, priorización, dos consultas, contradicción, precio, recuperación. |
-| S2 NVIDIA | [YAML](../../../benchmarks/longitudinal-v1/S2/case.yaml) | [Revisión](../../../benchmarks/longitudinal-v1/S2/rubric.md) | Inicio, ruido, hipótesis, deterioro, evidencia mixta, historia. |
-| S3 Ford | [YAML](../../../benchmarks/longitudinal-v1/S3/case.yaml) | [Revisión](../../../benchmarks/longitudinal-v1/S3/rubric.md) | Inicio, perímetro, ausencia documental, nueva fecha, premisa falsa, cierre. |
+| S1 ASML | YAML (`benchmarks/longitudinal-v1/S1/case.yaml`) | Revisión (`benchmarks/longitudinal-v1/S1/rubric.md`) | Inicio, priorización, dos consultas, contradicción, precio, recuperación. |
+| S2 NVIDIA | YAML (`benchmarks/longitudinal-v1/S2/case.yaml`) | Revisión (`benchmarks/longitudinal-v1/S2/rubric.md`) | Inicio, ruido, hipótesis, deterioro, evidencia mixta, historia. |
+| S3 Ford | YAML (`benchmarks/longitudinal-v1/S3/case.yaml`) | Revisión (`benchmarks/longitudinal-v1/S3/rubric.md`) | Inicio, perímetro, ausencia documental, nueva fecha, premisa falsa, cierre. |
 
-La [suite](../../../benchmarks/longitudinal-v1/suite.yaml) declara S1→S2→S3:
+La suite (`benchmarks/longitudinal-v1/suite.yaml`) declara S1→S2→S3:
 18 sesiones. El piloto anterior se conserva como antecedente separado; no se cambian
 su catálogo ni sus capturas. Esta suite es la nueva propuesta para el encargo, sin
 alterar por ello la estrategia general o aceptar mecanismos.

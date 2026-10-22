@@ -21,6 +21,9 @@ productores, consumidores y pruebas del área afectada. [AGENTS.md](../AGENTS.md
 establece las reglas de colaboración; el [README](../README.md) ofrece el arranque rápido.
 No hace falta releer todo en cada tarea.
 
+Para trasladar el laboratorio: [instalación reproducible en otro ordenador](installation.md),
+con dependencias fijadas, configuración de ejemplo y verificación offline.
+
 ## Registros y referencias
 
 Preparación vigente: [longitudinal v2.1 y prueba corta](experiments/longitudinal-v2-1/protocol.md)

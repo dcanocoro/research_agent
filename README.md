@@ -23,7 +23,8 @@ La [documentación](docs/README.md) reúne cinco referencias: visión, estrategi
 arquitectura, experimentos y desarrollo, con registros de decisiones, hallazgos y entregas.
 Las instrucciones para trabajar en este repositorio están en [AGENTS.md](AGENTS.md).
 
-Con el entorno y `.env` preparados según [desarrollo e instalación](docs/development.md):
+Para otro ordenador, seguir [instalación reproducible](docs/installation.md)
+(Windows x86-64/Python 3.12, wheels y hashes). Con el entorno y `.env` preparados:
 
 ```powershell
 .\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --experiment ./artifacts/nvidia-conservacion --new --run-name investigacion-inicial
