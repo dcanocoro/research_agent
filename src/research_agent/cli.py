@@ -12,7 +12,7 @@ from .experiments import prepare_experiment, experiment_lock, human_name
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="research-agent", description="Agent A: isolated experiments and persistent file state.")
     raw = sys.argv[1:] if argv is None else argv
-    if any(arg.split("=")[0] in {"--knowledge-mode", "--case-store", "--workspace", "--runs"} for arg in raw):
+    if any(arg.split("=")[0] in {"--case-store", "--workspace", "--runs"} for arg in raw):
         parser.error('Legacy workspace/case options were removed. Use: research-agent "MESSAGE" --experiment PATH --new --run-name NAME; then --continue. Historical stores are not migrated.')
     parser.add_argument("message")
     parser.add_argument("--experiment", type=Path, required=True)
@@ -23,21 +23,35 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--conversation", default="cli")
     parser.add_argument("--instructions", type=Path, action="append", default=[])
     parser.add_argument("--timeout-seconds", type=float, default=300)
+    parser.add_argument("--knowledge-mode", choices=("markdown", "argumentative"))
+    parser.add_argument("--tool-profile", choices=("live", "closed-corpus"))
+    parser.add_argument("--runtime-config", type=Path, help="Frozen benchmark runtime configuration")
     args = parser.parse_args(raw)
     run_directory: Path | None = None
 
     async def execute(root: Path, prompts: tuple[Path, ...], limits: AgentLimits) -> AgentResult:
         nonlocal run_directory
+        mode = json.loads((root / "experimento.json").read_text(encoding="utf-8")) if (root / "experimento.json").exists() else {
+            "knowledge_mode": "markdown", "tool_profile": "live"}
+        runtime = json.loads(args.runtime_config.read_text(encoding="utf-8")) if args.runtime_config else {}
+        options: dict = {k: v for k, v in mode.items() if v not in {"markdown", "live"}}
+        if runtime.get("document_paths"):
+            options["document_paths"] = tuple(runtime["document_paths"])
+            options["document_limit"] = runtime["document_limit"]
+        if runtime.get("profile"):
+            options["profile_overrides"] = runtime["profile"]
         async with build_agent(root / "estado", root / "ejecuciones", limits,
-                               experiment=root, run_name=args.run_name) as agent:
+                               experiment=root, run_name=args.run_name, **options) as agent:
             result = await agent.run(AgentRequest(args.message, root.name, args.conversation, prompts))
             run_directory = agent.recorder.current
             return result
     try:
         human_name(args.run_name)
-        limits = AgentLimits(timeout_seconds=args.timeout_seconds)
+        runtime = json.loads(args.runtime_config.read_text(encoding="utf-8")) if args.runtime_config else {}
+        limits = AgentLimits(**runtime["limits"]) if "limits" in runtime else AgentLimits(timeout_seconds=args.timeout_seconds)
         root = args.experiment.absolute()
-        prompts = prepare_experiment(root, new=args.new, instructions=tuple(args.instructions))
+        prompts = prepare_experiment(root, new=args.new, instructions=tuple(args.instructions),
+                                     knowledge_mode=args.knowledge_mode, tool_profile=args.tool_profile)
         with experiment_lock(root):
             result = asyncio.run(execute(root, prompts, limits))
     except (ValueError, OSError) as exc:

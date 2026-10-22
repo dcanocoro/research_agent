@@ -74,6 +74,12 @@ La composición usa la configuración compartida del planificador (`LLM_PLANNER_
 `LLM_PLANNER_MODEL` y ajustes asociados) con un perfil explícito llamado `lab`.
 Las claves de proveedor y `TAVILY_API_KEY` se mantienen fuera de Git.
 
+`LLM_PLANNER_MAX_OUTPUT_TOKENS` limita la salida por llamada, incluidos los argumentos
+de escritura. La configuración local se amplió de 4000 a 16000 el 2026-10-21 tras un
+`LLMTruncated` en ASML S1-04; se verificó el perfil efectivo sin llamar al proveedor.
+Se ajusta en `.env` y se aplica al iniciar procesos nuevos. El máximo del archivo de
+estado sigue siendo 128 KiB; no era el límite que provocó ese fallo.
+
 `DATABASE_URL` debe apuntar a PostgreSQL con datos ya disponibles. El esquema de URL
 elige el controlador: `postgresql+psycopg` necesita psycopg 3; `postgresql` utiliza
 normalmente psycopg2 con SQLAlchemy. SQLite no sustituye las lecturas v2. Usar además
@@ -135,7 +141,7 @@ Las instrucciones iniciales se copian de los recursos instalados. `--instruction
 puede repetirse únicamente con `--new`; luego editar explícitamente los Markdown de
 `instrucciones/`. Los manifiestos registran el contenido efectivo de cada run, por lo que
 cambiar instrucciones entre continuaciones es visible y altera la condición experimental.
-La evolución M1 del 2026-10-21 está integrada en `prompts/agent_a.md`: se copia al crear
+La evolución M1 + M2 del 2026-10-21 está integrada en `prompts/agent_a.md`: se copia al crear
 experimentos nuevos y se usa directamente en la interfaz básica. No sustituye las copias
 de experimentos existentes. Para adoptarla en una continuación, actualizar explícitamente
 su `instrucciones/agente.md` desde el prompt vigente, conservando las personalizaciones
@@ -174,12 +180,16 @@ del run conservan sus extremos, sin prometer todas las ediciones intermedias.
 
 ## Benchmark piloto
 
+El catálogo piloto es histórico y ya no está en el árbol. Los ejemplos siguientes
+utilizan `longitudinal-v1`, disponible con tres casos y 18 sesiones. Para el prototipo
+controlado v2, seguir [preparación argumentativa](#preparación-argumentativa-experimental).
+
 Desde la raíz del repositorio:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent.benchmark validate benchmarks/pilot-v1
-.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/pilot-v1 --output artifacts/benchmark
-.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/pilot-v1 --case E2 --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_agent.benchmark validate benchmarks/longitudinal-v1
+.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/longitudinal-v1 --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/longitudinal-v1 --case S2 --output artifacts/benchmark
 ```
 
 `validate` no construye clientes ni consulta servicios. `run` llama al agente real y
@@ -333,6 +343,49 @@ Los comandos de limpieza pueden eliminar detalle o ejecuciones: no son mantenimi
 necesario para investigar y no deben borrar tentativas incómodas de una comparación.
 
 ## Verificación proporcionada al cambio
+
+### Preparación argumentativa experimental
+
+Preparación actual: [v2.1 y recorrido corto](experiments/longitudinal-v2-1/protocol.md),
+con comandos para ejecución manual. V2 se conserva como antecedente con campañas
+locales. La prueba corta verifica operación; las nuevas A0/A1 comparan calidad bajo
+la misma definición corregida. Un experimento nuevo copia el prompt A1 actualizado;
+las instrucciones de experimentos y campañas anteriores no se reescriben.
+
+El [prototipo](argumentative-prototype.md) es optativo. La CLI admite
+`--knowledge-mode markdown|argumentative` y `--tool-profile live|closed-corpus`
+al crear un experimento. Sin opciones mantiene Markdown/live; las continuaciones
+heredan `experimento.json` y rechazan cambiarlo. Experimentos históricos sin ese
+archivo siguen siendo Markdown/live. El modo argumentativo crea instrucciones
+operativas adicionales y su base en `conocimiento/`, sin migrar estados antiguos.
+
+Comprobación offline del nuevo catálogo (no llama al modelo):
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent.benchmark validate benchmarks/longitudinal-v2
+```
+
+Para una campaña futura, `benchmark run` admite `--condition A0|A1` y
+`--profile RUTA_JSON`. V2 exige perfil explícito con `provider`, `model`,
+`reasoning_effort` (o null) y `max_output_tokens`; no se elige uno en esta entrega.
+El protocolo fija límites idénticos y herramientas de corpus cerrado. El runner
+congela perfil, parámetros por sesión, fuentes, rúbricas y prompts efectivos.
+La CLI recibe internamente `--runtime-config` con límites, perfil y cupo documental.
+Estos archivos son configuración del controlador, fuera del estado del agente.
+
+Una invocación ejecuta una condición por campaña, con memoria nueva por caso y
+procesos independientes por sesión. Ejecutar A0 y A1 con idéntico JSON y definiciones;
+comparar además manifiestos efectivos y wheel antes de atribuir una diferencia.
+El [protocolo v2](experiments/longitudinal-v2/protocol.md) separa preparación,
+calibración del baseline y comparación. No ejecutar campañas por validar documentación.
+
+La captura compacta A1 incluye seis archivos adicionales: SQLite y JSON inicial/final
+con sendos índices de hashes. `research_agent.knowledge.verify_capture(run)` valida
+integridad y equivalencia; los lectores de campañas anteriores siguen disponibles.
+Los snapshots de archivos conservan su formato: el expediente no se disfraza como
+Markdown ni se carga automáticamente en el contexto.
+
+### Comprobaciones locales
 
 | Cambio | Verificación esperada |
 |---|---|

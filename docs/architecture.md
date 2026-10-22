@@ -1,5 +1,18 @@
 # Arquitectura implementada
 
+Actualización experimental 2026-10-22: se añade el modo optativo
+[`argumentative`](argumentative-prototype.md), con SQLite, cinco herramientas,
+historial y captura verificable. El modo Markdown sigue por defecto. La composición
+acepta `knowledge_mode` y `tool_profile`; sin nuevos argumentos conserva Audit.
+`closed-corpus` registra solo archivos/cálculo y conocimiento en A1; protege entradas
+y aplica cupos documentales antes de leer/buscar contenido. No construye clientes
+Findata/Tavily. Los apartados históricos siguientes describen el modo de archivos;
+las afirmaciones de ausencia de grafo se refieren al baseline, no al prototipo optativo.
+
+La [reparación v2.1](experiments/longitudinal-v2-1/protocol.md) amplía la búsqueda literal
+a IDs, aporta errores de revisión recuperables y precisa persistencia material en el
+prompt A1. No modifica el ciclo, el schema SQLite ni los presupuestos.
+
 > Estado local a 2026-10-18. Autoridad: código, schemas y wheel instalado.
 
 ## Frontera y componentes
@@ -105,7 +118,15 @@ fundamentos y evidencia, incertidumbres, condiciones de revisión e historial br
 materiales en los archivos existentes, localizables desde `indice.md`. Separa hipótesis de
 evaluación factual y marca información superada; permite no escribir ante ruido o redundancia.
 No impone schema, nombres de archivos ni puntuaciones. Es una instrucción de comportamiento,
-no una garantía validada por el runtime ni evidencia de mejora semántica. No añade M2.
+no una garantía validada por el runtime ni evidencia de mejora semántica.
+Sobre M1, M2 incorpora investigación dirigida por incertidumbres: priorizar preguntas capaces
+de cambiar el juicio, identificar evidencia confirmatoria y refutatoria, elegir fuentes por
+su utilidad y reconsiderar prioridades tras hallazgos materiales. Aplica M1 a esos hallazgos
+y conserva pendientes en el mismo estado. El cierre distingue suficiencia de evidencia,
+bajo valor de seguir buscando y agotamiento de recursos; una incertidumbre crítica sin resolver
+mantiene la conclusión condicionada. No exige planes, puntuaciones de valor de información
+ni listas exhaustivas. Ambos mecanismos conviven en el mismo prompt y ciclo, con las
+herramientas, límites y benchmark existentes; su mejora semántica queda por evaluar.
 Las copias de instrucciones de experimentos ya creados conservan su texto anterior; véase
 [continuación](development.md#ejecutar-a-nuevo-experimento-o-continuación).
 

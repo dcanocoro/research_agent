@@ -10,6 +10,7 @@ from typing import Any
 import yaml
 
 from .workspace import Workspace
+from .contracts import AgentLimits
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,8 @@ class Session:
     id: str
     message: str
     publish: tuple[Publication, ...]
+    document_paths: tuple[str, ...] = ()
+    document_limit: int | None = None
 
 
 @dataclass(frozen=True)
@@ -40,6 +43,7 @@ class Suite:
     root: Path
     id: str
     cases: tuple[Case, ...]
+    execution: dict[str, Any] | None = None
 
     def files(self) -> list[Path]:
         return sorted({self.root / "suite.yaml", *(c.definition for c in self.cases),
@@ -107,7 +111,13 @@ def read_yaml(path: Path) -> Any:
 
 def load_suite(root: Path) -> Suite:
     root = root.absolute()
-    raw = mapping(read_yaml(inside(root, "suite.yaml")), {"schema_version", "id", "cases"})
+    raw = mapping(read_yaml(inside(root, "suite.yaml")), {"schema_version", "id", "cases"}, {"execution"})
+    execution = raw.get("execution")
+    if execution is not None:
+        mapping(execution, {"tool_profile", "limits"})
+        if execution["tool_profile"] != "closed-corpus":
+            raise ValueError("Controlled suites require closed-corpus")
+        AgentLimits(**execution["limits"])
     if raw["schema_version"] != "benchmark-v1" or not isinstance(raw["cases"], list) or not raw["cases"]:
         raise ValueError("Expected benchmark-v1 and a nonempty cases list.")
     cases: list[Case] = []
@@ -133,7 +143,7 @@ def load_suite(root: Path) -> Suite:
         session_ids: set[str] = set()
         targets: set[str] = set()
         for entry_session in item["sessions"]:
-            session = mapping(entry_session, {"id", "message", "publish"})
+            session = mapping(entry_session, {"id", "message", "publish"}, {"document_budget"})
             session_id = identifier(session["id"])
             if session_id.casefold() in session_ids:
                 raise ValueError(f"Duplicate session: {session_id}")
@@ -156,6 +166,17 @@ def load_suite(root: Path) -> Suite:
                 if original.suffix == ".json":
                     json.loads(original.read_text(encoding="utf-8"))
                 publications.append(Publication(original, target))
-            sessions.append(Session(session_id, text(session["message"]), tuple(publications)))
+            budget = session.get("document_budget")
+            paths: tuple[str, ...] = ()
+            limit = None
+            if budget is not None:
+                mapping(budget, {"paths", "limit"})
+                if not isinstance(budget["paths"], list) or not budget["paths"] or type(budget["limit"]) is not int or budget["limit"] < 1:
+                    raise ValueError("Invalid document budget")
+                paths = tuple(text(p) for p in budget["paths"])
+                if len(set(p.casefold() for p in paths)) != len(paths) or any(p.casefold() not in targets for p in paths):
+                    raise ValueError("Document budget must reference distinct published inputs")
+                limit = budget["limit"]
+            sessions.append(Session(session_id, text(session["message"]), tuple(publications), paths, limit))
         cases.append(Case(case_id, text(item["title"]), text(item["context"]), definition, rubric, tuple(sessions)))
-    return Suite(root, identifier(raw["id"]), tuple(cases))
+    return Suite(root, identifier(raw["id"]), tuple(cases), execution)

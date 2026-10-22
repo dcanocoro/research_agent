@@ -5,6 +5,21 @@
 
 ## Prioridad actual
 
+**Continuación aceptada el 2026-10-22:** corregir la operación de A1 tras los
+[hallazgos v2](experiments/longitudinal-v2/findings.md). Se prepara
+[v2.1 y un recorrido corto](experiments/longitudinal-v2-1/protocol.md), con
+verificación local y campañas reales a cargo del usuario. No añadir entidades o
+motor lógico antes de comprobar recuperación y conservación material del expediente.
+El encargo inicial que sigue es antecedente; A0/A1 v2 ya fueron ejecutados.
+
+**Encargo local aceptado el 2026-10-22:** preparar el
+[benchmark longitudinal v2 y prototipo argumentativo](experiments/longitudinal-v2/protocol.md).
+A0 conserva Markdown con M1 + M2; A1 añade SQLite y operaciones explícitas.
+La entrega se limita a implementación y verificación offline; quedan pendientes
+ejecutar A0, comprobar discriminación, comparar A1 y decidir si mantener el mecanismo.
+No sustituye el baseline Markdown ni adopta SQLite para FinMate. La agenda del
+2026-10-18 que sigue queda como contexto; este encargo es la prioridad concreta actual.
+
 **Contrastar conservación y continuidad con un estado de archivos por experimento.**
 El [baseline acordado](baseline.md), basado en el plan aceptado el 2026-10-18, sustituye el almacén de expedientes por un único estado
 editable, materiales automáticos, instrucciones separadas y archivo por run. Git es

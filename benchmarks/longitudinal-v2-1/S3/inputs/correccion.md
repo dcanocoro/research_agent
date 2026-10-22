@@ -1,0 +1,5 @@
+> Documento sintético longitudinal-v2, diseñado el 2026-10-22. No describe hechos actuales de las empresas.
+
+# Corrección retrospectiva de tesorería, publicada 2030-08-10
+Miles de millones USD, perímetro industrial. Auditoría del mismo saldo bancario: 2 antes clasificados como no restringidos estaban sujetos a una restricción desde diciembre de 2029 y durante junio de 2030. Caja total inicial 20 permanece: restringida corregida 5, no restringida 15. Caja total junio 16 permanece: restringida corregida 5, no restringida 11. No es salida de caja en agosto.
+También se corrige la clasificación del puente semestral: flujo libre -1, distribuciones 2, en lugar de +1 y 4. Total inicial 20, amortizaciones 4 y nueva deuda 3 permanecen: no hay dos movimientos adicionales de 2. La deuda 27 y los vencimientos julio-diciembre 2 y 2031 8 no cambian. La línea no dispuesta 8 no cambia y sus condiciones siguen sin publicarse. Ford Credit no tiene reexpresión ni transferencia registrada. El informe no aporta una nueva previsión de flujos ni declara impago.

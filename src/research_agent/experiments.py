@@ -80,12 +80,25 @@ def experiment_lock(root: Path) -> Iterator[None]:
                 locking.flock(stream.fileno(), locking.LOCK_UN)
 
 
-def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] = ()) -> tuple[Path, ...]:
+def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] = (),
+                       knowledge_mode: str | None = None, tool_profile: str | None = None) -> tuple[Path, ...]:
     root = root.absolute()
     Workspace._check_links(root)
     # The experiment can live under artifacts/, but never include the source package.
     package = Path(str(files("research_agent")))
     disjoint(root, package)
+    import json
+    config_path = root / "experimento.json"
+    Workspace._check_links(config_path)
+    if not new and not config_path.exists() and (root / "conocimiento").exists():
+        raise ValueError("Argumentative experiment configuration is missing")
+    stored = json.loads(config_path.read_text(encoding="utf-8")) if not new and config_path.exists() else {
+        "knowledge_mode": "markdown", "tool_profile": "live"}
+    chosen = {"knowledge_mode": knowledge_mode or stored["knowledge_mode"], "tool_profile": tool_profile or stored["tool_profile"]}
+    if chosen["knowledge_mode"] not in {"markdown", "argumentative"} or chosen["tool_profile"] not in {"live", "closed-corpus"}:
+        raise ValueError("Invalid experiment mode or tool profile")
+    if not new and chosen != stored:
+        raise ValueError("Continuation cannot change experiment mode or tool profile")
     extras = []
     for path in instructions:
         Workspace._check_links(path)
@@ -97,12 +110,16 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         root.mkdir(parents=True, exist_ok=False)
         for name in ("instrucciones", "estado", "ejecuciones"):
             (root / name).mkdir()
+        config_path.write_text(json.dumps(chosen), encoding="utf-8")
         prompts = files("research_agent").joinpath("prompts")
         (root / "instrucciones/agente.md").write_text(prompts.joinpath("agent_a.md").read_text(encoding="utf-8"), encoding="utf-8")
         (root / "instrucciones/investigacion-financiera.md").write_text(
             prompts.joinpath("financial_research.md").read_text(encoding="utf-8"), encoding="utf-8")
         for i, content in enumerate(extras, 1):
             (root / f"instrucciones/adicional-{i:02d}.md").write_text(content, encoding="utf-8")
+        if chosen["knowledge_mode"] == "argumentative":
+            (root / "conocimiento").mkdir()
+            (root / "instrucciones/expediente.md").write_text(prompts.joinpath("argumentative.md").read_text(encoding="utf-8"), encoding="utf-8")
         (root / ".gitignore").write_text("ejecuciones/\n.run.lock\n.env\n.env.*\n", encoding="utf-8")
     elif instructions:
         raise ValueError("--instructions is only accepted with --new; edit experiment instructions explicitly.")

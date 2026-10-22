@@ -71,7 +71,7 @@ def fake_cli(command, out, err, *, status="completed", missing=None):
     return 0 if status == "completed" else 1
 
 
-def test_validate_pilots_without_service_imports():
+def test_validate_catalog_without_service_imports():
     code = """
 import sys
 class Block:
@@ -80,11 +80,11 @@ class Block:
             raise AssertionError(fullname)
 sys.meta_path.insert(0, Block())
 from research_agent.benchmark import main
-raise SystemExit(main(['validate', 'benchmarks/pilot-v1']))
+raise SystemExit(main(['validate', 'benchmarks/longitudinal-v1']))
 """
     result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
-    assert "cases=4; sessions=8" in result.stdout
+    assert "cases=3; sessions=18" in result.stdout
 
 
 @pytest.mark.parametrize("change", ["duplicate_case", "duplicate_session", "missing", "escape", "overwrite", "device", "duplicate_yaml"])
@@ -208,7 +208,7 @@ def test_modified_stimulus_is_reported(tmp_path):
     assert session["input_modifications"][0]["path"] == "entradas/initial.md"
 
 
-def test_all_pilots_with_simulated_agent_and_no_providers(tmp_path):
+def test_all_longitudinal_cases_with_simulated_agent_and_no_providers(tmp_path):
     attempted = []
     def worker(command, out, err):
         exp = Path(command[command.index("--experiment") + 1])
@@ -216,16 +216,15 @@ def test_all_pilots_with_simulated_agent_and_no_providers(tmp_path):
         attempted.append((exp.name, session))
         state = exp / "estado"
         assert not any("rubric" in p.name for p in state.rglob("*"))
-        if exp.name == "E2":
-            assert (state / "entradas/escenario.md").exists() == (session in {"sesion-03", "sesion-04"})
-        if exp.name == "F3":
-            assert (state / "entradas/anuncio.md").exists() == (session == "sesion-02")
+        if exp.name == "S1":
+            assert (state / "entradas/catalogo.md").exists() == (session >= "sesion-03")
+            assert (state / "entradas/precio.md").exists() == (session >= "sesion-05")
+        if exp.name == "S2":
+            assert (state / "entradas/hipotesis.md").exists() == (session >= "sesion-03")
         return fake_cli(command, out, err)
-    campaign, code = run_suite(load_suite(ROOT / "benchmarks/pilot-v1"), tmp_path / "out", launcher=worker, compact=False)
-    assert code == 0 and len(attempted) == 8
-    assert [c for c, _ in attempted] == ["B1", "E2", "E2", "E2", "E2", "F3", "F3", "G2"]
-    g2 = json.loads((campaign / "sesiones/G2-sesion-01.json").read_text())
-    assert g2["failure_recovery_review"] == "not_observed"
+    campaign, code = run_suite(load_suite(ROOT / "benchmarks/longitudinal-v1"), tmp_path / "out", launcher=worker, compact=False)
+    assert code == 0 and len(attempted) == 18
+    assert [c for c, _ in attempted] == ["S1"]*6 + ["S2"]*6 + ["S3"]*6
 
 
 def test_regeneration_reports_missing_capture_without_changing_sessions(tmp_path):

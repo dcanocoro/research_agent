@@ -56,7 +56,14 @@ def dependencies() -> dict[str, object]:
 
 def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
               launcher: Callable[[list[str], Path, Path], int] = launch,
-              compact: bool = True) -> tuple[Path, int]:
+              compact: bool = True, condition: str = "A0", profile: dict | None = None) -> tuple[Path, int]:
+    if condition not in {"A0", "A1"}:
+        raise ValueError("Expected A0 or A1")
+    if suite.execution is not None:
+        required = {"provider", "model", "reasoning_effort", "max_output_tokens"}
+        if profile is None or set(profile) != required or any(not isinstance(profile[k], str) or not profile[k] for k in ("provider", "model")) or profile["provider"] not in {"openai", "gemini"} or (profile["reasoning_effort"] is not None and not isinstance(profile["reasoning_effort"], str)) or type(profile["max_output_tokens"]) is not int or profile["max_output_tokens"] < 1:
+            raise ValueError("Controlled run requires explicit provider, model, reasoning_effort and max_output_tokens profile")
+    mode = "argumentative" if condition == "A1" else "markdown"
     cases = [case for case in suite.cases if selected is None or case.id == selected]
     if not cases:
         raise ValueError(f"Unknown case: {selected}")
@@ -81,8 +88,9 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
                 "code_git": git_state(Path(__file__).resolve().parents[2]),
                 "source_sha256": {p.relative_to(Path(__file__).parent).as_posix(): digest(p)
                                   for p in sorted(Path(__file__).parent.rglob("*")) if p.suffix in {".py", ".md"}},
-                "dependencies": dependencies(), "limits": asdict(AgentLimits()),
-                "environment": "live-tools-with-prepared-stimuli", "cases": [c.id for c in cases],
+                "dependencies": dependencies(), "limits": (suite.execution or {}).get("limits", asdict(AgentLimits())),
+                "environment": (suite.execution or {}).get("tool_profile", "live-tools-with-prepared-stimuli"),
+                "condition": condition, "execution": suite.execution, "profile": profile, "cases": [c.id for c in cases],
                 "definitions_sha256": {p.relative_to(campaign).as_posix(): digest(p) for p in suite.files()},
                 "configuration_source": "Per-run manifiesto.json contains effective profile, prompts and code hashes; no environment dump."}
     save(campaign / "manifiesto.json", manifest)
@@ -110,7 +118,8 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
         blocked = interrupted
         preparation_error: str | None = None
         try:
-            prompts = prepare_experiment(experiment, new=True)
+            prompts = prepare_experiment(experiment, new=True, knowledge_mode=mode,
+                                         tool_profile=(suite.execution or {}).get("tool_profile", "live"))
             initial = case.sessions[0]
             index = case.context + "\n\nEntradas disponibles:\n" + "".join(f"- {p.target}\n" for p in initial.publish)
             Workspace(experiment / "estado").write_file("indice.md", index)
@@ -139,6 +148,17 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
             command = [sys.executable, "-m", "research_agent", session.message,
                        "--experiment", str(experiment), "--continue", "--run-name", session.id,
                        "--conversation", f"{case.id}-{session.id}"]
+            runtime: dict = {"document_paths": session.document_paths, "document_limit": session.document_limit}
+            if suite.execution is not None:
+                runtime["limits"] = suite.execution["limits"]
+            if profile is not None:
+                runtime["profile"] = profile
+            runtime_dir = campaign / "definiciones/runtime"
+            runtime_dir.mkdir(exist_ok=True)
+            runtime_path = runtime_dir / f"{case.id}-{session.id}.json"
+            save(runtime_path, runtime)
+            manifest["definitions_sha256"][runtime_path.relative_to(campaign).as_posix()] = digest(runtime_path)
+            command.extend(["--runtime-config", str(runtime_path)])
             record.update(status="running", command=command, stdout=stdout.relative_to(campaign).as_posix(),
                           stderr=stderr.relative_to(campaign).as_posix(),
                           started_at=datetime.now(timezone.utc).isoformat())
@@ -213,6 +233,8 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("suite", type=Path)
     run.add_argument("--output", type=Path, default=Path("artifacts/benchmark"))
     run.add_argument("--case")
+    run.add_argument("--condition", choices=("A0", "A1"), default="A0")
+    run.add_argument("--profile", type=Path, help="JSON provider/model/reasoning_effort/max_output_tokens")
     regenerate = sub.add_parser("extract", help="Regenerate pasos.jsonl from native evidence, without providers")
     regenerate.add_argument("campaign", type=Path)
     compact = sub.add_parser("compact", help="Export an existing campaign to a separate compact archive")
@@ -232,7 +254,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"valid: {suite.id}; cases={len(suite.cases)}; sessions={sum(len(c.sessions) for c in suite.cases)}")
             return 0
         try:
-            _, code = run_suite(suite, args.output, args.case)
+            import json
+            profile = json.loads(args.profile.read_text(encoding="utf-8")) if args.profile else None
+            _, code = run_suite(suite, args.output, args.case, condition=args.condition, profile=profile)
             return code
         except OSError as exc:
             print(f"benchmark: execution/archive error: {type(exc).__name__}: {exc}", file=sys.stderr)

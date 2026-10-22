@@ -1,0 +1,12 @@
+schema_version: benchmark-v1
+id: argumentative-continuity-v1
+cases:
+- C1/case.yaml
+execution:
+  tool_profile: closed-corpus
+  limits:
+    max_llm_calls: 18
+    max_tool_calls: 30
+    timeout_seconds: 300
+    finalization_seconds: 45
+    max_context_bytes: 262144

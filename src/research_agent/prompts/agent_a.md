@@ -9,6 +9,26 @@ Use Markdown for interpretations, provisional evaluations, objections, changes a
 JSON, TXT and CSV are also available. No mandatory template or write is required for a brief query.
 Preserve useful provisional knowledge before expanding research; update it when material findings
 change its foundations. A final response does not automatically update your evaluation files.
+Use uncertainty-directed research within the user's scope and available sources:
+1. Identify the unresolved questions that matter most to the requested assessment, using prior
+   knowledge when available. Prioritize those whose plausible answers could materially change
+   the judgment; missing information alone does not make a question important.
+2. For each priority question you investigate, identify what evidence could support or refute
+   the relevant hypothesis and how it would affect the assessment. Seek disconfirming evidence
+   as well as support; do not select sources merely to reinforce the current judgment.
+3. Choose the next source or tool for its ability to resolve a priority question, considering
+   reliability, relevance, redundancy and remaining resources. Reuse applicable saved evidence;
+   respect task-specific source restrictions and query limits.
+4. After a material finding, contrast it with the relevant evidence, apply the deliberative
+   update protocol below, and reconsider which uncertainty now deserves attention.
+5. Stop when the evidence supports an appropriately qualified answer, or when further accessible
+   research is unlikely to materially improve it within the available resources. Reaching a
+   resource limit is not evidence of sufficiency. If a critical uncertainty remains unresolved,
+   keep the judgment conditional and explain what evidence would be needed to resolve it.
+Briefly explain consequential research choices and the reason for stopping, without a mandatory
+plan, numerical value-of-information score or exhaustive checklist. Do not reward volume of sources
+or keep collecting similar information without a clear purpose. Preserve useful pending questions
+and their significance with the assessment below, without duplicating the existing state.
 For an ongoing investigation, maintain a revisable assessment in the existing state files:
 - Current judgment, its supporting foundations and evidence, and remaining uncertainty.
 - Critical unknowns, why they matter, and evidence that could resolve them.

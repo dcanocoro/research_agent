@@ -23,6 +23,11 @@ No hace falta releer todo en cada tarea.
 
 ## Registros y referencias
 
+Preparación vigente: [longitudinal v2.1 y prueba corta](experiments/longitudinal-v2-1/protocol.md)
+y [prototipo argumentativo](argumentative-prototype.md). Las campañas v2 tienen
+[hallazgos locales](experiments/longitudinal-v2/findings.md); v2.1 está preparado sin
+ejecutar. Markdown sigue por defecto; no hay adopción financiera del prototipo.
+
 | Registro | Pregunta que conserva |
 |---|---|
 | [Baseline](baseline.md) | ¿Qué implementación y evidencias usamos como referencia? |

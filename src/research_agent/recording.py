@@ -8,6 +8,7 @@ from typing import Any
 from .contracts import serializable
 from .experiments import git_state, human_name
 from .workspace import Workspace
+from .knowledge import KnowledgeStore
 
 
 def encoded(value: Any) -> bytes:
@@ -30,6 +31,8 @@ class RunRecorder:
         self.workspace_fingerprint: str | None = None
         self.sequence = 0
         self.capture_errors: list[dict[str, str]] = []
+        self.knowledge: KnowledgeStore | None = None
+        self.knowledge_snapshot_count = 0
 
     def filename(self, name: str) -> str:
         return self.names.get(name, name) if self.experiment is not None else name
@@ -48,6 +51,7 @@ class RunRecorder:
             raise ValueError("Run name exhausted.")
         self.current = current
         self.events, self.capture_errors, self.sequence = [], [], 0
+        self.knowledge_snapshot_count = 0
         self.workspace_fingerprint = metadata.get("workspace_fingerprint")
         self.save("manifest.json", {**metadata, "run_directory": current.name,
                                     "git_initial": git_state(self.experiment)})
@@ -117,6 +121,12 @@ class RunRecorder:
 
     def snapshot(self, workspace: Workspace) -> dict[str, Any]:
         try:
+            if self.knowledge is not None:
+                assert self.current is not None
+                phase = "inicial" if self.knowledge_snapshot_count == 0 else "final"
+                self.knowledge_snapshot_count += 1
+                hashes = self.knowledge.capture(self.current, phase)
+                self.save(f"conocimiento-{phase}-hashes.json", hashes)
             return workspace.snapshot(errors=self.capture_errors)
         except Exception as exc:
             issue = {"operation": "state_snapshot", "error_type": type(exc).__name__}

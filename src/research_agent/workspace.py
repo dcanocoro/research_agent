@@ -15,8 +15,13 @@ def reject_constant(value: str) -> None:
 class Workspace:
     extensions = frozenset({".md", ".json", ".txt", ".csv"})
 
-    def __init__(self, root: Path, *, create: bool = True) -> None:
+    def __init__(self, root: Path, *, create: bool = True, closed_corpus: bool = False,
+                 document_paths: tuple[str, ...] = (), document_limit: int | None = None) -> None:
         self.root = root.absolute()
+        self.closed_corpus = closed_corpus
+        self.document_paths = frozenset(p.casefold() for p in document_paths)
+        self.document_limit = document_limit
+        self.documents_read: set[str] = set()
         self._check_links(self.root)
         if create:
             self.root.mkdir(parents=True, exist_ok=True)
@@ -60,6 +65,7 @@ class Workspace:
         if offset < 0 or not 1 <= max_bytes <= 32768:
             raise ValueError("Invalid read window.")
         source = self.path(path)
+        self.check_documents([source])
         if source.suffix.lower() not in self.extensions:
             raise ValueError("Unsupported text format.")
         with source.open("rb") as stream:
@@ -88,6 +94,8 @@ class Workspace:
 
     def write_file(self, path: str, content: str) -> dict[str, Any]:
         target = self.path(path)
+        if self.closed_corpus and Path(path).parts[0].casefold() == "entradas":
+            raise ValueError("Published inputs are read-only")
         if target.suffix.lower() not in self.extensions:
             raise ValueError("Allowed formats: Markdown, JSON, TXT and CSV.")
         if Path(path).parts[0].casefold() == "materiales":
@@ -114,7 +122,11 @@ class Workspace:
 
     def search_files(self, query: str, path: str = ".") -> dict[str, Any]:
         matches = []
-        for directory, children, files in os.walk(self.path(path), followlinks=False):
+        base = self.path(path)
+        candidates = []
+        if base.is_file():
+            candidates = [base]
+        for directory, children, files in os.walk(base, followlinks=False):
             children[:] = [child for child in children if not child.startswith(".")]
             for child in children:
                 self.path((Path(directory) / child).relative_to(self.root).as_posix())
@@ -124,13 +136,26 @@ class Workspace:
                 if file.suffix.lower() not in self.extensions:
                     continue
                 self.path(file.relative_to(self.root).as_posix())
-                with file.open(encoding="utf-8") as stream:
-                    for line, text in enumerate(stream, 1):
-                        if query.casefold() in text.casefold():
-                            matches.append({"path": file.relative_to(self.root).as_posix(), "line": line, "text": text[:1000]})
-                            if len(matches) >= 50:
-                                return {"matches": matches, "limited": True}
+                candidates.append(file)
+        self.check_documents(candidates)
+        for file in sorted(candidates):
+            self.path(file.relative_to(self.root).as_posix())
+            if file.suffix.lower() not in self.extensions:
+                raise ValueError("Unsupported text format")
+            with file.open(encoding="utf-8") as stream:
+                for line, text in enumerate(stream, 1):
+                    if query.casefold() in text.casefold():
+                        matches.append({"path": file.relative_to(self.root).as_posix(), "line": line, "text": text[:1000]})
+                        if len(matches) >= 50:
+                            return {"matches": matches, "limited": True}
         return {"matches": matches, "limited": False}
+
+    def check_documents(self, paths: list[Path]) -> None:
+        selected = {p.relative_to(self.root).as_posix().casefold() for p in paths}
+        selected &= self.document_paths
+        if self.document_limit is not None and len(self.documents_read | selected) > self.document_limit:
+            raise ValueError("Document consultation limit exceeded; search one selected document at a time")
+        self.documents_read |= selected
 
     def snapshot(self, errors: list[dict[str, str]] | None = None) -> dict[str, str]:
         result = {}

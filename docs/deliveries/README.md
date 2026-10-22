@@ -5,6 +5,17 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-22 — Recuperación y uso material de A1](2026-10-22-argumentative-recovery.md):
+  búsqueda por ID, recuperación de conflictos, prompt y suites manuales; sin campañas nuevas.
+
+- [2026-10-22 — Benchmark v2 y prototipo argumentativo](2026-10-22-argumentative-prototype.md):
+  SQLite optativo, corpus cerrado, captura recuperable y pruebas locales; sin campañas reales.
+
+- 2026-10-21 — [Límite de salida](../development.md#configuración-y-servicios):
+  configuración local de 4000 a 16000 tokens, perfil efectivo verificado sin proveedor;
+  retirado el intento de recuperación por truncamiento. Sin reejecutar la campaña.
+- [2026-10-21 — M2 junto a M1](2026-10-21-m2.md): investigación por incertidumbres,
+  contraste de hipótesis y cierre justificado en el mismo prompt y estado.
 - [2026-10-21 — M1 en el prompt de A](2026-10-21-m1.md): revisión deliberativa en
   los archivos existentes; sin cambios del benchmark ni campaña de aceptación.
 - [2026-10-20 — Evidencia compacta](2026-10-20-compact-evidence.md): trayectoria por

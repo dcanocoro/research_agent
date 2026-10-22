@@ -215,6 +215,11 @@ def compact_run(root: Path, run: Path, case_id: str, session_id: str) -> bool:
     metadata["files_sha256"] = {name: digest(run / name) for name in
                                ("trayectoria.jsonl.gz", "estado-inicial.json", "estado-final.json", "respuesta.md")
                                if (run / name).exists()}
+    if manifest.get("configuration", {}).get("state_mode") == "argumentative":
+        from .knowledge import verify_capture
+        verify_capture(run)
+        for path in run.glob("conocimiento-*"):
+            metadata["files_sha256"][path.name] = digest(path)
     save(run / "ejecucion.json", metadata)
     # Only known native files in this run are removed, never arbitrary campaign paths.
     for name in ("manifiesto.json", "resultado.json", "peticion.md", "conversacion.json", "eventos.jsonl", "git-final.json"):
@@ -235,6 +240,9 @@ def inspect_compact(root: Path, run: Path, case_id: str, session_id: str) -> tup
         for name, expected in meta["files_sha256"].items():
             if digest(resolve(run, name)) != expected:
                 raise ValueError(f"Evidence hash mismatch: {name}")
+        if meta["manifest"].get("configuration", {}).get("state_mode") == "argumentative":
+            from .knowledge import verify_capture
+            verify_capture(run)
         trace = records(run)
         for name in ("estado-inicial.json", "estado-final.json"):
             restore_snapshot(root, read_json(run / name))

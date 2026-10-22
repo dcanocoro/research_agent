@@ -4,6 +4,12 @@ Estado: implementado y verificado localmente con servicios simulados; campaña c
 proveedores reales no ejecutada. Encargo: cuatro casos, herramientas reales y archivo
 de evidencia, sin Excel, jueces LLM ni puntuación automática. Fecha: 2026-10-20.
 
+Este protocolo es histórico: `benchmarks/pilot-v1/` fue retirado del árbol.
+Sus archivos pueden consultarse sin restaurarlos con
+`git show f6b4d0d8ff26cf0b5633abadddd6561156d05f29^:benchmarks/pilot-v1/suite.yaml`
+y la misma revisión para cada caso/rúbrica. El controlador sigue disponible; los
+catálogos actuales están en el [registro](../README.md).
+
 ## Pregunta y alcance
 
 ¿Qué acciones observables realiza A ante contradicción, continuidad, ruido y fuentes
@@ -13,12 +19,12 @@ La [metodología](../../experiments.md) distingue operación y aceptación semá
 
 | Caso | Definición | Sesiones | Referencia del revisor |
 |---|---|---|---|
-| B1 | [Fuentes contradictorias](../../../benchmarks/pilot-v1/B1/case.yaml) | 1 | [Rúbrica](../../../benchmarks/pilot-v1/B1/rubric.md) |
-| E2 | [Continuidad](../../../benchmarks/pilot-v1/E2/case.yaml) | 4 | [Rúbrica](../../../benchmarks/pilot-v1/E2/rubric.md) |
-| F3 | [Información irrelevante](../../../benchmarks/pilot-v1/F3/case.yaml) | 2 | [Rúbrica](../../../benchmarks/pilot-v1/F3/rubric.md) |
-| G2 | [Fuentes fallidas](../../../benchmarks/pilot-v1/G2/case.yaml) | 1 | [Rúbrica](../../../benchmarks/pilot-v1/G2/rubric.md) |
+| B1 | Fuentes contradictorias (`benchmarks/pilot-v1/B1/case.yaml`, histórico) | 1 | Rúbrica (`benchmarks/pilot-v1/B1/rubric.md`, histórico) |
+| E2 | Continuidad (`benchmarks/pilot-v1/E2/case.yaml`, histórico) | 4 | Rúbrica (`benchmarks/pilot-v1/E2/rubric.md`, histórico) |
+| F3 | Información irrelevante (`benchmarks/pilot-v1/F3/case.yaml`, histórico) | 2 | Rúbrica (`benchmarks/pilot-v1/F3/rubric.md`, histórico) |
+| G2 | Fuentes fallidas (`benchmarks/pilot-v1/G2/case.yaml`, histórico) | 1 | Rúbrica (`benchmarks/pilot-v1/G2/rubric.md`, histórico) |
 
-La [suite](../../../benchmarks/pilot-v1/suite.yaml) fija este orden. Las dificultades
+La suite (`benchmarks/pilot-v1/suite.yaml`, histórico) fija este orden. Las dificultades
 dependen de incertidumbre, compatibilidad de datos y recuperación, no del número de
 mensajes. Los documentos incluyen procedencia, fecha y carácter sintético/hipotético;
 no convertirlos en datos actuales de una empresa real.

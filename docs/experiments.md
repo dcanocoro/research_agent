@@ -5,6 +5,11 @@
 
 ## Qué comparar primero
 
+Preparación del 2026-10-22: los [hallazgos A0/A1 v2](experiments/longitudinal-v2/findings.md)
+motivan una reparación de recuperación y disciplina de persistencia. El
+[protocolo v2.1](experiments/longitudinal-v2-1/protocol.md) prepara una prueba corta
+operacional antes de nuevas campañas emparejadas; su ejecución real sigue pendiente.
+
 El [baseline vigente](baseline.md) es A con estado de archivos por experimento,
 materiales automáticos y consolidación sin publicación obligatoria. La ejecución de
 NVIDIA del 2026-10-18 tiene un [registro retrospectivo](experiments/baseline-nvidia-2026-10-18/findings.md).
@@ -39,6 +44,12 @@ posteriores que deben aislarse. El [registro experimental](experiments/README.md
 define cómo fijar cada protocolo y conservar hallazgos, fallos y límites.
 
 ## Qué podemos ejecutar hoy
+
+Desde el 2026-10-22 existe el [prototipo argumentativo](argumentative-prototype.md)
+y la [suite longitudinal v2](experiments/longitudinal-v2/protocol.md), con corpus
+cerrado, cuotas documentales y captura SQLite. A0 y A1 comparten M1 + M2. Está
+verificado localmente con simulaciones; su discriminación y beneficio no se han
+medido. Los párrafos siguientes conservan el contexto de preparación histórica.
 
 La [suite longitudinal v1](experiments/longitudinal-v1/protocol.md) define tres nuevas
 historias (ASML, NVIDIA y Ford), con seis sesiones cada una, corpus sintético publicado
@@ -77,6 +88,10 @@ retenido antes de imponer una secuencia rígida de ejecución. Argumentar puede 
 a razonar o a representar la conclusión: son intervenciones distintas.
 
 ## Línea posterior: matriz de instrucciones
+
+Esta nomenclatura histórica A0–A3 describe instrucciones. Las condiciones A0/A1
+del prototipo longitudinal v2 describen almacenamiento sobre M1 + M2 común; no
+implementan esta matriz ni sustituyen sus preguntas.
 
 | Variante propuesta | Argumentación explícita obligatoria | Guía financiera específica |
 |---|---|---|

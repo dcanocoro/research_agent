@@ -56,6 +56,12 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
             return kind() if kind is not None else None
 
     manifest = read(run / "manifiesto.json")
+    if manifest.get("configuration", {}).get("state_mode") == "argumentative":
+        from .knowledge import verify_capture
+        try:
+            verify_capture(run)
+        except Exception as exc:
+            issue(run, f"Knowledge capture: {type(exc).__name__}: {exc}")
     result = read(run / "resultado.json")
     read(run / "estado-inicial.json")
     read(run / "estado-final.json")

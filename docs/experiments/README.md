@@ -26,7 +26,9 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 
 | ID | Pregunta | Registro |
 |---|---|---|
-| Longitudinal v1 | ¿Cómo combina A investigación, revisión y memoria en tres historias exigentes? | Tres escenarios de seis sesiones generados; [protocolo](longitudinal-v1/protocol.md). Corpus sintético y rúbricas previas; sin ejecutar. |
+| Longitudinal v2.1 / recuperación A1 | ¿La reparación permite recuperar y mantener el expediente material? | [Protocolo y comandos](longitudinal-v2-1/protocol.md), suite corregida y prueba corta; sin ejecutar. |
+| Longitudinal v2 / prototipo argumentativo | ¿Mejora la continuidad y revisión frente a Markdown con M1 + M2? | [Protocolo original](longitudinal-v2/protocol.md) y [hallazgos](longitudinal-v2/findings.md): A1 apenas adopta SQLite y falla al recuperar IDs; capturas locales, una tentativa por condición. |
+| Longitudinal v1 | ¿Cómo combina A investigación, revisión y memoria en tres historias exigentes? | Tres escenarios de seis sesiones; [protocolo original](longitudinal-v1/protocol.md). Campañas locales posteriores del 20–21 de octubre y sus límites se describen como antecedentes en el [protocolo v2](longitudinal-v2/protocol.md); capturas no portables en Git. |
 | Benchmark piloto v1 | ¿Qué hace A ante contradicción, continuidad, ruido y fuentes fallidas? | Cuatro casos preparados; [protocolo](benchmark-pilot-v1/protocol.md). Verificación local con servicios simulados; sin campaña real ni aceptación semántica. |
 | Baseline NVIDIA 2026-10-18 | ¿Qué dejó la primera ejecución del estado de archivos? | Observación exploratoria concluida; [hallazgos retrospectivos](baseline-nvidia-2026-10-18/findings.md). Sin protocolo previo ni control. |
 | E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Histórico: sin expediente; recuperación desde Git indicada abajo. |
