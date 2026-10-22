@@ -38,14 +38,14 @@ requiere revisar operaciones y contenido, no solo completed o existencia de SQLi
 Ejecutar manualmente, desde la raíz, con el perfil elegido por el usuario:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/argumentative-continuity-v1 --condition A1 --profile perfil-benchmark.json --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/argumentative-continuity-v1 --condition A1 --profile perfil-benchmark.json --output artifacts/benchmark
 ```
 
 Si la operación corta funciona, comparar nuevas campañas de ambas condiciones:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/longitudinal-v2-1 --condition A0 --profile perfil-benchmark.json --output artifacts/benchmark
-.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/longitudinal-v2-1 --condition A1 --profile perfil-benchmark.json --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v2-1 --condition A0 --profile perfil-benchmark.json --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v2-1 --condition A1 --profile perfil-benchmark.json --output artifacts/benchmark
 ```
 
 Cada invocación crea campaña y estado independientes. Congelar el mismo perfil,

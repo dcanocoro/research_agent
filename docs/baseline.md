@@ -46,7 +46,8 @@ datos, `.env`, `py.typed` ni toda la distribución de dependencias.
 
 Los contratos completos pertenecen a [arquitectura](architecture.md), la operación a
 [desarrollo](development.md) y la decisión a [ADR-0001](decisions/0001-estado-por-experimento.md).
-Audit mantiene la firma básica y su propia captura; sus mensajes comparten instancia.
+El corte original mantenía compatibilidad con Audit; se retiró el 2026-10-22.
+La operación actual usa la CLI y el benchmark propio, con captura por ejecución.
 No tratar su continuidad en proceso como reinicio de la CLI.
 
 ## Configuración observada y evidencia

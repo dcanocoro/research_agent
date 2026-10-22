@@ -14,11 +14,12 @@ from time import monotonic
 from typing import Callable
 from uuid import uuid4
 
-from .benchmark_catalog import Suite, load_suite
-from .benchmark_evidence import digest, extract, inspect_run, save
-from .contracts import AgentLimits
-from .experiments import disjoint, git_state, prepare_experiment
-from .workspace import Workspace
+from .catalog import Suite, load_suite
+from .evidence import digest, extract, inspect_run, save
+from research_agent.contracts import AgentLimits
+from research_agent.experiments import disjoint, git_state, prepare_experiment
+from research_agent.workspace import Workspace
+import research_agent
 
 
 def launch(command: list[str], stdout: Path, stderr: Path) -> int:
@@ -71,6 +72,8 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
     Workspace._check_links(output)
     disjoint(output, suite.root)
     disjoint(output, Path(__file__).parent)
+    agent_source = Path(research_agent.__file__).parent
+    disjoint(output, agent_source)
     output.mkdir(parents=True, exist_ok=True)
     campaign = output / f"{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}-{uuid4().hex[:8]}"
     campaign.mkdir()
@@ -86,8 +89,9 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
                 "started_at": datetime.now(timezone.utc).isoformat(),
                 "python": {"executable": sys.executable, "version": sys.version},
                 "code_git": git_state(Path(__file__).resolve().parents[2]),
-                "source_sha256": {p.relative_to(Path(__file__).parent).as_posix(): digest(p)
-                                  for p in sorted(Path(__file__).parent.rglob("*")) if p.suffix in {".py", ".md"}},
+                "source_sha256": {f"{package.name}/{p.relative_to(package).as_posix()}": digest(p)
+                                  for package in (agent_source, Path(__file__).parent)
+                                  for p in sorted(package.rglob("*")) if p.suffix in {".py", ".md"}},
                 "dependencies": dependencies(), "limits": (suite.execution or {}).get("limits", asdict(AgentLimits())),
                 "environment": (suite.execution or {}).get("tool_profile", "live-tools-with-prepared-stimuli"),
                 "condition": condition, "execution": suite.execution, "profile": profile, "cases": [c.id for c in cases],
@@ -216,7 +220,7 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
     manifest["finished_at"] = datetime.now(timezone.utc).isoformat()
     save(campaign / "manifiesto.json", manifest)
     if compact:
-        from .benchmark_archive import compact_campaign
+        from .archive import compact_campaign
         compact_campaign(campaign)
         extract(campaign)
         import json
@@ -243,7 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.operation == "compact":
-            from .benchmark_archive import export_campaign
+            from .archive import export_campaign
             print(export_campaign(args.campaign, args.output))
             return 0
         if args.operation == "extract":

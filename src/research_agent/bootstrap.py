@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from dataclasses import asdict, replace
 from pathlib import Path
 from contextlib import asynccontextmanager
-from .experiments import disjoint
+from .experiments import ExperimentConfig, disjoint
 from .agent import AgentA
 from .contracts import AgentLimits
 from .recording import RunRecorder
@@ -21,14 +21,11 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     disjoint(workspace, runs)
     disjoint(workspace, Path(__file__).parent)
     disjoint(runs, Path(__file__).parent)
-    if knowledge_mode not in {"markdown", "argumentative"} or tool_profile not in {"live", "closed-corpus"}:
-        raise ValueError("Invalid mode or tool profile")
+    mode = ExperimentConfig(knowledge_mode, tool_profile)
     if knowledge_mode == "argumentative" and experiment is None:
         raise ValueError("Argumentative mode requires an experiment")
     if experiment is not None and (experiment / "experimento.json").exists():
-        import json
-        fixed = json.loads((experiment / "experimento.json").read_text(encoding="utf-8"))
-        if fixed != {"knowledge_mode": knowledge_mode, "tool_profile": tool_profile}:
+        if ExperimentConfig.load(experiment) != mode:
             raise ValueError("Composition must match the fixed experiment configuration")
     recorder = RunRecorder(runs, experiment=experiment, run_name=run_name)
     registry = ToolRegistry(recorder)
@@ -48,8 +45,6 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
         profile = replace(configured_profile(settings, "planner"), name="lab")
     space = Workspace(workspace, closed_corpus=tool_profile == "closed-corpus",
                       document_paths=document_paths, document_limit=document_limit)
-    if space.root.resolve() == runs.resolve() or space.root.resolve() in runs.resolve().parents or runs.resolve() in space.root.resolve().parents:
-        raise ValueError("Workspace and audit directory must be disjoint.")
     register_files(registry, space)
     database = None
     try:

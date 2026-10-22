@@ -9,66 +9,16 @@ import sys
 import pytest
 import yaml
 
-from research_agent.benchmark import launch, main, run_suite
-from research_agent.benchmark_catalog import load_suite
-from research_agent.benchmark_evidence import extract, save
+from research_benchmarks.runner import launch, main, run_suite
+from research_benchmarks.catalog import load_suite
+from research_benchmarks.evidence import extract, save
 from research_agent.workspace import Workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def catalog(tmp_path, cases=2, sessions=2):
-    root = tmp_path / "suite"
-    root.mkdir()
-    paths = []
-    for n in range(cases):
-        case = root / f"C{n}"
-        case.mkdir()
-        (case / "source.md").write_text("initial evidence", encoding="utf-8")
-        (case / "future.md").write_text("future evidence", encoding="utf-8")
-        (case / "rubric.md").write_text("EVALUATOR ONLY", encoding="utf-8")
-        value = {"id": f"C{n}", "title": "Test", "context": "Company", "competencies": ["memory"],
-                 "difficulty": "Requires recovery", "rubric": "rubric.md", "sessions": [
-                     {"id": f"s{i}", "message": f"Question {i}",
-                      "publish": {"entradas/initial.md": "source.md"} if i == 0 else
-                                 {"entradas/future.md": "future.md"} if i == 1 else {}}
-                     for i in range(sessions)]}
-        (case / "case.yaml").write_text(yaml.safe_dump(value), encoding="utf-8")
-        paths.append(f"C{n}/case.yaml")
-    (root / "suite.yaml").write_text(yaml.safe_dump({"schema_version": "benchmark-v1", "id": "test", "cases": paths}), encoding="utf-8")
-    return root
-
-
-def fake_cli(command, out, err, *, status="completed", missing=None):
-    """Small native-format fixture, not a replacement used by the product runner."""
-    experiment = Path(command[command.index("--experiment") + 1])
-    session = command[command.index("--run-name") + 1]
-    run = experiment / "ejecuciones" / session
-    run.mkdir()
-    (run / "trazas").mkdir()
-    out.write_text("arbitrary output; never parsed", encoding="utf-8")
-    err.write_text("diagnostic", encoding="utf-8")
-    run_id = f"run-{experiment.name}-{session}"
-    save(run / "manifiesto.json", {"run_id": run_id})
-    save(run / "resultado.json", {"run_id": run_id, "status": status, "stop_reason": "answered", "answer": "done",
-                                 "llm_calls": 1, "tool_calls": 0, "state": {"capture_errors": []}})
-    save(run / "estado-inicial.json", {})
-    save(run / "estado-final.json", {})
-    save(run / "conversacion.json", [])
-    (run / "peticion.md").write_text(command[3], encoding="utf-8")
-    (run / "respuesta.md").write_text("done", encoding="utf-8")
-    native = [{"run_id": run_id, "event": "lab.run.started", "occurred_at": "2026-10-20T00:00:00+00:00"},
-              {"run_id": run_id, "event": f"lab.run.{status}", "occurred_at": "2026-10-20T00:00:02+00:00"}]
-    (run / "eventos.jsonl").write_text("\n".join(json.dumps(e) for e in native), encoding="utf-8")
-    event = {"run_id": run_id, "event": "engine.llm_call", "llm_call_id": run_id + "-llm",
-             "occurred_at": "2026-10-20T00:00:01+00:00", "archive_file": "modelo-0001.json.gz"}
-    (run / "trazas/events.jsonl").write_text(json.dumps(event) + "\n", encoding="utf-8")
-    with gzip.open(run / "trazas/modelo-0001.json.gz", "wt", encoding="utf-8") as stream:
-        json.dump({"provider_input": {"input": ["question"]}, "provider_output": {"text": "done"}}, stream)
-    if missing:
-        (run / missing).unlink()
-    return 0 if status == "completed" else 1
+from support import catalog, fake_cli
 
 
 def test_validate_catalog_without_service_imports():
@@ -79,7 +29,7 @@ class Block:
         if fullname.split('.')[0] in {'infra','findata','engine','finmate','api'}:
             raise AssertionError(fullname)
 sys.meta_path.insert(0, Block())
-from research_agent.benchmark import main
+from research_benchmarks.runner import main
 raise SystemExit(main(['validate', 'benchmarks/longitudinal-v1']))
 """
     result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
@@ -136,6 +86,8 @@ def test_isolation_publication_and_extraction(tmp_path):
         return fake_cli(command, out, err)
     campaign, code = run_suite(load_suite(root), tmp_path / "out", launcher=worker, compact=False)
     assert code == 0 and len(seen) == 4
+    sources = json.loads((campaign / "manifiesto.json").read_text())["source_sha256"]
+    assert "research_agent/agent.py" in sources and "research_benchmarks/runner.py" in sources
     summary = json.loads((campaign / "resumen.json").read_text())
     assert summary["sessions_completed"] == 4 and summary["llm_calls"] == 4
     assert len({exp for exp, _ in seen}) == 2
@@ -262,7 +214,7 @@ from infra.adapters.llm_trace import LLMCallTrace
 @asynccontextmanager
 async def builder(workspace, runs, limits=AgentLimits(), **kwargs):
     space = Workspace(workspace)
-    recorder = RunRecorder(runs, **kwargs)
+    recorder = RunRecorder(runs, experiment=kwargs['experiment'], run_name=kwargs['run_name'])
     tools = ToolRegistry(recorder)
     register_files(tools, space)
     class Client:
@@ -340,8 +292,8 @@ def tool_fixture(command, out, err, *, limited=False):
 
 @pytest.mark.parametrize("limited", [False, True])
 def test_compact_export_is_lossless_and_source_is_unchanged(tmp_path, limited):
-    from research_agent.benchmark_archive import export_campaign, records, delivered_result, full_result, restore_snapshot
-    from research_agent.benchmark_evidence import digest, inspect_run
+    from research_benchmarks.archive import export_campaign, records, delivered_result, full_result, restore_snapshot
+    from research_benchmarks.evidence import digest, inspect_run
     def worker(command, out, err):
         return tool_fixture(command, out, err, limited=limited)
     source, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=worker, compact=False)
@@ -387,7 +339,7 @@ def original_state_to_raw(state):
 
 
 def test_default_compact_and_corruption_diagnostics(tmp_path):
-    from research_agent.benchmark_evidence import inspect_run
+    from research_benchmarks.evidence import inspect_run
     campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=tool_fixture)
     assert code == 0
     summary = json.loads((campaign / "resumen.json").read_text())

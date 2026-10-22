@@ -63,15 +63,11 @@ reales. Su controlador prepara archivos, invoca la CLI y recoge evidencia; no ca
 el ciclo de A ni usa jueces automáticos. Tiene verificación local con servicios
 simulados, sin campaña real. Web y PostgreSQL siguen siendo variables externas.
 
-El directorio [scenarios](../scenarios) contiene investigación de empresa, comparación
-de periodos, continuidad de memoria, fallo documental y agotamiento de recursos.
-Sus YAML fijan mensajes y checks, pero los escenarios que usan fuentes remotas no
-congelan automáticamente PostgreSQL ni la web. Los casos sintéticos se identifican.
-
-Experience Audit ejecuta mensajes secuenciales con una instancia por escenario y un
-workspace aislado. Conserva definiciones, intervenciones, resultados y evidencia.
-Los checks mecánicos comprueban ejecución, texto, uso de herramienta o archivos;
-no evalúan por sí solos la veracidad o calidad financiera.
+Las definiciones ejecutables están en [benchmarks](../benchmarks). El controlador
+propio publica entradas y ejecuta sesiones por proceso; conserva respuestas, trazas y
+estados. Los checks mecánicos no demuestran veracidad ni calidad financiera.
+Los antiguos escenarios de Experience Audit se retiraron el 2026-10-22; sus
+resultados históricos permanecen en los registros fechados.
 
 La [operación](development.md) describe contrato, comandos y consulta. Este documento
 posee el diseño experimental, no el funcionamiento del runner.
@@ -101,10 +97,10 @@ implementan esta matriz ni sustituyen sus preguntas.
 | A3 financiero | No | Sí |
 
 Son cuatro condiciones experimentales del mismo agente, no cuatro agentes que
-colaboran. No existen selectores A0–A3 implementados. Hoy CLI y Audit añaden la guía
+colaboran. No existen selectores A0–A3 implementados. Hoy la CLI añade la guía
 financiera básica. En CLI, `--instructions` añade archivos solo con `--new`; las
 continuaciones utilizan las copias de `instrucciones/`, que pueden editarse explícitamente.
-Audit recibe las instrucciones de cada escenario. La ejecución
+La ejecución
 actual no equivale a A0, ni la guía ligera representa necesariamente el tratamiento
 financiero completo propuesto para A2/A3.
 

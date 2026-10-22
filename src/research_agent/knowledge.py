@@ -11,6 +11,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 from .workspace import Workspace
+from .tools import ToolRegistry
 
 STRING = {"type": "string", "minLength": 1, "maxLength": 16000}
 REF = {"type": "object", "properties": {"id": STRING, "revision": {"type": "integer", "minimum": 1}},
@@ -312,38 +313,24 @@ def _verify_capture(directory: Path) -> None:
             raise ValueError("Physical/logical knowledge mismatch")
 
 
-def register_knowledge(registry: Any, store: KnowledgeStore) -> None:
-    async def apply(changes: list[dict[str, Any]]) -> dict[str, Any]:
+def register_knowledge(registry: ToolRegistry, store: KnowledgeStore) -> None:
+    def apply(changes: list[dict[str, Any]]) -> dict[str, Any]:
         # No await/thread between validation and commit: cancellation cannot leave a late writer.
         assert registry.recorder.current is not None
         return store.apply(changes, registry.recorder.current.name)
-
-    async def query(kind: str, text: str, offset: int, limit: int) -> dict[str, Any]:
-        return store.query(kind, text, offset, limit)
-
-    async def read(id: str, revision: int) -> dict[str, Any]:
-        return store.read(id, revision)
-
-    async def history(id: str, offset: int, limit: int) -> dict[str, Any]:
-        return store.history(id, offset, limit)
-
-    async def impact(id: str) -> dict[str, Any]:
-        return store.impact(id)
 
     window = {"offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 50}}
     registry.register("knowledge_query", "Find current active knowledge by case-insensitive literal substring in ID or content, not semantic search. "
                       "Use a short term, or text='' to list a kind; follow next_offset. An empty result is not proof of absence. "
                       "For a known ID use knowledge_read(id, revision=0).",
-        {"kind": {"type": "string", "enum": ["", *KINDS]}, "text": {"type": "string"}, **window}, query)
+        {"kind": {"type": "string", "enum": ["", *KINDS]}, "text": {"type": "string"}, **window}, store.query, execution="inline", consolidation=True)
     registry.register("knowledge_read", "Retrieve directly by exact ID, including pending review causes; revision=0 reads current. "
                       "Prefer this when the index or a previous result gives an ID, even if knowledge_query returned empty.",
-        {"id": STRING, "revision": {"type": "integer", "minimum": 0}}, read)
-    registry.register("knowledge_history", "Read immutable revisions and reasons.", {"id": STRING, **window}, history)
-    registry.register("knowledge_impact", "Find potentially affected dependents; this does not change judgments.", {"id": STRING}, impact)
+        {"id": STRING, "revision": {"type": "integer", "minimum": 0}}, store.read, execution="inline", consolidation=True)
+    registry.register("knowledge_history", "Read immutable revisions and reasons.", {"id": STRING, **window}, store.history, execution="inline", consolidation=True)
+    registry.register("knowledge_impact", "Find potentially affected dependents; this does not change judgments.", {"id": STRING}, store.impact, execution="inline", consolidation=True)
     registry.register("knowledge_apply", "Atomically create/revise/retire typed knowledge; expected_revision=0 creates only a missing ID. "
                       "On revision conflict, no part of the batch is saved: use knowledge_read(id, revision=0), reconsider and retry with the current revision. "
                       "Preserve source metadata; review affected foundations.",
-        {"changes": {"type": "array", "items": CHANGE, "minItems": 1, "maxItems": 50}}, apply)
-    registry.consolidation_tools = registry.consolidation_tools | frozenset({"knowledge_query", "knowledge_read",
-        "knowledge_history", "knowledge_impact", "knowledge_apply"})
-    registry.recorder.knowledge = store
+        {"changes": {"type": "array", "items": CHANGE, "minItems": 1, "maxItems": 50}}, apply, execution="inline", consolidation=True)
+    registry.recorder.capture_state = store.capture

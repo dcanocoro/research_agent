@@ -10,11 +10,12 @@ import subprocess
 import sys
 
 import pytest
+from support import ScriptedClient
 from runtime_contracts.llm import AssistantResponse, ResponseFunctionCall, ResponseTurn, ConversationContext
 
 from research_agent.agent import AgentA
-from research_agent.benchmark import run_suite
-from research_agent.benchmark_catalog import load_suite
+from research_benchmarks.runner import run_suite
+from research_benchmarks.catalog import load_suite
 from research_agent.contracts import AgentLimits, AgentRequest
 from research_agent.experiments import prepare_experiment
 from research_agent.integrations.file_tools import register_files
@@ -245,7 +246,7 @@ root=Path(sys.argv[1]); phase=int(sys.argv[2]); space=Workspace(root/'estado')
 rec=RunRecorder(root/'ejecuciones',experiment=root,run_name=f'paso-{phase}')
 reg=ToolRegistry(rec); register_files(reg,space)
 store=KnowledgeStore(root/'conocimiento/expediente.sqlite',space); register_knowledge(reg,store)
-rec.start(str(phase),{}); rec.snapshot(space)
+rec.start(str(phase),{}); rec.snapshot(space, "inicial")
 def change(id,revision,value):
     return {'id':id,'kind':'hypothesis','expected_revision':revision,'retired':False,'reason':'Correction' if revision else 'Initial',
             'data':{'proposition':value,'status':'conditional','references':[]}}
@@ -268,7 +269,7 @@ async def execute():
         await call('knowledge_read',{'id':id,'revision':0})
         await call('knowledge_history',{'id':id,'offset':0,'limit':20})
         await call('knowledge_query',{'kind':'','text':'must_rollback','offset':0,'limit':20})
-    rec.snapshot(space)
+    rec.snapshot(space, "final")
     print(json.dumps(results,ensure_ascii=False))
 asyncio.run(execute())
 '''
@@ -329,19 +330,7 @@ def make_agent(root, turns, limits=None):
     store = KnowledgeStore(root / "conocimiento/expediente.sqlite", space)
     register_knowledge(tools, store)
 
-    class Client:
-        def __init__(self):
-            self.turns = iter(turns)
-            self.requests = []
-
-        async def respond(self, **kwargs):
-            self.requests.append(kwargs)
-            value = next(self.turns)
-            if isinstance(value, BaseException):
-                raise value
-            return value
-
-    return AgentA(Client(), tools, space, recorder, limits or AgentLimits(),
+    return AgentA(ScriptedClient(turns), tools, space, recorder, limits or AgentLimits(),
                   configuration={"state_mode": "argumentative"}, instructions=prompts), store
 
 
@@ -424,7 +413,7 @@ def test_closed_bootstrap_never_builds_remote_tools(tmp_path, monkeypatch):
 
 
 def test_v2_controls_and_budget_survive_runner(tmp_path):
-    from test_benchmark import fake_cli
+    from support import fake_cli
     suite = load_suite(ROOT / "benchmarks/longitudinal-v2")
     assert len(suite.cases) == 3 and all(len(c.sessions) == 6 for c in suite.cases)
     with pytest.raises(ValueError, match="explicit"):
@@ -452,9 +441,9 @@ def test_v2_controls_and_budget_survive_runner(tmp_path):
 
 
 def test_knowledge_roundtrip_compact_and_corruption(tmp_path):
-    from test_benchmark import catalog, fake_cli
-    from research_agent.benchmark_evidence import save
-    from research_agent.benchmark_archive import export_campaign, inspect_compact
+    from support import catalog, fake_cli
+    from research_benchmarks.evidence import save
+    from research_benchmarks.archive import export_campaign, inspect_compact
 
     def worker(command, out, err):
         code = fake_cli(command, out, err)
@@ -484,9 +473,9 @@ def test_knowledge_roundtrip_compact_and_corruption(tmp_path):
 
 
 def test_argumentative_cli_in_fresh_processes_with_simulated_llm(tmp_path):
-    from test_benchmark import catalog
-    from research_agent.benchmark import launch
-    from research_agent.benchmark_archive import records
+    from support import catalog
+    from research_benchmarks.runner import launch
+    from research_benchmarks.archive import records
     worker = tmp_path / "worker.py"
     worker.write_text('''
 import sys
@@ -547,7 +536,7 @@ raise SystemExit(cli.main())
         verify_capture(run)
         trace = records(run)
         query = next(r for r in trace if r["kind"] == "tool" and r["call"]["name"] == "knowledge_query")
-        from research_agent.benchmark_archive import delivered_result
+        from research_benchmarks.archive import delivered_result
         items = delivered_result(campaign, query)["value"]["items"]
         assert len(items) == (0 if session["session_id"] == "s0" else 1)
     state = KnowledgeStore(campaign / "casos/C0/conocimiento/expediente.sqlite", Workspace(campaign / "casos/C0/estado"))

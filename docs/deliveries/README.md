@@ -5,6 +5,9 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-22 — Simplificación del laboratorio](2026-10-22-simplification.md):
+  campañas separadas, retirada de Audit y configuración, captura y herramientas más explícitas.
+
 - [2026-10-22 — Recuperación y uso material de A1](2026-10-22-argumentative-recovery.md):
   búsqueda por ID, recuperación de conflictos, prompt y suites manuales; sin campañas nuevas.
 

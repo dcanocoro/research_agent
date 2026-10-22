@@ -3,7 +3,8 @@
 Actualización experimental 2026-10-22: se añade el modo optativo
 [`argumentative`](argumentative-prototype.md), con SQLite, cinco herramientas,
 historial y captura verificable. El modo Markdown sigue por defecto. La composición
-acepta `knowledge_mode` y `tool_profile`; sin nuevos argumentos conserva Audit.
+acepta `knowledge_mode` y `tool_profile`. Desde el 2026-10-22 se retira la
+compatibilidad local con Experience Audit; el wheel compartido sigue intacto.
 `closed-corpus` registra solo archivos/cálculo y conocimiento en A1; protege entradas
 y aplica cupos documentales antes de leer/buscar contenido. No construye clientes
 Findata/Tavily. Los apartados históricos siguientes describen el modo de archivos;
@@ -14,6 +15,24 @@ a IDs, aporta errores de revisión recuperables y precisa persistencia material 
 prompt A1. No modifica el ciclo, el schema SQLite ni los presupuestos.
 
 > Estado local a 2026-10-18. Autoridad: código, schemas y wheel instalado.
+
+## Organización del código
+
+- `src/research_agent/`: ciclo, composición, herramientas, workspace y captura.
+- `src/research_agent/archive.py`: lectura de evidencia compacta y recuperación de referencias.
+- `src/research_benchmarks/`: catálogo, controlador de campañas, extracción y compactación.
+- `benchmarks/`: definiciones, corpus y rúbricas; `tests/`: comprobaciones locales.
+
+Las campañas dependen del agente; el agente no importa el paquete de campañas.
+`AgentA.run` conserva el ciclo y sus reservas; `_prepare` y `_finish` concentran apertura
+y captura final. Los registros nuevos comparten un formato. Los anteriores se conservan
+sin reescritura y el lector compacto mantiene las referencias de herramientas.
+`ExperimentConfig` concentra los modos persistentes; la CLI lee la configuración de
+ejecución una vez. Cada herramienta declara ejecución (`inline`, `thread` o `async`),
+conservación de materiales y disponibilidad en consolidación al registrarse.
+Los validadores se construyen una vez por registro. Las escrituras de archivos y SQLite
+son `inline`, para evitar escritores tardíos tras cancelación. La captura específica de
+SQLite se conecta mediante una función opcional con fase inicial/final explícita.
 
 ## Frontera y componentes
 
@@ -70,8 +89,8 @@ los IDs técnicos permanecen dentro de los registros. La fecha de los nombres ut
 Hay tres estados distintos: archivos persistentes, contexto transitorio de A y evidencia
 de ejecución. Solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
 explícita; el resto se consulta bajo demanda. La CLI crea una instancia nueva por run:
-continuar reutiliza archivos, sin restaurar el chat. Audit conserva su instancia entre
-mensajes del escenario y mantiene su organización propia, compatible con su wheel.
+continuar reutiliza archivos, sin restaurar el chat. Las pruebas locales pueden reutilizar
+una instancia para verificar el historial; CLI y benchmark usan procesos nuevos por sesión.
 
 Las instrucciones CLI son copias editables de los prompts al crear el experimento;
 los runs usan esas copias, conservando texto y hashes efectivos en el manifiesto.
@@ -155,7 +174,7 @@ fallo, cancelación e interrupción conservan los archivos y capturas disponible
 conservan contenidos iniciales/finales de los cuatro formatos, con errores identificados.
 No reconstruyen cada edición intermedia. El archivo se mantiene fuera del alcance de
 escritura del agente. CLI agrupa eventos del ciclo y payloads del proveedor dentro del run;
-Audit mantiene su captura externa existente. No ejecutar capturas simultáneas en un proceso,
+Cada ejecución de A posee su captura. No ejecutar capturas simultáneas en un proceso,
 porque el adaptador compartido emplea configuración global temporal.
 
 El benchmark consolida esa captura **después de ejecutar**: cada sesión conserva
@@ -176,9 +195,9 @@ repositorio propio; sin `.git` propio se indica ausencia, aunque exista un padre
 No se ejecuta init, add, commit, checkout, reset, push ni creación de ramas.
 Las capturas inicial/final permiten auditar runs realizados con cambios sin commit.
 
-`build_agent(workspace, runs, limits)` mantiene el contrato de Audit; los argumentos
-opcionales `experiment` y `run_name` sirven al organizador CLI. Los nombres de archivos
-técnicos del consumidor básico permanecen compatibles. CLI usa la organización española.
+`build_agent` es la composición local; `experiment` y `run_name` aportan el contexto
+de la CLI. Todas las ejecuciones nuevas usan los mismos nombres españoles de archivos.
+No se mantiene una interfaz para Experience Audit.
 La operación y los comandos están en [desarrollo](development.md). El
 [baseline](baseline.md) distingue capacidad implementada, resultado observado y
 aceptación semántica pendiente.

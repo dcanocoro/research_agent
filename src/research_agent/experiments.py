@@ -2,15 +2,41 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, Iterator
 import os
+import json
 import re
 import subprocess
 import unicodedata
 
 from .workspace import Workspace
+
+
+@dataclass(frozen=True)
+class ExperimentConfig:
+    knowledge_mode: str = "markdown"
+    tool_profile: str = "live"
+
+    def __post_init__(self) -> None:
+        if self.knowledge_mode not in {"markdown", "argumentative"} or self.tool_profile not in {"live", "closed-corpus"}:
+            raise ValueError("Invalid experiment mode or tool profile")
+
+    @classmethod
+    def load(cls, root: Path) -> ExperimentConfig:
+        path = root / "experimento.json"
+        Workspace._check_links(path)
+        if not path.exists():
+            if (root / "conocimiento").exists():
+                raise ValueError("Argumentative experiment configuration is missing")
+            return cls()
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if (not isinstance(value, dict) or set(value) != {"knowledge_mode", "tool_profile"}
+                or not all(isinstance(item, str) for item in value.values())):
+            raise ValueError("Invalid experiment configuration")
+        return cls(**value)
 
 
 def human_name(value: str) -> str:
@@ -87,16 +113,11 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
     # The experiment can live under artifacts/, but never include the source package.
     package = Path(str(files("research_agent")))
     disjoint(root, package)
-    import json
+    from dataclasses import asdict
     config_path = root / "experimento.json"
     Workspace._check_links(config_path)
-    if not new and not config_path.exists() and (root / "conocimiento").exists():
-        raise ValueError("Argumentative experiment configuration is missing")
-    stored = json.loads(config_path.read_text(encoding="utf-8")) if not new and config_path.exists() else {
-        "knowledge_mode": "markdown", "tool_profile": "live"}
-    chosen = {"knowledge_mode": knowledge_mode or stored["knowledge_mode"], "tool_profile": tool_profile or stored["tool_profile"]}
-    if chosen["knowledge_mode"] not in {"markdown", "argumentative"} or chosen["tool_profile"] not in {"live", "closed-corpus"}:
-        raise ValueError("Invalid experiment mode or tool profile")
+    stored = ExperimentConfig() if new else ExperimentConfig.load(root)
+    chosen = ExperimentConfig(knowledge_mode or stored.knowledge_mode, tool_profile or stored.tool_profile)
     if not new and chosen != stored:
         raise ValueError("Continuation cannot change experiment mode or tool profile")
     extras = []
@@ -110,14 +131,14 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         root.mkdir(parents=True, exist_ok=False)
         for name in ("instrucciones", "estado", "ejecuciones"):
             (root / name).mkdir()
-        config_path.write_text(json.dumps(chosen), encoding="utf-8")
+        config_path.write_text(json.dumps(asdict(chosen)), encoding="utf-8")
         prompts = files("research_agent").joinpath("prompts")
         (root / "instrucciones/agente.md").write_text(prompts.joinpath("agent_a.md").read_text(encoding="utf-8"), encoding="utf-8")
         (root / "instrucciones/investigacion-financiera.md").write_text(
             prompts.joinpath("financial_research.md").read_text(encoding="utf-8"), encoding="utf-8")
         for i, content in enumerate(extras, 1):
             (root / f"instrucciones/adicional-{i:02d}.md").write_text(content, encoding="utf-8")
-        if chosen["knowledge_mode"] == "argumentative":
+        if chosen.knowledge_mode == "argumentative":
             (root / "conocimiento").mkdir()
             (root / "instrucciones/expediente.md").write_text(prompts.joinpath("argumentative.md").read_text(encoding="utf-8"), encoding="utf-8")
         (root / ".gitignore").write_text("ejecuciones/\n.run.lock\n.env\n.env.*\n", encoding="utf-8")

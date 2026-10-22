@@ -9,8 +9,8 @@ from typing import Any
 
 import yaml
 
-from .workspace import Workspace
-from .contracts import AgentLimits
+from research_agent.workspace import Workspace
+from research_agent.contracts import AgentLimits
 
 
 @dataclass(frozen=True)

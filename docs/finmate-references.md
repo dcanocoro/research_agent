@@ -32,7 +32,7 @@ solo porque sus salidas se parezcan.
 | [Operación Findata](../../FinMate/docs/operations/findata.md) | PostgreSQL, datos y restricciones de lectura |
 | [Experience Audit](../../FinMate/docs/operations/experience-audit.md) | Archivo, consulta, informes y distinción de variantes |
 | [ADR 0004: contratos compartidos](../../FinMate/docs/architecture/decisions/0004-shared-runtime-contracts.md) | Separación de contratos técnicos respecto a Engine |
-| [Runner nativo lab](../../FinMate/experience_audit/lab_runner.py) | Contrato efectivo `lab-v1`, checks y ejecución sin producto |
+| [Runner nativo lab histórico](../../FinMate/experience_audit/lab_runner.py) | Antiguo consumidor `lab-v1`; Research Agent ya no mantiene esa integración |
 
 Ante una diferencia entre guía y ejecución, revisar fuentes, tests y versión instalada.
 Cambios en Findata/Infra/Audit se realizan en FinMate y se incorporan mediante una

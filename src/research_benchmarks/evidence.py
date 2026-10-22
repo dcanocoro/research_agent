@@ -3,16 +3,12 @@ from __future__ import annotations
 
 from datetime import datetime
 import gzip
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
-from .workspace import Workspace
-
-
-def digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+from research_agent.workspace import Workspace
+from research_agent.archive import digest
 
 
 def save(path: Path, value: Any) -> None:
@@ -29,7 +25,7 @@ def brief(value: Any) -> str | None:
 
 def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if (run / "ejecucion.json").exists():
-        from .benchmark_archive import inspect_compact
+        from .archive import inspect_compact
         return inspect_compact(campaign, run, case_id, session_id)
     errors: list[dict[str, Any]] = []
     rows: list[dict[str, Any]] = []
@@ -57,7 +53,7 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
 
     manifest = read(run / "manifiesto.json")
     if manifest.get("configuration", {}).get("state_mode") == "argumentative":
-        from .knowledge import verify_capture
+        from research_agent.knowledge import verify_capture
         try:
             verify_capture(run)
         except Exception as exc:

@@ -34,6 +34,9 @@ o una decisión aceptada; plantear la discrepancia y actualizar su referencia al
 
 - `src/research_agent/` posee el ciclo de A, archivos y adaptaciones experimentales.
   El núcleo es general; la especialización financiera vive en prompts y herramientas.
+- `src/research_benchmarks/` posee catálogo, campañas y evaluación; depende del agente,
+  nunca al revés. `benchmarks/` contiene definiciones y materiales. No mantener
+  compatibilidad de ejecución con Experience Audit; puede seguir instalado en el wheel.
 - No importar `finmate`, `engine` o `api`, tampoco indirectamente durante ejecución
   o auditoría. No consultar la API del producto ni su estado privado para eludirlo.
 - Las bibliotecas comunes permanecen en FinMate. Aquí se consumen mediante el wheel

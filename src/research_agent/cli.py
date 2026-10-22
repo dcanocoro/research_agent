@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 from .bootstrap import build_agent
 from .contracts import AgentRequest, AgentLimits, AgentResult
-from .experiments import prepare_experiment, experiment_lock, human_name
+from .experiments import ExperimentConfig, prepare_experiment, experiment_lock, human_name
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,17 +31,13 @@ def main(argv: list[str] | None = None) -> int:
 
     async def execute(root: Path, prompts: tuple[Path, ...], limits: AgentLimits) -> AgentResult:
         nonlocal run_directory
-        mode = json.loads((root / "experimento.json").read_text(encoding="utf-8")) if (root / "experimento.json").exists() else {
-            "knowledge_mode": "markdown", "tool_profile": "live"}
-        runtime = json.loads(args.runtime_config.read_text(encoding="utf-8")) if args.runtime_config else {}
-        options: dict = {k: v for k, v in mode.items() if v not in {"markdown", "live"}}
-        if runtime.get("document_paths"):
-            options["document_paths"] = tuple(runtime["document_paths"])
-            options["document_limit"] = runtime["document_limit"]
-        if runtime.get("profile"):
-            options["profile_overrides"] = runtime["profile"]
+        mode = ExperimentConfig.load(root)
         async with build_agent(root / "estado", root / "ejecuciones", limits,
-                               experiment=root, run_name=args.run_name, **options) as agent:
+                               experiment=root, run_name=args.run_name,
+                               knowledge_mode=mode.knowledge_mode, tool_profile=mode.tool_profile,
+                               document_paths=tuple(runtime.get("document_paths", ())),
+                               document_limit=runtime.get("document_limit"),
+                               profile_overrides=runtime.get("profile")) as agent:
             result = await agent.run(AgentRequest(args.message, root.name, args.conversation, prompts))
             run_directory = agent.recorder.current
             return result

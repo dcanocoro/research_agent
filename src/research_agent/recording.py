@@ -8,7 +8,7 @@ from typing import Any
 from .contracts import serializable
 from .experiments import git_state, human_name
 from .workspace import Workspace
-from .knowledge import KnowledgeStore
+from collections.abc import Callable
 
 
 def encoded(value: Any) -> bytes:
@@ -16,11 +16,6 @@ def encoded(value: Any) -> bytes:
 
 
 class RunRecorder:
-    names = {"manifest.json": "manifiesto.json", "result.json": "resultado.json",
-             "transcript.json": "conversacion.json", "events.jsonl": "eventos.jsonl",
-             "workspace_before.json": "estado-inicial.json", "workspace_after.json": "estado-final.json",
-             "answer.md": "respuesta.md"}
-
     def __init__(self, root: Path, *, experiment: Path | None = None, run_name: str = "intervencion") -> None:
         self.root = root.absolute()
         Workspace._check_links(self.root)
@@ -31,11 +26,7 @@ class RunRecorder:
         self.workspace_fingerprint: str | None = None
         self.sequence = 0
         self.capture_errors: list[dict[str, str]] = []
-        self.knowledge: KnowledgeStore | None = None
-        self.knowledge_snapshot_count = 0
-
-    def filename(self, name: str) -> str:
-        return self.names.get(name, name) if self.experiment is not None else name
+        self.capture_state: Callable[[Path, str], dict[str, Any]] | None = None
 
     def start(self, run_id: str, metadata: dict[str, Any]) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
@@ -51,15 +42,13 @@ class RunRecorder:
             raise ValueError("Run name exhausted.")
         self.current = current
         self.events, self.capture_errors, self.sequence = [], [], 0
-        self.knowledge_snapshot_count = 0
         self.workspace_fingerprint = metadata.get("workspace_fingerprint")
-        self.save("manifest.json", {**metadata, "run_directory": current.name,
+        self.save("manifiesto.json", {**metadata, "run_directory": current.name,
                                     "git_initial": git_state(self.experiment)})
 
     def save(self, name: str, value: Any) -> str:
         if self.current is None:
             raise RuntimeError("No active recording.")
-        name = self.filename(name)
         relative = Path(name)
         if relative.is_absolute() or ".." in relative.parts or len(relative.parts) > 2:
             raise ValueError("Invalid recording path.")
@@ -71,7 +60,7 @@ class RunRecorder:
 
     def text(self, name: str, content: str) -> None:
         assert self.current is not None
-        (self.current / self.filename(name)).write_text(content, encoding="utf-8")
+        (self.current / name).write_text(content, encoding="utf-8")
 
     def artifact(self, value: Any) -> str:
         assert self.current is not None
@@ -89,7 +78,7 @@ class RunRecorder:
         bounded = Workspace(self.root, create=False)
         run = bounded.path(parts[1])
         if (run / "ejecucion.json").exists():
-            from .benchmark_archive import read_json, records, full_result
+            from .archive import read_json, records, full_result
             metadata = read_json(run / "ejecucion.json")["manifest"]
             if metadata.get("workspace_fingerprint") != self.workspace_fingerprint:
                 raise FileNotFoundError("Artifact belongs to another workspace.")
@@ -112,20 +101,18 @@ class RunRecorder:
             return {"reference": reference, "path": parts[2], "offset": offset, "text": text,
                     "next_offset": end if end < len(value) else None}
         bounded.path(f"{parts[1]}/trazas/{parts[2]}")
-        manifest = run / self.filename("manifest.json")
+        manifest = run / "manifiesto.json"
         Workspace._check_links(manifest)
         metadata = json.loads(manifest.read_bytes())
         if metadata.get("workspace_fingerprint") != self.workspace_fingerprint:
             raise FileNotFoundError("Artifact belongs to another workspace.")
         return {"reference": reference, **Workspace(run / "trazas", create=False).read_file(parts[2], offset, max_bytes)}
 
-    def snapshot(self, workspace: Workspace) -> dict[str, Any]:
+    def snapshot(self, workspace: Workspace, phase: str) -> dict[str, Any]:
         try:
-            if self.knowledge is not None:
+            if self.capture_state is not None:
                 assert self.current is not None
-                phase = "inicial" if self.knowledge_snapshot_count == 0 else "final"
-                self.knowledge_snapshot_count += 1
-                hashes = self.knowledge.capture(self.current, phase)
+                hashes = self.capture_state(self.current, phase)
                 self.save(f"conocimiento-{phase}-hashes.json", hashes)
             return workspace.snapshot(errors=self.capture_errors)
         except Exception as exc:
@@ -144,5 +131,5 @@ class RunRecorder:
                  "sequence": len(self.events) + 1, **fields}
         self.events.append(event)
         if self.current is not None:
-            with (self.current / self.filename("events.jsonl")).open("ab") as stream:
+            with (self.current / "eventos.jsonl").open("ab") as stream:
                 stream.write(encoded(event) + b"\n")

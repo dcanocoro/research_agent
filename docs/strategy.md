@@ -5,6 +5,11 @@
 
 ## Prioridad actual
 
+**Mantenimiento aceptado el 2026-10-22:** separar las campañas del núcleo, retirar
+el acoplamiento local con Experience Audit y simplificar ciclo, configuración y
+registro de herramientas. No cambia los tratamientos experimentales ni autoriza campañas.
+Véase la [entrega](deliveries/2026-10-22-simplification.md).
+
 **Continuación aceptada el 2026-10-22:** corregir la operación de A1 tras los
 [hallazgos v2](experiments/longitudinal-v2/findings.md). Se prepara
 [v2.1 y un recorrido corto](experiments/longitudinal-v2-1/protocol.md), con

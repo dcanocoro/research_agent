@@ -4,7 +4,7 @@ from typing import Any, Literal
 import asyncio
 import hashlib
 from pathlib import Path
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from importlib.resources import files
 from time import monotonic
 from uuid import uuid4
@@ -33,32 +33,9 @@ class AgentA:
         if self._conversation_id not in (None, request.conversation_id):
             raise ValueError("An AgentA instance belongs to one conversation.")
         self._conversation_id = request.conversation_id
-        instructions = (*self.instructions, *request.instructions)
-        protected = [Path(str(files("research_agent"))), *instructions]
-        disjoint(self.workspace.root, self.recorder.root)
-        for path in protected:
-            disjoint(self.workspace.root, path)
-            disjoint(self.recorder.root, path)
-        self.tools.reset()
         run_id, interaction_id = str(uuid4()), str(uuid4())
         deadline = monotonic() + self.limits.timeout_seconds
-        base = files("research_agent").joinpath("prompts/agent_a.md").read_text(encoding="utf-8")
-        prompts = {str(p): p.read_text(encoding="utf-8") for p in instructions}
-        if self.recorder.experiment is None:
-            prompts = {"agent_a.md": base, **prompts}
-        system = "\n\n".join(prompts.values())
-        self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id,
-            "conversation_id": request.conversation_id, "workspace_id": request.workspace_id,
-            "workspace_fingerprint": hashlib.sha256(str(self.workspace.root.resolve()).encode()).hexdigest(),
-            "limits": asdict(self.limits), "configuration": self.configuration, "metadata": request.metadata,
-            "closing_policy": {"consolidation_calls": 2, "response_calls": 1,
-                               "consolidation_seconds_at_time_threshold": self.limits.finalization_seconds / 3,
-                               "response_seconds": self.limits.finalization_seconds * 2 / 3,
-                               "context_reserve_bytes": min(32768, self.limits.max_context_bytes // 4),
-                               "consolidation_tools": sorted(self.tools.consolidation_tools or ())}
-                              if self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
-            "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
-            "tools": self.tools.specs()})
+        system = self._prepare(request, run_id, interaction_id)
         calls = tool_calls = 0
         answer = error = None
         status: Literal["completed", "interrupted", "failed", "cancelled"] = "interrupted"
@@ -88,10 +65,7 @@ class AgentA:
                 text = ("Runtime final response: tools are disabled. Deliver a brief answer in the user's language, "
                         "identify what was saved and what remains unfinished. Do not repeat the full investigation. "
                         "This limit comes from the runtime, not a new human instruction.")
-            if cause not in {"early_answer", "saved"}:
-                reason = "context_limit" if cause == "context" else "budget"
-            elif cause == "early_answer":
-                reason = "answered"
+            reason = "context_limit" if cause == "context" else "budget"
             self.history.append(ConversationMessage("user", text))
             self.recorder.event("lab.phase.changed", previous_phase=previous, phase=target, cause=cause)
         context = RunContext(run_id, turn_id=interaction_id, regime="lab", component="agent_a", deadline=deadline)
@@ -99,12 +73,11 @@ class AgentA:
         with bind_run_context(context), bind_interaction_context(interaction):
             self.recorder.event("lab.run.started", **request.metadata)
             try:
-                if self.recorder.experiment is not None:
-                    from .tracing import capture_traces
-                    assert self.recorder.current is not None
-                    captured = captures.enter_context(capture_traces(self.recorder.current / "trazas", flat=True))
+                from .tracing import capture_traces
+                assert self.recorder.current is not None
+                captured = captures.enter_context(capture_traces(self.recorder.current / "trazas", flat=True))
                 self.recorder.text("peticion.md", request.message)
-                self.recorder.save("workspace_before.json", self.recorder.snapshot(self.workspace))
+                self.recorder.save("estado-inicial.json", self.recorder.snapshot(self.workspace, "inicial"))
                 index = self.workspace.path("indice.md")
                 memory = self.workspace.read_file("indice.md", max_bytes=8192) if index.exists() else {"text": ""}
                 self.history.append(ConversationContext({"memory_index": memory}))
@@ -142,9 +115,12 @@ class AgentA:
                             reason = "context_limit" if size >= self.limits.max_context_bytes - 4096 else "budget"
                             self.history.append(ConversationMessage("user", "Execution resources are ending. Deliver the best supported answer from available evidence, state limitations and unfinished work. Do not call tools."))
                     specs = self.tools.specs(allowed)
-                    phase_capacity = (0 if closing else min(2 - consolidation_calls,
-                                      self.limits.max_llm_calls - calls - 1) if phase == "consolidation"
-                                      else self.limits.max_llm_calls - calls - (3 if can_consolidate else 1))
+                    if closing:
+                        phase_capacity = 0
+                    elif phase == "consolidation":
+                        phase_capacity = min(2 - consolidation_calls, self.limits.max_llm_calls - calls - 1)
+                    else:
+                        phase_capacity = self.limits.max_llm_calls - calls - (3 if can_consolidate else 1)
                     budget = {"phase": phase, "llm_calls_available": self.limits.max_llm_calls - calls,
                               "tool_calls_available": self.limits.max_tool_calls - tool_calls,
                               "phase_tool_opportunities": max(0, min(phase_capacity, self.limits.max_tool_calls - tool_calls)),
@@ -202,39 +178,67 @@ class AgentA:
             except Exception as exc:
                 status, reason, error = "failed", "operational_failure", type(exc).__name__
             finally:
-                def save(name: str, value: Any) -> str | None:
-                    try:
-                        return self.recorder.save(name, value)
-                    except Exception as exc:
-                        self.recorder.capture_errors.append({"operation": name, "error_type": type(exc).__name__})
-                        return None
                 try:
                     captures.close()
                 except Exception as exc:
                     self.recorder.capture_errors.append({"operation": "provider_capture", "error_type": type(exc).__name__})
-                for event in captured:
-                    for field in ("archive_error", "capture_error"):
-                        if event.get(field):
-                            self.recorder.capture_errors.append({"operation": "provider_payload", "error_type": str(event[field])})
-                refs = [ref for ref in (save("transcript.json", self.history),
-                        save("workspace_after.json", self.recorder.snapshot(self.workspace)),
-                        save("git-final.json", git_state(self.recorder.experiment))) if ref]
-                if answer is not None:
-                    try:
-                        self.recorder.text("answer.md", answer)
-                    except Exception as exc:
-                        self.recorder.capture_errors.append({"operation": "answer_capture", "error_type": type(exc).__name__})
-                terminal = "completed" if status == "completed" else "failed" if status == "failed" else "interrupted"
-                try:
-                    self.recorder.event(f"lab.run.{terminal}", status=status, stop_reason=reason, llm_calls=calls, tool_calls=tool_calls)
-                except Exception as exc:
-                    self.recorder.capture_errors.append({"operation": "terminal_event", "error_type": type(exc).__name__})
-                refs = [self.recorder.filename(n) for n in ("manifest.json", "workspace_before.json", "events.jsonl")] + refs
-                if answer is not None:
-                    refs.append(self.recorder.filename("answer.md"))
-                outcome = AgentResult(run_id, status, answer, reason, tuple(refs),
-                                      calls, tool_calls, error, self.tools.summary())
-                if save("result.json", outcome) is None:
-                    from dataclasses import replace
-                    outcome = replace(outcome, state=self.tools.summary())
+                outcome = self._finish(AgentResult(run_id, status, answer, reason, (), calls, tool_calls, error), captured)
+        return outcome
+
+    def _prepare(self, request: AgentRequest, run_id: str, interaction_id: str) -> str:
+        instructions = (*self.instructions, *request.instructions)
+        protected = [Path(str(files("research_agent"))), *instructions]
+        disjoint(self.workspace.root, self.recorder.root)
+        for path in protected:
+            disjoint(self.workspace.root, path)
+            disjoint(self.recorder.root, path)
+        self.tools.reset()
+        prompts = {str(p): p.read_text(encoding="utf-8") for p in instructions}
+        if not instructions:
+            prompts = {"agent_a.md": files("research_agent").joinpath("prompts/agent_a.md").read_text(encoding="utf-8")}
+        system = "\n\n".join(prompts.values())
+        self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id,
+            "conversation_id": request.conversation_id, "workspace_id": request.workspace_id,
+            "workspace_fingerprint": hashlib.sha256(str(self.workspace.root.resolve()).encode()).hexdigest(),
+            "limits": asdict(self.limits), "configuration": self.configuration, "metadata": request.metadata,
+            "closing_policy": {"consolidation_calls": 2, "response_calls": 1,
+                               "consolidation_seconds_at_time_threshold": self.limits.finalization_seconds / 3,
+                               "response_seconds": self.limits.finalization_seconds * 2 / 3,
+                               "context_reserve_bytes": min(32768, self.limits.max_context_bytes // 4),
+                               "consolidation_tools": sorted(self.tools.consolidation_tools)}
+                              if self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
+            "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
+            "tools": self.tools.specs()})
+        return system
+
+    def _finish(self, result: AgentResult, captured: list[dict[str, Any]]) -> AgentResult:
+        def save(name: str, value: Any) -> str | None:
+            try:
+                return self.recorder.save(name, value)
+            except Exception as exc:
+                self.recorder.capture_errors.append({"operation": name, "error_type": type(exc).__name__})
+                return None
+        for event in captured:
+            for field in ("archive_error", "capture_error"):
+                if event.get(field):
+                    self.recorder.capture_errors.append({"operation": "provider_payload", "error_type": str(event[field])})
+        refs = [ref for ref in (save("conversacion.json", self.history),
+                save("estado-final.json", self.recorder.snapshot(self.workspace, "final")),
+                save("git-final.json", git_state(self.recorder.experiment))) if ref]
+        if result.answer is not None:
+            try:
+                self.recorder.text("respuesta.md", result.answer)
+            except Exception as exc:
+                self.recorder.capture_errors.append({"operation": "answer_capture", "error_type": type(exc).__name__})
+        terminal = "completed" if result.status == "completed" else "failed" if result.status == "failed" else "interrupted"
+        try:
+            self.recorder.event(f"lab.run.{terminal}", status=result.status, stop_reason=result.stop_reason, llm_calls=result.llm_calls, tool_calls=result.tool_calls)
+        except Exception as exc:
+            self.recorder.capture_errors.append({"operation": "terminal_event", "error_type": type(exc).__name__})
+        refs = ["manifiesto.json", "estado-inicial.json", "eventos.jsonl", *refs]
+        if result.answer is not None:
+            refs.append("respuesta.md")
+        outcome = replace(result, artifact_refs=tuple(refs), state=self.tools.summary())
+        if save("resultado.json", outcome) is None:
+            outcome = replace(outcome, state=self.tools.summary())
         return outcome

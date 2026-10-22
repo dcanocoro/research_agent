@@ -1,4 +1,4 @@
-"""Controlled state lifecycle, closing policy, failures and installed Audit contracts."""
+"""Controlled state lifecycle, closing policy, failures and local execution contracts."""
 import asyncio
 import json
 from pathlib import Path
@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import pytest
+from support import ScriptedClient
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 from research_agent.agent import AgentA
 from research_agent.contracts import AgentLimits, AgentRequest
@@ -15,6 +16,18 @@ from research_agent.integrations.file_tools import register_files
 from research_agent.recording import RunRecorder
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
+
+
+@pytest.mark.parametrize("value", [[], {"knowledge_mode": "markdown"},
+                                  {"knowledge_mode": [], "tool_profile": "live"},
+                                  {"knowledge_mode": "unknown", "tool_profile": "live"}])
+def test_invalid_experiment_configuration_fails_before_continuation(tmp_path, value):
+    root = tmp_path / "exp"
+    prepare_experiment(root, new=True)
+    (root / "experimento.json").write_text(json.dumps(value), encoding="utf-8")
+    with pytest.raises(ValueError):
+        prepare_experiment(root, new=False)
+    assert not list((root / "ejecuciones").iterdir())
 
 
 def text(value="Delivered"):
@@ -33,19 +46,7 @@ def make_agent(root, turns, limits=None, managed=False):
     registry = ToolRegistry(recorder)
     register_files(registry, space)
 
-    class Client:
-        def __init__(self):
-            self.requests = []
-            self.turns = iter(turns)
-
-        async def respond(self, **kwargs):
-            self.requests.append(kwargs)
-            item = next(self.turns)
-            if isinstance(item, BaseException):
-                raise item
-            return item
-
-    agent = AgentA(Client(), registry, space, recorder, limits or AgentLimits(), instructions=prompts)
+    agent = AgentA(ScriptedClient(turns), registry, space, recorder, limits or AgentLimits(), instructions=prompts)
     return agent
 
 
@@ -110,7 +111,7 @@ def test_invalid_json_protected_materials_and_depth(tmp_path):
 def test_materials_are_automatic_complete_and_separate_from_knowledge(tmp_path):
     agent = make_agent(tmp_path / "experiment", [call("read_document", url="https://example.test"), text()], managed=True)
     original = {"url": "https://example.test", "partial": True, "period": "2026-Q1", "currency": "USD", "text": "á" * 40000}
-    agent.tools.register("read_document", "Controlled document", {"url": {"type": "string"}}, lambda url: original)
+    agent.tools.register("read_document", "Controlled document", {"url": {"type": "string"}}, lambda url: original, material=True)
     result = run(agent)
     assert result.status == "completed" and not result.state.files_written
     assert len(result.state.materials) == 1
@@ -169,11 +170,11 @@ def test_partial_state_survives_failure_or_cancellation(tmp_path, failure):
             run(agent)
     else:
         assert run(agent).status == "failed"
-    data = json.loads((agent.recorder.current / "result.json").read_text())
+    data = json.loads((agent.recorder.current / "resultado.json").read_text())
     assert data["status"] in {"cancelled", "failed"}
     assert data["answer"] is None and data["state"]["files_written"] == ["indice.md"]
-    assert json.loads((agent.recorder.current / "workspace_after.json").read_text())["indice.md"] == "Partial"
-    assert not (agent.recorder.current / "answer.md").exists()
+    assert json.loads((agent.recorder.current / "estado-final.json").read_text())["indice.md"] == "Partial"
+    assert not (agent.recorder.current / "respuesta.md").exists()
 
 
 def test_capture_failure_does_not_erase_operational_result(tmp_path, monkeypatch):
@@ -261,16 +262,32 @@ def test_cli_validates_before_building_and_freezes_instructions(tmp_path, monkey
     import research_agent.cli as cli
     from contextlib import asynccontextmanager
     root = tmp_path / "experiment"
+    runtime_path = tmp_path / "runtime.json"
+    profile = {"provider": "openai", "model": "controlled", "reasoning_effort": "medium", "max_output_tokens": 4000}
+    runtime_path.write_text(json.dumps({"profile": profile, "document_paths": ["entradas/source.md"], "document_limit": 1}))
+    reads = []
+    received = []
+    read_text = Path.read_text
+    def observed_read(path, *args, **kwargs):
+        if path == runtime_path:
+            reads.append(path)
+        return read_text(path, *args, **kwargs)
+    monkeypatch.setattr(Path, "read_text", observed_read)
     @asynccontextmanager
     async def builder(workspace, runs, limits, **kwargs):
+        received.append(kwargs)
         agent = make_agent(tmp_path / "fake", [text("OK")])
         agent.workspace = Workspace(workspace)
-        agent.recorder = RunRecorder(runs, **kwargs)
+        agent.recorder = RunRecorder(runs, experiment=kwargs["experiment"], run_name=kwargs["run_name"])
         agent.tools = ToolRegistry(agent.recorder)
         register_files(agent.tools, agent.workspace)
         yield agent
     monkeypatch.setattr(cli, "build_agent", builder)
-    assert cli.main(["Question", "--experiment", str(root), "--new", "--run-name", "Inicial"]) == 0
+    assert cli.main(["Question", "--experiment", str(root), "--new", "--run-name", "Inicial",
+                     "--runtime-config", str(runtime_path)]) == 0
+    assert len(reads) == 1
+    assert received[0]["profile_overrides"] == profile
+    assert received[0]["document_paths"] == ("entradas/source.md",) and received[0]["document_limit"] == 1
     (root / "instrucciones/agente.md").write_text("Custom frozen instructions", encoding="utf-8")
     assert cli.main(["Continue", "--experiment", str(root), "--continue", "--run-name", "Inicial"]) == 0
     manifests = sorted(root.glob("ejecuciones/*/manifiesto.json"))
@@ -294,7 +311,7 @@ def test_partial_snapshot_retains_readable_files_and_reports_errors(tmp_path):
     assert result.status == "completed"
     assert len(result.state.capture_errors) == 2
     assert all(e["path"] == "broken.txt" for e in result.state.capture_errors)
-    assert json.loads((agent.recorder.current / "workspace_after.json").read_text())["note.md"] == "Recoverable"
+    assert json.loads((agent.recorder.current / "estado-final.json").read_text())["note.md"] == "Recoverable"
 
 
 @pytest.mark.parametrize("archive_failure", [False, True])
@@ -331,11 +348,11 @@ def test_managed_provider_capture_is_inside_run_and_reports_failure(tmp_path, mo
 def test_materials_use_all_registered_research_families(tmp_path):
     agent = make_agent(tmp_path, [])
     agent.recorder.start("run", {})
-    for name in sorted(ToolRegistry.material_tools):
+    for name in sorted({"calculate", "search_companies", "read_company", "read_financials", "read_metric_trend", "search_web", "read_document"}):
         if name == "calculate":
             arguments = {"operation": "add", "left": 1, "right": 2, "source_refs": []}
         else:
-            agent.tools.register(name, "Controlled source", {}, lambda: {"period": "2026", "value": None})
+            agent.tools.register(name, "Controlled source", {}, lambda: {"period": "2026", "value": None}, material=True)
             arguments = {}
         result = asyncio.run(agent.tools.execute(ResponseFunctionCall("call", name, arguments)))
         assert result.payload["ok"] and result.payload["material_ref"]
@@ -355,10 +372,10 @@ def test_result_capture_failure_is_returned_to_caller(tmp_path, monkeypatch):
     agent = make_agent(tmp_path, [text()])
     original = agent.recorder.save
     def save(name, value):
-        if name == "result.json":
+        if name == "resultado.json":
             raise OSError("controlled failure")
         return original(name, value)
     monkeypatch.setattr(agent.recorder, "save", save)
     result = run(agent)
     assert result.status == "completed"
-    assert any(e["operation"] == "result.json" for e in result.state.capture_errors)
+    assert any(e["operation"] == "resultado.json" for e in result.state.capture_errors)

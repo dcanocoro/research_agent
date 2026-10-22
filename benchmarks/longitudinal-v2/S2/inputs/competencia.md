@@ -1,4 +1,0 @@
-> Documento sintético longitudinal-v2, diseñado el 2026-10-22. No describe hechos actuales de las empresas.
-
-# Despliegue de inferencia y contratos, publicado 2030-07-31
-El cliente del piloto contrata para 2031 una solución propia en dos cargas de inferencia. Coste total por consulta, con energía, migración amortizada y soporte: índice 90 frente a 100 del sistema NVIDIA para esas mismas cargas y utilización. No son los mismos costes del piloto de febrero. No se publican tamaño de las cargas ni peso sobre ventas de NVIDIA. El cliente conserva sus contratos de entrenamiento. La compañía confirma que los 18 diferidos por electricidad se mantienen: no son las cargas que cambia este anuncio. Un analista atribuye los 18 a sustitución competitiva sin nuevas pruebas. No hay datos nuevos del retorno de las aplicaciones del cliente ni del margen consolidado 2031. La mejora logística de julio permanece publicada.
