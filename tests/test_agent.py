@@ -2,7 +2,6 @@ import asyncio
 import json
 import subprocess
 import sys
-from contextlib import asynccontextmanager
 from pathlib import Path
 import pytest
 from runtime_contracts.llm import AssistantResponse, ResponseTurn, ResponseFunctionCall, ProviderContinuation, ToolResult
@@ -14,17 +13,7 @@ from research_agent.workspace import Workspace
 from research_agent.integrations.file_tools import register_files
 
 
-class ScriptedClient:
-    def __init__(self, turns):
-        self.turns = iter(turns)
-        self.requests = []
-
-    async def respond(self, **kwargs):
-        self.requests.append(kwargs)
-        turn = next(self.turns)
-        if isinstance(turn, BaseException):
-            raise turn
-        return turn
+from support import ScriptedClient
 
 
 def response(text="done", call=None, provider=None):
@@ -55,8 +44,8 @@ def test_tools_preserve_replay_and_persist_memory(tmp_path, provider):
     assert any(isinstance(item, ToolResult) and item.call_id == "call" for item in history)
     second = asyncio.run(a.run(request("Revisit")))
     assert second.run_id != first.run_id
-    assert "Remember the limit" in (a.recorder.current / "workspace_before.json").read_text()
-    assert json.loads((a.recorder.current / "transcript.json").read_text())
+    assert "Remember the limit" in (a.recorder.current / "estado-inicial.json").read_text()
+    assert json.loads((a.recorder.current / "conversacion.json").read_text())
 
 
 def test_reserved_finalization_disables_tools(tmp_path):
@@ -80,23 +69,23 @@ def test_failure_preserves_partial_run(tmp_path, error):
     a = agent(tmp_path, [response(call=("write_markdown", {"path": "notes/prior.md", "content": "confirmed"})), error])
     result = asyncio.run(a.run(request()))
     assert result.status in {"failed", "interrupted"}
-    assert (a.recorder.current / "result.json").exists()
-    assert "confirmed" in (a.recorder.current / "workspace_after.json").read_text()
-    assert "secret" not in (a.recorder.current / "result.json").read_text()
+    assert (a.recorder.current / "resultado.json").exists()
+    assert "confirmed" in (a.recorder.current / "estado-final.json").read_text()
+    assert "secret" not in (a.recorder.current / "resultado.json").read_text()
 
 
 def test_cancel_is_propagated_and_archived(tmp_path):
     a = agent(tmp_path, [asyncio.CancelledError()])
     with pytest.raises(asyncio.CancelledError):
         asyncio.run(a.run(request()))
-    assert json.loads((a.recorder.current / "result.json").read_text())["status"] == "cancelled"
+    assert json.loads((a.recorder.current / "resultado.json").read_text())["status"] == "cancelled"
 
 
 def test_context_limit_does_not_silently_trim(tmp_path):
     a = agent(tmp_path, [], AgentLimits(max_context_bytes=1024))
     result = asyncio.run(a.run(request("x" * 4096)))
     assert result.stop_reason == "context_limit" and result.llm_calls == 0
-    assert "x" * 4096 in (a.recorder.current / "transcript.json").read_text()
+    assert "x" * 4096 in (a.recorder.current / "conversacion.json").read_text()
 
 
 def test_large_result_can_be_read_without_recursion(tmp_path):
@@ -153,62 +142,17 @@ def test_findata_tools_are_readonly_and_rollback(monkeypatch):
     assert statements[0] == "SET TRANSACTION READ ONLY" and statements[-1] == "rollback"
 
 
-def test_campaign_archive_query_and_viewer(tmp_path):
-    from experience_audit.lab_runner import execute_lab
-    from experience_audit.archive import Archive, load_run
-    from experience_audit.query import detail, export
-    from experience_audit.viewer import mount
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
-    scenarios = tmp_path / "scenarios"
-    scenarios.mkdir()
-    (scenarios / "one.yaml").write_text('''id: lab_memory
-title: Continuity
-requirements: []
-messages: [Remember, Revisit]
-checks:
-  - {id: done, kind: completed}
-  - {id: memory, kind: file_contains, path: memory/index.md, value: durable}
-''')
-    @asynccontextmanager
-    async def builder(workspace, runs, limits):
-        a = agent(tmp_path / "fake", [response(call=("write_markdown", {"path": "memory/index.md", "content": "durable"})), response("saved"), response("revisited")])
-        a.workspace = Workspace(workspace)
-        a.recorder = RunRecorder(runs)
-        a.tools = ToolRegistry(a.recorder)
-        register_files(a.tools, a.workspace)
-        yield a
-    run, path = asyncio.run(execute_lab(scenarios, tmp_path / "archive", builder=builder))
-    assert run.status == "passed"
-    restored = load_run(path)
-    assert restored.scenarios[0].steps[1].answer == "revisited"
-    archive = Archive(tmp_path / "archive")
-    value = detail(archive, "executions", run.execution_refs[0]["execution_id"], full=True)
-    assert value["execution_kind"] == "lab" and len(value["answers"]) == 2
-    assert "revisited" in export(value, "txt")
-    from experience_audit.reporting.extract import build_summary
-    assert build_summary(restored).overview.scenarios.passed == 1
-    app = FastAPI()
-    mount(app, tmp_path / "archive")
-    assert TestClient(app).get("/api/history").status_code == 200
-    archive.cleanup(execution_id=run.execution_refs[0]["execution_id"], apply=True)
-    assert not list((path.parent / "agent_runs" / "lab_memory").rglob("*.json"))
-    assert not list((path.parent / "workspaces" / "lab_memory").rglob("*.md"))
-
-
 def test_import_boundary_in_clean_subprocess(tmp_path):
     code = r'''
 import sys, importlib.abc, tempfile, asyncio
 from pathlib import Path
 class Reject(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, *args):
-        if fullname.split('.')[0] in {'finmate','engine','api'}:
+        if fullname.split('.')[0] in {'finmate','engine','api','experience_audit','research_benchmarks'}:
             raise RuntimeError('Forbidden import: '+fullname)
 sys.meta_path.insert(0, Reject())
 from research_agent.bootstrap import build_agent
 from research_agent.cli import main
-from experience_audit.cli import parser
-from experience_audit.lab_runner import execute_lab
 from infra.llm_factory import LLMFactory
 from research_agent.contracts import AgentRequest
 from runtime_contracts.llm import ResponseTurn, AssistantResponse
@@ -223,18 +167,8 @@ async def check():
             assert (await agent.run(AgentRequest('hello','space','conversation'))).status=='completed'
             assert 'save_case' not in {s.name for s in agent.tools.specs()}
             assert agent.instructions == ()
-        from contextlib import asynccontextmanager
-        @asynccontextmanager
-        async def builder(workspace,runs,limits):
-            async with build_agent(workspace,runs,limits) as agent:
-                agent.client=Fake()
-                yield agent
-        scenarios=root/'scenarios';scenarios.mkdir()
-        (scenarios/'test.yaml').write_text('id: boundary\ntitle: Boundary\nrequirements: []\nmessages: [Hello]\n')
-        run,path=await execute_lab(scenarios,root/'audit',builder=builder)
-        assert run.status=='passed'
 asyncio.run(check())
-assert not any(n.split('.')[0] in {'finmate','engine','api'} for n in sys.modules)
+assert not any(n.split('.')[0] in {'finmate','engine','api','experience_audit','research_benchmarks'} for n in sys.modules)
 '''
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
@@ -260,7 +194,10 @@ def test_static_import_boundary():
         for path in root.rglob("*.py"):
             for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
                 names = [a.name for a in node.names] if isinstance(node, ast.Import) else [node.module or ""] if isinstance(node, ast.ImportFrom) else []
-                assert not {n.split(".")[0] for n in names} & {"finmate", "engine", "api"}, path
+                forbidden = {"finmate", "engine", "api"}
+                if root.name == "research_agent":
+                    forbidden |= {"experience_audit", "research_benchmarks"}
+                assert not {n.split(".")[0] for n in names} & forbidden, path
 
 
 def test_native_llm_capture_has_correlation_and_payload(tmp_path):
@@ -291,3 +228,12 @@ def test_prior_artifacts_are_readable_only_in_the_same_workspace(tmp_path):
     recorder.start("third", {"workspace_fingerprint": "other"})
     with pytest.raises(FileNotFoundError):
         recorder.read_artifact(reference)
+
+
+def test_legacy_native_artifact_is_still_readable(tmp_path):
+    recorder = RunRecorder(tmp_path / "runs")
+    recorder.start("old", {"workspace_fingerprint": "same"})
+    reference = recorder.artifact({"original": "historical"})
+    (recorder.current / "manifiesto.json").rename(recorder.current / "manifest.json")
+    recorder.start("new", {"workspace_fingerprint": "same"})
+    assert "historical" in recorder.read_artifact(reference)["text"]

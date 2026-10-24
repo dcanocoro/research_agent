@@ -38,8 +38,6 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     factory = LLMFactory(settings)
     profile = replace(configured_profile(settings, "planner"), name="lab")
     space = Workspace(workspace)
-    if space.root.resolve() == runs.resolve() or space.root.resolve() in runs.resolve().parents or runs.resolve() in space.root.resolve().parents:
-        raise ValueError("Workspace and audit directory must be disjoint.")
     register_files(registry, space)
     database = create_engine(settings.DATABASE_URL,
         connect_args={"connect_timeout": 10} if make_url(settings.DATABASE_URL).get_backend_name() == "postgresql" else {})

@@ -43,24 +43,19 @@ define cómo fijar cada protocolo y conservar hallazgos, fallos y límites.
 La [suite longitudinal v1](experiments/longitudinal-v1/protocol.md) define tres nuevas
 historias (ASML, NVIDIA y Ford), con seis sesiones cada una, corpus sintético publicado
 por etapas y rúbricas previas. Está generada, sin ejecutar ni implementar M1/M2.
-Conserva el piloto anterior; sus restricciones de corpus y consultas son declaradas,
+El piloto anterior se conserva en Git; las restricciones de la suite de corpus y consultas son declaradas,
 no límites técnicos impuestos por el controlador.
 
-El [benchmark piloto v1](experiments/benchmark-pilot-v1/protocol.md) añade cuatro casos
+El [benchmark piloto v1 histórico](experiments/benchmark-pilot-v1/protocol.md) definió cuatro casos
 con sesiones en procesos nuevos, entradas publicadas entre sesiones y herramientas
 reales. Su controlador prepara archivos, invoca la CLI y recoge evidencia; no cambia
 el ciclo de A ni usa jueces automáticos. Tiene verificación local con servicios
 simulados, sin campaña real. Web y PostgreSQL siguen siendo variables externas.
 
-El directorio [scenarios](../scenarios) contiene investigación de empresa, comparación
-de periodos, continuidad de memoria, fallo documental y agotamiento de recursos.
-Sus YAML fijan mensajes y checks, pero los escenarios que usan fuentes remotas no
-congelan automáticamente PostgreSQL ni la web. Los casos sintéticos se identifican.
-
-Experience Audit ejecuta mensajes secuenciales con una instancia por escenario y un
-workspace aislado. Conserva definiciones, intervenciones, resultados y evidencia.
-Los checks mecánicos comprueban ejecución, texto, uso de herramienta o archivos;
-no evalúan por sí solos la veracidad o calidad financiera.
+Las campañas actuales usan `python -m research_benchmarks`, separado del núcleo,
+con las definiciones de `benchmarks/`. La integración local con Experience Audit y
+sus escenarios se retiraron el 2026-10-24. Los checks mecánicos no evalúan por sí
+solos la veracidad o calidad financiera.
 
 La [operación](development.md) describe contrato, comandos y consulta. Este documento
 posee el diseño experimental, no el funcionamiento del runner.
@@ -86,10 +81,10 @@ a razonar o a representar la conclusión: son intervenciones distintas.
 | A3 financiero | No | Sí |
 
 Son cuatro condiciones experimentales del mismo agente, no cuatro agentes que
-colaboran. No existen selectores A0–A3 implementados. Hoy CLI y Audit añaden la guía
+colaboran. No existen selectores A0–A3 implementados. Hoy la CLI añade la guía
 financiera básica. En CLI, `--instructions` añade archivos solo con `--new`; las
 continuaciones utilizan las copias de `instrucciones/`, que pueden editarse explícitamente.
-Audit recibe las instrucciones de cada escenario. La ejecución
+La ejecución
 actual no equivale a A0, ni la guía ligera representa necesariamente el tratamiento
 financiero completo propuesto para A2/A3.
 

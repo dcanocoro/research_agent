@@ -1,8 +1,8 @@
 # Registro de experimentos y hallazgos
 
 La [metodología](../experiments.md) define cómo comparar y la
-[estrategia](../strategy.md) establece la prioridad. Los escenarios ejecutables de [scenarios](../../scenarios)
-son estímulos y checks, no campañas realizadas ni resultados semánticos.
+[estrategia](../strategy.md) establece la prioridad. Las definiciones ejecutables de [benchmarks](../../benchmarks)
+son estímulos y rúbricas, no campañas realizadas ni resultados semánticos.
 
 Crear una carpeta `E001-nombre-breve/` cuando exista un contraste concreto:
 

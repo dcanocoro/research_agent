@@ -13,69 +13,10 @@ from pathlib import Path
 import shutil
 from typing import Any
 
-from .benchmark_evidence import brief, digest, save
-from .workspace import Workspace
-
-
-FORMAT = "benchmark-compact-v1"
-
-
-def reference(root: Path, path: Path) -> str:
-    return path.relative_to(root).as_posix()
-
-
-def resolve(root: Path, name: str) -> Path:
-    if not isinstance(name, str) or "\\" in name or ":" in name or Path(name).is_absolute() or ".." in name.split("/"):
-        raise ValueError("Evidence reference escapes campaign")
-    path = root / name
-    Workspace._check_links(path)
-    if not path.resolve().is_relative_to(root.resolve()):
-        raise ValueError("Evidence reference escapes campaign")
-    return path
-
-
-def read_json(path: Path) -> Any:
-    Workspace._check_links(path)
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def records(run: Path) -> list[dict[str, Any]]:
-    Workspace._check_links(run / "trayectoria.jsonl.gz")
-    with gzip.open(run / "trayectoria.jsonl.gz", "rt", encoding="utf-8") as stream:
-        return [json.loads(line) for line in stream if line.strip()]
-
-
-def material(root: Path, ref: dict[str, Any]) -> Any:
-    path = resolve(root, ref["ref"])
-    if digest(path) != ref["sha256"]:
-        raise ValueError(f"Material hash mismatch: {ref['ref']}")
-    return read_json(path)
-
-
-def full_result(root: Path, record: dict[str, Any]) -> Any:
-    value = record["full_result"]
-    return material(root, value) if record.get("full_result_is_reference") else value
-
-
-def delivered_result(root: Path, record: dict[str, Any]) -> Any:
-    if record.get("delivered_value_is_full_result"):
-        return {**record["delivered"], "value": full_result(root, record)}
-    return record["delivered"]
-
-
-def restore_snapshot(root: Path, value: dict[str, Any]) -> dict[str, Any]:
-    if value.get("schema_version") != FORMAT:
-        return value
-    result = {}
-    for name, entry in value["files"].items():
-        if isinstance(entry, dict) and "ref" in entry:
-            path = resolve(root, entry["ref"])
-            if digest(path) != entry["sha256"]:
-                raise ValueError(f"Snapshot material hash mismatch: {name}")
-            result[name] = path.read_text(encoding="utf-8")
-        else:
-            result[name] = entry
-    return result
+from .evidence import brief, save
+from research_agent.archive import (FORMAT, digest, reference, resolve, read_json, records,
+                                    material, full_result, delivered_result, restore_snapshot)
+from research_agent.workspace import Workspace
 
 
 def _pack_snapshot(root: Path, experiment: Path, value: dict[str, Any]) -> dict[str, Any]:
@@ -97,7 +38,7 @@ def _pack_snapshot(root: Path, experiment: Path, value: dict[str, Any]) -> dict[
 
 
 def compact_run(root: Path, run: Path, case_id: str, session_id: str) -> bool:
-    from .benchmark_evidence import inspect_run
+    from .evidence import inspect_run
     if (run / "ejecucion.json").exists():
         details, _ = inspect_compact(root, run, case_id, session_id)
         if not details["capture_complete"]:
@@ -305,7 +246,7 @@ def review_index(root: Path) -> None:
               "Entrega: hallazgo, evidencia, consecuencia y siguiente cambio que merezca contrastarse.",
               "No atribuyas mejora causal ni rentabilidad a esta campaña exploratoria.", "",
               "## Lectura técnica", "",
-              "Usa research_agent.benchmark_archive.records(run) para leer la trayectoria comprimida.",
+              "Usa research_agent.archive.records(run) para leer la trayectoria comprimida.",
               "delivered_result(campaign, record) y full_result(campaign, record) recuperan ambos resultados de herramientas.",
               "restore_snapshot(campaign, snapshot) recupera el estado completo verificando los materiales.",
               "Los eventos conservan el orden del productor; sequence ordena la captura, no infiere causalidad."]
@@ -357,6 +298,6 @@ def export_campaign(source: Path, destination: Path) -> Path:
         Workspace._check_links(path)
     shutil.copytree(source, destination)
     compact_campaign(destination)
-    from .benchmark_evidence import extract
+    from .evidence import extract
     extract(destination)
     return destination

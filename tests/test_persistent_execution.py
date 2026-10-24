@@ -1,4 +1,4 @@
-"""Controlled state lifecycle, closing policy, failures and installed Audit contracts."""
+"""Controlled state lifecycle, closing policy and capture failures."""
 import asyncio
 import json
 from pathlib import Path
@@ -15,6 +15,7 @@ from research_agent.integrations.file_tools import register_files
 from research_agent.recording import RunRecorder
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
+from support import ScriptedClient
 
 
 def text(value="Delivered"):
@@ -33,19 +34,7 @@ def make_agent(root, turns, limits=None, managed=False):
     registry = ToolRegistry(recorder)
     register_files(registry, space)
 
-    class Client:
-        def __init__(self):
-            self.requests = []
-            self.turns = iter(turns)
-
-        async def respond(self, **kwargs):
-            self.requests.append(kwargs)
-            item = next(self.turns)
-            if isinstance(item, BaseException):
-                raise item
-            return item
-
-    agent = AgentA(Client(), registry, space, recorder, limits or AgentLimits(), instructions=prompts)
+    agent = AgentA(ScriptedClient(turns), registry, space, recorder, limits or AgentLimits(), instructions=prompts)
     return agent
 
 
@@ -110,7 +99,7 @@ def test_invalid_json_protected_materials_and_depth(tmp_path):
 def test_materials_are_automatic_complete_and_separate_from_knowledge(tmp_path):
     agent = make_agent(tmp_path / "experiment", [call("read_document", url="https://example.test"), text()], managed=True)
     original = {"url": "https://example.test", "partial": True, "period": "2026-Q1", "currency": "USD", "text": "á" * 40000}
-    agent.tools.register("read_document", "Controlled document", {"url": {"type": "string"}}, lambda url: original)
+    agent.tools.register("read_document", "Controlled document", {"url": {"type": "string"}}, lambda url: original, material=True)
     result = run(agent)
     assert result.status == "completed" and not result.state.files_written
     assert len(result.state.materials) == 1
@@ -169,11 +158,11 @@ def test_partial_state_survives_failure_or_cancellation(tmp_path, failure):
             run(agent)
     else:
         assert run(agent).status == "failed"
-    data = json.loads((agent.recorder.current / "result.json").read_text())
+    data = json.loads((agent.recorder.current / "resultado.json").read_text())
     assert data["status"] in {"cancelled", "failed"}
     assert data["answer"] is None and data["state"]["files_written"] == ["indice.md"]
-    assert json.loads((agent.recorder.current / "workspace_after.json").read_text())["indice.md"] == "Partial"
-    assert not (agent.recorder.current / "answer.md").exists()
+    assert json.loads((agent.recorder.current / "estado-final.json").read_text())["indice.md"] == "Partial"
+    assert not (agent.recorder.current / "respuesta.md").exists()
 
 
 def test_capture_failure_does_not_erase_operational_result(tmp_path, monkeypatch):
@@ -294,7 +283,7 @@ def test_partial_snapshot_retains_readable_files_and_reports_errors(tmp_path):
     assert result.status == "completed"
     assert len(result.state.capture_errors) == 2
     assert all(e["path"] == "broken.txt" for e in result.state.capture_errors)
-    assert json.loads((agent.recorder.current / "workspace_after.json").read_text())["note.md"] == "Recoverable"
+    assert json.loads((agent.recorder.current / "estado-final.json").read_text())["note.md"] == "Recoverable"
 
 
 @pytest.mark.parametrize("archive_failure", [False, True])
@@ -331,11 +320,12 @@ def test_managed_provider_capture_is_inside_run_and_reports_failure(tmp_path, mo
 def test_materials_use_all_registered_research_families(tmp_path):
     agent = make_agent(tmp_path, [])
     agent.recorder.start("run", {})
-    for name in sorted(ToolRegistry.material_tools):
+    for name in ["search_companies", "read_company", "read_financials", "read_metric_trend",
+                 "search_web", "read_document", "calculate"]:
         if name == "calculate":
             arguments = {"operation": "add", "left": 1, "right": 2, "source_refs": []}
         else:
-            agent.tools.register(name, "Controlled source", {}, lambda: {"period": "2026", "value": None})
+            agent.tools.register(name, "Controlled source", {}, lambda: {"period": "2026", "value": None}, material=True)
             arguments = {}
         result = asyncio.run(agent.tools.execute(ResponseFunctionCall("call", name, arguments)))
         assert result.payload["ok"] and result.payload["material_ref"]
@@ -355,10 +345,54 @@ def test_result_capture_failure_is_returned_to_caller(tmp_path, monkeypatch):
     agent = make_agent(tmp_path, [text()])
     original = agent.recorder.save
     def save(name, value):
-        if name == "result.json":
+        if name == "resultado.json":
             raise OSError("controlled failure")
         return original(name, value)
     monkeypatch.setattr(agent.recorder, "save", save)
     result = run(agent)
     assert result.status == "completed"
-    assert any(e["operation"] == "result.json" for e in result.state.capture_errors)
+    assert any(e["operation"] == "resultado.json" for e in result.state.capture_errors)
+
+
+@pytest.mark.parametrize("execution", ["inline", "thread", "async"])
+def test_explicit_execution_materials_and_validation(tmp_path, monkeypatch, execution):
+    import threading
+    agent = make_agent(tmp_path, [])
+    agent.recorder.start("run", {})
+    invoked = []
+    def source(value):
+        invoked.append(threading.get_ident())
+        return {"value": value}
+    async def async_source(value):
+        return source(value)
+    agent.tools.register("new_source", "Controlled", {"value": {"type": "integer"}},
+                         async_source if execution == "async" else source,
+                         execution=execution, material=True, consolidation=True)
+    # Dispatch must reuse the validator created at registration.
+    monkeypatch.setattr("research_agent.tools.Draft202012Validator",
+                        lambda *a, **k: pytest.fail("rebuilt registry validator"))
+    async def check():
+        call = ResponseFunctionCall("call", "new_source", {"value": 2})
+        result = await agent.tools.execute(call, allowed_names=agent.tools.consolidation_tools)
+        assert result.payload["ok"] and result.payload["material_ref"]
+        assert result.payload["value"] == {"value": 2}
+        invalid = await agent.tools.execute(ResponseFunctionCall("bad", "new_source", {"value": "wrong"}))
+        assert not invalid.payload["ok"]
+        denied = await agent.tools.execute(call, allowed_names=frozenset())
+        assert not denied.payload["ok"]
+    asyncio.run(check())
+    assert len(invoked) == 1
+    assert (invoked[0] == threading.get_ident()) == (execution != "thread")
+    assert "new_source" in agent.tools.consolidation_tools
+
+
+def test_file_write_finishes_without_background_thread(tmp_path, monkeypatch):
+    agent = make_agent(tmp_path, [])
+    agent.recorder.start("run", {})
+    async def reject_thread(*args, **kwargs):
+        pytest.fail("file operation dispatched to background thread")
+    monkeypatch.setattr(asyncio, "to_thread", reject_thread)
+    result = asyncio.run(agent.tools.execute(ResponseFunctionCall("write", "write_file", {
+        "path": "indice.md", "content": "Retained before closing"})))
+    assert result.payload["ok"]
+    assert agent.workspace.path("indice.md").read_text() == "Retained before closing"

@@ -2,10 +2,9 @@ from __future__ import annotations
 """Schema-validated dispatch, automatic materials, and bounded result delivery."""
 import asyncio
 import hashlib
-import inspect
-from pathlib import Path
 from collections.abc import Callable
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Literal
 from jsonschema import Draft202012Validator
 from runtime_contracts.llm import ResponseFunctionCall, ToolResult, ToolSpec
 from .contracts import StateSummary, serializable
@@ -13,14 +12,20 @@ from .recording import RunRecorder, encoded
 from .workspace import Workspace
 
 
-class ToolRegistry:
-    material_tools = frozenset({"search_companies", "read_company", "read_financials", "read_metric_trend",
-                                "search_web", "read_document", "calculate"})
-    consolidation_tools = frozenset({"list_files", "read_file", "search_files", "write_file", "write_markdown", "read_artifact"})
+@dataclass(frozen=True)
+class RegisteredTool:
+    spec: ToolSpec
+    function: Callable[..., Any]
+    validator: Draft202012Validator
+    execution: Literal["inline", "thread", "async"]
+    material: bool
+    consolidation: bool
 
+
+class ToolRegistry:
     def __init__(self, recorder: RunRecorder) -> None:
         self.recorder = recorder
-        self._tools: dict[str, tuple[ToolSpec, Callable[..., Any]]] = {}
+        self._tools: dict[str, RegisteredTool] = {}
         self.workspace: Workspace | None = None
         self.files_written: list[str] = []
         self.materials: list[str] = []
@@ -31,19 +36,26 @@ class ToolRegistry:
     def summary(self) -> StateSummary:
         return StateSummary(tuple(dict.fromkeys(self.files_written)), tuple(self.materials), tuple(self.recorder.capture_errors))
 
-    def register(self, name: str, description: str, properties: dict[str, Any], function: Callable[..., Any]) -> None:
+    def register(self, name: str, description: str, properties: dict[str, Any], function: Callable[..., Any], *,
+                 execution: Literal["inline", "thread", "async"] = "thread",
+                 material: bool = False, consolidation: bool = False) -> None:
         if name in self._tools:
             raise ValueError("Duplicate tool.")
         schema = {"type": "object", "properties": properties,
                   "required": list(properties), "additionalProperties": False}
         Draft202012Validator.check_schema(schema)
-        self._tools[name] = (ToolSpec(name, description, schema), function)
+        self._tools[name] = RegisteredTool(ToolSpec(name, description, schema), function,
+                                          Draft202012Validator(schema), execution, material, consolidation)
+
+    @property
+    def consolidation_tools(self) -> frozenset[str]:
+        return frozenset(name for name, tool in self._tools.items() if tool.consolidation)
 
     def specs(self, allowed_names: frozenset[str] | None = None) -> list[ToolSpec]:
-        return [spec for spec, _ in self._tools.values() if allowed_names is None or spec.name in allowed_names]
+        return [tool.spec for name, tool in self._tools.items() if allowed_names is None or name in allowed_names]
 
     def _material(self, name: str, value: Any) -> str | None:
-        if name not in self.material_tools or self.workspace is None:
+        if not self._tools[name].material or self.workspace is None:
             return None
         assert self.recorder.current is not None
         relative = f"materiales/{self.recorder.current.name}-{len(self.materials)+1:02d}-{name.replace('_', '-')}.json"
@@ -61,15 +73,15 @@ class ToolRegistry:
                 raise ValueError("Tool is unavailable in this execution phase.")
             if call.name not in self._tools:
                 raise ValueError("Unknown tool.")
-            spec, function = self._tools[call.name]
-            Draft202012Validator(spec.parameters).validate(call.arguments)
-            if inspect.iscoroutinefunction(function):
-                value = await function(**call.arguments)
-            elif self.workspace is not None and getattr(function, "__self__", None) is self.workspace:
+            tool = self._tools[call.name]
+            tool.validator.validate(call.arguments)
+            if tool.execution == "async":
+                value = await tool.function(**call.arguments)
+            elif tool.execution == "inline":
                 # File operations finish synchronously: a timed-out thread must not mutate a closed run.
-                value = function(**call.arguments)
+                value = tool.function(**call.arguments)
             else:
-                value = await asyncio.to_thread(function, **call.arguments)
+                value = await asyncio.to_thread(tool.function, **call.arguments)
             value = serializable(value)
             artifact = self.recorder.artifact(value)
             material = self._material(call.name, value)

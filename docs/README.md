@@ -44,9 +44,10 @@ La prioridad vigente se consulta en estrategia, no en la última campaña record
 
 Hoy existe solo A, con herramientas y estado de archivos por experimento; instrucciones,
 materiales y ejecuciones están separados. CLI permite crear o continuar una prueba.
-Audit conserva su interfaz instalada. Ambos cargan guía financiera básica; A0–A3, DCF
+Las campañas se ejecutan desde `research_benchmarks`, separado del núcleo.
+La CLI carga guía financiera básica; A0–A3, DCF
 y cartera no están implementados. Los documentos de E001/E002 no están en el árbol
 actual; el registro experimental explica cómo recuperarlos desde Git.
 Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
 La documentación de sus fuentes puede diferir del wheel instalado: verificar antes
-de atribuir capacidades. Estado revisado el 2026-10-18.
+de atribuir capacidades. Estado revisado el 2026-10-24.

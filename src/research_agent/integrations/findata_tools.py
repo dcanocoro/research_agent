@@ -46,9 +46,9 @@ class FindataTools:
         from findata.read.metrics import METRIC_DEFINITIONS
         string = {"type": "string", "minLength": 1, "maxLength": 200}
         registry.register("search_companies", "Search the stored financial universe.",
-                          {"query": string, "page": {"type": "integer", "minimum": 1}}, self.search_companies)
-        registry.register("read_company", "Read company snapshot with coverage metadata.", {"symbol": string}, self.read_company)
-        registry.register("read_financials", "Read annual/quarterly financial observations with individual provenance.", {"symbol": string}, self.read_financials)
+                          {"query": string, "page": {"type": "integer", "minimum": 1}}, self.search_companies, material=True)
+        registry.register("read_company", "Read company snapshot with coverage metadata.", {"symbol": string}, self.read_company, material=True)
+        registry.register("read_financials", "Read annual/quarterly financial observations with individual provenance.", {"symbol": string}, self.read_financials, material=True)
         registry.register("read_metric_trend", "Read supported deterministic metric history.",
                           {"symbol": string, "metric": {"type": "string", "enum": list(METRIC_DEFINITIONS)},
-                           "years": {"type": "integer", "enum": [3, 5]}}, self.read_metric_trend)
+                           "years": {"type": "integer", "enum": [3, 5]}}, self.read_metric_trend, material=True)

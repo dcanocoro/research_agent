@@ -13,15 +13,19 @@ La [metodología](../../experiments.md) distingue operación y aceptación semá
 
 | Caso | Definición | Sesiones | Referencia del revisor |
 |---|---|---|---|
-| B1 | [Fuentes contradictorias](../../../benchmarks/pilot-v1/B1/case.yaml) | 1 | [Rúbrica](../../../benchmarks/pilot-v1/B1/rubric.md) |
-| E2 | [Continuidad](../../../benchmarks/pilot-v1/E2/case.yaml) | 4 | [Rúbrica](../../../benchmarks/pilot-v1/E2/rubric.md) |
-| F3 | [Información irrelevante](../../../benchmarks/pilot-v1/F3/case.yaml) | 2 | [Rúbrica](../../../benchmarks/pilot-v1/F3/rubric.md) |
-| G2 | [Fuentes fallidas](../../../benchmarks/pilot-v1/G2/case.yaml) | 1 | [Rúbrica](../../../benchmarks/pilot-v1/G2/rubric.md) |
+| B1 | Fuentes contradictorias (`benchmarks/pilot-v1/B1/case.yaml` en Git) | 1 | Rúbrica (`benchmarks/pilot-v1/B1/rubric.md` en Git) |
+| E2 | Continuidad (`benchmarks/pilot-v1/E2/case.yaml` en Git) | 4 | Rúbrica (`benchmarks/pilot-v1/E2/rubric.md` en Git) |
+| F3 | Información irrelevante (`benchmarks/pilot-v1/F3/case.yaml` en Git) | 2 | Rúbrica (`benchmarks/pilot-v1/F3/rubric.md` en Git) |
+| G2 | Fuentes fallidas (`benchmarks/pilot-v1/G2/case.yaml` en Git) | 1 | Rúbrica (`benchmarks/pilot-v1/G2/rubric.md` en Git) |
 
-La [suite](../../../benchmarks/pilot-v1/suite.yaml) fija este orden. Las dificultades
+La suite (`benchmarks/pilot-v1/suite.yaml` en Git) fija este orden. Las dificultades
 dependen de incertidumbre, compatibilidad de datos y recuperación, no del número de
 mensajes. Los documentos incluyen procedencia, fecha y carácter sintético/hipotético;
 no convertirlos en datos actuales de una empresa real.
+
+El catálogo del piloto ya no está en el árbol actual. Se recupera desde `22bcaa5`
+con `git show 22bcaa5:benchmarks/pilot-v1/suite.yaml` y las rutas indicadas arriba.
+El catálogo ejecutable actual es [longitudinal v1](../longitudinal-v1/protocol.md).
 
 ## Definición y ejecución
 

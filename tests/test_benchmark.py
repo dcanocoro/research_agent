@@ -9,69 +9,19 @@ import sys
 import pytest
 import yaml
 
-from research_agent.benchmark import launch, main, run_suite
-from research_agent.benchmark_catalog import load_suite
-from research_agent.benchmark_evidence import extract, save
+from research_benchmarks.runner import launch, main, run_suite
+from research_benchmarks.catalog import load_suite
+from research_benchmarks.evidence import extract, save
 from research_agent.workspace import Workspace
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def catalog(tmp_path, cases=2, sessions=2):
-    root = tmp_path / "suite"
-    root.mkdir()
-    paths = []
-    for n in range(cases):
-        case = root / f"C{n}"
-        case.mkdir()
-        (case / "source.md").write_text("initial evidence", encoding="utf-8")
-        (case / "future.md").write_text("future evidence", encoding="utf-8")
-        (case / "rubric.md").write_text("EVALUATOR ONLY", encoding="utf-8")
-        value = {"id": f"C{n}", "title": "Test", "context": "Company", "competencies": ["memory"],
-                 "difficulty": "Requires recovery", "rubric": "rubric.md", "sessions": [
-                     {"id": f"s{i}", "message": f"Question {i}",
-                      "publish": {"entradas/initial.md": "source.md"} if i == 0 else
-                                 {"entradas/future.md": "future.md"} if i == 1 else {}}
-                     for i in range(sessions)]}
-        (case / "case.yaml").write_text(yaml.safe_dump(value), encoding="utf-8")
-        paths.append(f"C{n}/case.yaml")
-    (root / "suite.yaml").write_text(yaml.safe_dump({"schema_version": "benchmark-v1", "id": "test", "cases": paths}), encoding="utf-8")
-    return root
+from support import catalog, fake_cli
 
 
-def fake_cli(command, out, err, *, status="completed", missing=None):
-    """Small native-format fixture, not a replacement used by the product runner."""
-    experiment = Path(command[command.index("--experiment") + 1])
-    session = command[command.index("--run-name") + 1]
-    run = experiment / "ejecuciones" / session
-    run.mkdir()
-    (run / "trazas").mkdir()
-    out.write_text("arbitrary output; never parsed", encoding="utf-8")
-    err.write_text("diagnostic", encoding="utf-8")
-    run_id = f"run-{experiment.name}-{session}"
-    save(run / "manifiesto.json", {"run_id": run_id})
-    save(run / "resultado.json", {"run_id": run_id, "status": status, "stop_reason": "answered", "answer": "done",
-                                 "llm_calls": 1, "tool_calls": 0, "state": {"capture_errors": []}})
-    save(run / "estado-inicial.json", {})
-    save(run / "estado-final.json", {})
-    save(run / "conversacion.json", [])
-    (run / "peticion.md").write_text(command[3], encoding="utf-8")
-    (run / "respuesta.md").write_text("done", encoding="utf-8")
-    native = [{"run_id": run_id, "event": "lab.run.started", "occurred_at": "2026-10-20T00:00:00+00:00"},
-              {"run_id": run_id, "event": f"lab.run.{status}", "occurred_at": "2026-10-20T00:00:02+00:00"}]
-    (run / "eventos.jsonl").write_text("\n".join(json.dumps(e) for e in native), encoding="utf-8")
-    event = {"run_id": run_id, "event": "engine.llm_call", "llm_call_id": run_id + "-llm",
-             "occurred_at": "2026-10-20T00:00:01+00:00", "archive_file": "modelo-0001.json.gz"}
-    (run / "trazas/events.jsonl").write_text(json.dumps(event) + "\n", encoding="utf-8")
-    with gzip.open(run / "trazas/modelo-0001.json.gz", "wt", encoding="utf-8") as stream:
-        json.dump({"provider_input": {"input": ["question"]}, "provider_output": {"text": "done"}}, stream)
-    if missing:
-        (run / missing).unlink()
-    return 0 if status == "completed" else 1
-
-
-def test_validate_pilots_without_service_imports():
+def test_validate_catalog_without_service_imports():
     code = """
 import sys
 class Block:
@@ -79,12 +29,22 @@ class Block:
         if fullname.split('.')[0] in {'infra','findata','engine','finmate','api'}:
             raise AssertionError(fullname)
 sys.meta_path.insert(0, Block())
-from research_agent.benchmark import main
-raise SystemExit(main(['validate', 'benchmarks/pilot-v1']))
+from research_benchmarks.runner import main
+raise SystemExit(main(['validate', 'benchmarks/longitudinal-v1']))
 """
     result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
-    assert "cases=4; sessions=8" in result.stdout
+    assert "cases=3; sessions=18" in result.stdout
+
+
+@pytest.mark.parametrize("package", ["research_agent", "research_benchmarks"])
+def test_campaign_output_cannot_overlap_either_source_package(tmp_path, package):
+    from importlib.util import find_spec
+    source = Path(find_spec(package).origin).parent
+    output = source / "forbidden-campaign-output"
+    with pytest.raises(ValueError):
+        run_suite(load_suite(catalog(tmp_path)), output, launcher=fake_cli)
+    assert not output.exists()
 
 
 @pytest.mark.parametrize("change", ["duplicate_case", "duplicate_session", "missing", "escape", "overwrite", "device", "duplicate_yaml"])
@@ -208,24 +168,26 @@ def test_modified_stimulus_is_reported(tmp_path):
     assert session["input_modifications"][0]["path"] == "entradas/initial.md"
 
 
-def test_all_pilots_with_simulated_agent_and_no_providers(tmp_path):
+def test_longitudinal_suite_with_simulated_agent_and_no_providers(tmp_path):
+    suite = load_suite(ROOT / "benchmarks/longitudinal-v1")
     attempted = []
     def worker(command, out, err):
         exp = Path(command[command.index("--experiment") + 1])
-        session = command[command.index("--run-name") + 1]
-        attempted.append((exp.name, session))
-        state = exp / "estado"
-        assert not any("rubric" in p.name for p in state.rglob("*"))
-        if exp.name == "E2":
-            assert (state / "entradas/escenario.md").exists() == (session in {"sesion-03", "sesion-04"})
-        if exp.name == "F3":
-            assert (state / "entradas/anuncio.md").exists() == (session == "sesion-02")
+        session_id = command[command.index("--run-name") + 1]
+        case = next(c for c in suite.cases if c.id == exp.name)
+        index = next(i for i, session in enumerate(case.sessions) if session.id == session_id)
+        expected = {p.target for session in case.sessions[:index + 1] for p in session.publish}
+        actual = {p.relative_to(exp / "estado").as_posix() for p in (exp / "estado/entradas").rglob("*") if p.is_file()}
+        assert actual == expected
+        assert not any("rubric" in p.name for p in (exp / "estado").rglob("*"))
+        attempted.append((exp.name, session_id))
         return fake_cli(command, out, err)
-    campaign, code = run_suite(load_suite(ROOT / "benchmarks/pilot-v1"), tmp_path / "out", launcher=worker, compact=False)
-    assert code == 0 and len(attempted) == 8
-    assert [c for c, _ in attempted] == ["B1", "E2", "E2", "E2", "E2", "F3", "F3", "G2"]
-    g2 = json.loads((campaign / "sesiones/G2-sesion-01.json").read_text())
-    assert g2["failure_recovery_review"] == "not_observed"
+    campaign, code = run_suite(suite, tmp_path / "out", launcher=worker, compact=False)
+    assert code == 0
+    assert attempted == [(case.id, session.id) for case in suite.cases for session in case.sessions]
+    assert len(attempted) == 18
+    sources = json.loads((campaign / "manifiesto.json").read_text())["source_sha256"]
+    assert "research_agent/agent.py" in sources and "research_benchmarks/runner.py" in sources
 
 
 def test_regeneration_reports_missing_capture_without_changing_sessions(tmp_path):
@@ -341,8 +303,8 @@ def tool_fixture(command, out, err, *, limited=False):
 
 @pytest.mark.parametrize("limited", [False, True])
 def test_compact_export_is_lossless_and_source_is_unchanged(tmp_path, limited):
-    from research_agent.benchmark_archive import export_campaign, records, delivered_result, full_result, restore_snapshot
-    from research_agent.benchmark_evidence import digest, inspect_run
+    from research_benchmarks.archive import export_campaign, records, delivered_result, full_result, restore_snapshot
+    from research_benchmarks.evidence import digest, inspect_run
     def worker(command, out, err):
         return tool_fixture(command, out, err, limited=limited)
     source, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=worker, compact=False)
@@ -376,6 +338,20 @@ def test_compact_export_is_lossless_and_source_is_unchanged(tmp_path, limited):
     page = recorder.read_artifact("archivo/s0/resultado-herramienta-0001.json", max_bytes=31)
     assert page["next_offset"] is not None
     assert page["text"]
+    # Reading compact history must work when campaign orchestration is unavailable.
+    isolated = subprocess.run([sys.executable, "-c", """
+import sys
+class Reject:
+    def find_spec(self, fullname, *args):
+        if fullname.split('.')[0] in {'research_benchmarks', 'experience_audit', 'finmate', 'engine', 'api'}:
+            raise AssertionError(fullname)
+sys.meta_path.insert(0, Reject())
+from pathlib import Path
+from research_agent.recording import RunRecorder
+recorder = RunRecorder(Path(sys.argv[1]))
+assert recorder.read_artifact('archivo/s0/resultado-herramienta-0001.json')['text']
+""", str(run.parent)], capture_output=True, text=True)
+    assert isolated.returncode == 0, isolated.stderr
     recorder.workspace_fingerprint = "unrelated-workspace"
     with pytest.raises(FileNotFoundError):
         recorder.read_artifact("archivo/s0/resultado-herramienta-0001.json")
@@ -388,7 +364,7 @@ def original_state_to_raw(state):
 
 
 def test_default_compact_and_corruption_diagnostics(tmp_path):
-    from research_agent.benchmark_evidence import inspect_run
+    from research_benchmarks.evidence import inspect_run
     campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=tool_fixture)
     assert code == 0
     summary = json.loads((campaign / "resumen.json").read_text())

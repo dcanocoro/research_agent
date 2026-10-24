@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from .workspace import Workspace
+from research_agent.workspace import Workspace
 
 
 @dataclass(frozen=True)

@@ -5,6 +5,8 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-24 — Simplificación de main sin SQL](2026-10-24-simplification-main.md):
+  campañas separadas, herramientas explícitas y captura propia; retirada local de Audit.
 - [2026-10-21 — M1 en el prompt de A](2026-10-21-m1.md): revisión deliberativa en
   los archivos existentes; sin cambios del benchmark ni campaña de aceptación.
 - [2026-10-20 — Evidencia compacta](2026-10-20-compact-evidence.md): trayectoria por

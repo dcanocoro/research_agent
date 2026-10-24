@@ -15,11 +15,6 @@ def encoded(value: Any) -> bytes:
 
 
 class RunRecorder:
-    names = {"manifest.json": "manifiesto.json", "result.json": "resultado.json",
-             "transcript.json": "conversacion.json", "events.jsonl": "eventos.jsonl",
-             "workspace_before.json": "estado-inicial.json", "workspace_after.json": "estado-final.json",
-             "answer.md": "respuesta.md"}
-
     def __init__(self, root: Path, *, experiment: Path | None = None, run_name: str = "intervencion") -> None:
         self.root = root.absolute()
         Workspace._check_links(self.root)
@@ -30,9 +25,6 @@ class RunRecorder:
         self.workspace_fingerprint: str | None = None
         self.sequence = 0
         self.capture_errors: list[dict[str, str]] = []
-
-    def filename(self, name: str) -> str:
-        return self.names.get(name, name) if self.experiment is not None else name
 
     def start(self, run_id: str, metadata: dict[str, Any]) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
@@ -49,13 +41,12 @@ class RunRecorder:
         self.current = current
         self.events, self.capture_errors, self.sequence = [], [], 0
         self.workspace_fingerprint = metadata.get("workspace_fingerprint")
-        self.save("manifest.json", {**metadata, "run_directory": current.name,
+        self.save("manifiesto.json", {**metadata, "run_directory": current.name,
                                     "git_initial": git_state(self.experiment)})
 
     def save(self, name: str, value: Any) -> str:
         if self.current is None:
             raise RuntimeError("No active recording.")
-        name = self.filename(name)
         relative = Path(name)
         if relative.is_absolute() or ".." in relative.parts or len(relative.parts) > 2:
             raise ValueError("Invalid recording path.")
@@ -67,7 +58,7 @@ class RunRecorder:
 
     def text(self, name: str, content: str) -> None:
         assert self.current is not None
-        (self.current / self.filename(name)).write_text(content, encoding="utf-8")
+        (self.current / name).write_text(content, encoding="utf-8")
 
     def artifact(self, value: Any) -> str:
         assert self.current is not None
@@ -85,7 +76,7 @@ class RunRecorder:
         bounded = Workspace(self.root, create=False)
         run = bounded.path(parts[1])
         if (run / "ejecucion.json").exists():
-            from .benchmark_archive import read_json, records, full_result
+            from .archive import read_json, records, full_result
             metadata = read_json(run / "ejecucion.json")["manifest"]
             if metadata.get("workspace_fingerprint") != self.workspace_fingerprint:
                 raise FileNotFoundError("Artifact belongs to another workspace.")
@@ -108,7 +99,9 @@ class RunRecorder:
             return {"reference": reference, "path": parts[2], "offset": offset, "text": text,
                     "next_offset": end if end < len(value) else None}
         bounded.path(f"{parts[1]}/trazas/{parts[2]}")
-        manifest = run / self.filename("manifest.json")
+        manifest = run / "manifiesto.json"
+        if not manifest.exists():
+            manifest = run / "manifest.json"
         Workspace._check_links(manifest)
         metadata = json.loads(manifest.read_bytes())
         if metadata.get("workspace_fingerprint") != self.workspace_fingerprint:
@@ -134,5 +127,5 @@ class RunRecorder:
                  "sequence": len(self.events) + 1, **fields}
         self.events.append(event)
         if self.current is not None:
-            with (self.current / self.filename("events.jsonl")).open("ab") as stream:
+            with (self.current / "eventos.jsonl").open("ab") as stream:
                 stream.write(encoded(event) + b"\n")

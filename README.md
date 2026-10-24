@@ -28,15 +28,14 @@ Con el entorno y `.env` preparados según [desarrollo e instalación](docs/devel
 ```powershell
 .\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --experiment ./artifacts/nvidia-conservacion --new --run-name investigacion-inicial
 .\.venv\Scripts\python.exe -m research_agent "Continúa desde lo conservado" --experiment ./artifacts/nvidia-conservacion --continue --run-name revision-documental
-$auditRoot = Join-Path $PWD.Path "artifacts/audit"
-.\.venv\Scripts\python.exe -m experience_audit lab ./scenarios --output $auditRoot
+.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v1
 ```
 
 Los comandos reales pueden consumir servicios LLM, Tavily y PostgreSQL según la tarea.
 Workspace y archivo de ejecuciones deben estar separados. Para consultas de historial,
-exportación, escenarios y pruebas, seguir [desarrollo y operación](docs/development.md).
+exportación, campañas y pruebas, seguir [desarrollo y operación](docs/development.md).
 
-La CLI y Audit cargan guía financiera básica; no representan todavía el A0 sin guía
+La CLI carga guía financiera básica; no representa todavía el A0 sin guía
 específica de la [matriz propuesta A0–A3](docs/experiments.md). Una ejecución completada
 o un check aprobado no demuestra suficiencia financiera ni rentabilidad.
 

@@ -10,6 +10,6 @@ def register_research(registry: ToolRegistry, search: Any, reader: Any) -> None:
         return await reader.read(url, query=question)
 
     string = {"type": "string", "minLength": 1, "maxLength": 4000}
-    registry.register("search_web", "Discover sources; snippets are not full documents.", {"query": string}, search_web)
+    registry.register("search_web", "Discover sources; snippets are not full documents.", {"query": string}, search_web, execution="async", material=True)
     registry.register("read_document", "Extract and preserve passages relevant to a question; extraction may be partial.",
-                      {"url": string, "question": string}, read_document)
+                      {"url": string, "question": string}, read_document, execution="async", material=True)

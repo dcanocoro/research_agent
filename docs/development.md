@@ -1,6 +1,6 @@
 # Desarrollo y operación
 
-> Operación y dependencias del proyecto externo. Revisión: 2026-10-18.
+> Operación y dependencias del proyecto externo. Revisión: 2026-10-24.
 > Los detalles del wheel corresponden al corte del 2026-10-16; verificar el entorno efectivo.
 
 ## Dependencias y frontera de instalación
@@ -9,19 +9,21 @@ Una distribución instalable puede aportar varios paquetes importables:
 
 | Distribución | Declaración | Paquetes que aporta |
 |---|---|---|
-| `research-agent==0.1.0` | [pyproject local](../pyproject.toml) | `research_agent` |
+| `research-agent==0.1.0` | [pyproject local](../pyproject.toml) | `research_agent`, `research_benchmarks` |
 | `findata==0.1.0` | [pyproject de FinMate](../../FinMate/pyproject.toml) | `findata`, `infra`, `runtime_contracts`, `experience_audit`, módulos de observabilidad y otros paquetes del producto |
 
 Findata, Infra y Experience Audit se instalan juntas desde el wheel local `findata`.
 Que incluya código del producto no autoriza a cargarlo: los tests de frontera rechazan
-`finmate`, `engine` y `api`.
+`finmate`, `engine` y `api`. El núcleo tampoco importa `experience_audit` ni
+`research_benchmarks`; Audit puede permanecer instalado sin ser usado.
 
 ```mermaid
 flowchart LR
     F[Fuentes compartidas en FinMate] --> W[Wheel local findata]
     W --> V[Entorno propio de Research Agent]
     R[Fuentes externas research_agent] -->|Instalación editable| V
-    V --> A[CLI y Experience Audit lab]
+    V --> A[CLI de Research Agent]
+    B[research_benchmarks] --> A
 ```
 
 ### Bibliotecas reutilizadas
@@ -32,7 +34,7 @@ flowchart LR
 | Infra | `LLMFactory`, perfil, clientes, replay, reintentos, búsqueda y extracción Tavily | Sin fallback entre modelos añadido por el laboratorio |
 | runtime_contracts | Mensajes, herramientas, continuaciones, errores, documentos y contexto técnico | Sin entidades, ORM o SDKs del producto |
 | Observabilidad | Correlación y captura local de logs/payloads | Nombres históricos `engine.llm*`; sin exportador configurado aquí |
-| Experience Audit | Escenarios `lab-v1`, ejecución, Archive, consulta e informes | Importa Research Agent para ejecutarlo; Research Agent no importa Audit |
+| research_benchmarks | Catálogo, campañas, extracción y compactación | Depende de Research Agent; no se importa desde el núcleo |
 
 Engine mantiene reexportaciones de contratos por compatibilidad con sus consumidores.
 El agente importa las definiciones canónicas de `runtime_contracts`; no necesita cargar
@@ -81,11 +83,11 @@ credenciales de lectura cuando estén disponibles; A abre transacciones de solo 
 
 Se conserva OpenTelemetry por compatibilidad de dependencias. No es necesario configurar
 un exportador para producir los registros locales. La instalación amplia del wheel puede
-incluir dependencias del producto, pero las campañas `lab` no necesitan sus servicios,
+incluir dependencias del producto, pero las campañas propias no necesitan sus servicios,
 usuarios, navegador ni instalar binarios de Playwright.
 
-La CLI deriva las rutas de estado y ejecuciones de `--experiment`; la interfaz
-básica usada por Audit recibe workspace y archivo explícitamente. Los prompts incluidos son recursos
+La CLI deriva las rutas de estado y ejecuciones de `--experiment`; la composición
+directa recibe workspace y archivo explícitamente. Los prompts incluidos son recursos
 del paquete; no se localizan buscando el checkout padre. Para ejecutar desde otra
 carpeta, proporcionar configuración disponible allí o variables de entorno: no asumir
 que se descubrirá automáticamente el `.env` de este proyecto.
@@ -177,20 +179,20 @@ del run conservan sus extremos, sin prometer todas las ediciones intermedias.
 Desde la raíz del repositorio:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent.benchmark validate benchmarks/pilot-v1
-.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/pilot-v1 --output artifacts/benchmark
-.\.venv\Scripts\python.exe -m research_agent.benchmark run benchmarks/pilot-v1 --case E2 --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v1
+.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v1 --output artifacts/benchmark
+.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v1 --case S2 --output artifacts/benchmark
 ```
 
 `validate` no construye clientes ni consulta servicios. `run` llama al agente real y
 requiere la configuración de proveedor, Findata y Tavily habitual; no realiza ingestas
 ni migraciones. Ejecuta una sesión por subprocess, en secuencia, conservando archivos
-sin restaurar el chat. Los límites son los actuales de A. No modifica prompts,
-Experience Audit ni el wheel instalado. El [protocolo](experiments/benchmark-pilot-v1/protocol.md)
+sin restaurar el chat. Los límites son los actuales de A. No modifica prompts ni
+el wheel instalado. El [protocolo](experiments/longitudinal-v1/protocol.md)
 posee definiciones, rúbricas y límites de interpretación.
 
 Cada invocación crea una carpeta de campaña nueva bajo `--output` e imprime su ruta.
-`--case` elige un ID exacto; sin filtro, el orden es B1, E2, F3 y G2. No hay resume ni
+`--case` elige un ID exacto; sin filtro, el orden es S1, S2 y S3. No hay resume ni
 reintentos automáticos de sesiones. Una sesión fallida o con captura incompleta bloquea
 las siguientes de su caso; los otros casos continúan. Ctrl+C conserva lo disponible.
 Retornos: 0 = todas las sesiones completadas con captura íntegra; 1 = fallo operativo,
@@ -217,7 +219,7 @@ Si hay captura incompleta, se retienen los originales nativos y diagnósticos.
 Para exportar una campaña anterior a otra carpeta, conservando el origen intacto:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent.benchmark compact artifacts/benchmark/ID --output artifacts/benchmark-compact/ID
+.\.venv\Scripts\python.exe -m research_benchmarks compact artifacts/benchmark/ID --output artifacts/benchmark-compact/ID
 ```
 
 El destino debe ser nuevo y separado del origen. La conversión verifica reconstrucción
@@ -228,7 +230,7 @@ compactas son consultables por el mismo extractor.
 Para regenerar la vista breve sin ejecutar el agente:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_agent.benchmark extract RUTA_DE_CAMPAÑA
+.\.venv\Scripts\python.exe -m research_benchmarks extract RUTA_DE_CAMPAÑA
 ```
 
 `pasos.jsonl` incluye caso, sesión, run, acción, identificadores disponibles, fragmentos
@@ -243,94 +245,16 @@ entradas publicadas. No hay Excel ni evaluación automática en esta versión.
 evidencia, previa revisión de datos privados.
 
 Para inspección detallada desde Python, las funciones públicas del módulo
-`research_agent.benchmark_archive` son `records(run)`, `full_result(campaign, record)`,
+`research_agent.archive` son `records(run)`, `full_result(campaign, record)`,
 `delivered_result(campaign, record)` y `restore_snapshot(campaign, snapshot)`.
 Las dos últimas reconstruyen lo efectivamente entregado y el estado histórico, sin
 inferencias. Las referencias a materiales e instrucciones comprueban sus hashes.
 
-## Campañas nativas de Experience Audit
+## Experience Audit histórico
 
-Usar `lab`, no el atajo del runner de recorridos del producto:
-
-```powershell
-$auditRoot = Join-Path $PWD.Path "artifacts/audit"
-.\.venv\Scripts\python.exe -m experience_audit lab ./scenarios --output $auditRoot
-```
-
-El comando ejecuta todos los YAML/YML del directorio con IDs únicos. Para seleccionar
-un subconjunto, preparar un directorio con esas definiciones y sus instrucciones.
-Las intervenciones son secuenciales; no iniciar capturas concurrentes dentro del mismo
-proceso. No se arranca frontend, backend, navegador ni sesión de usuario del producto.
-
-El runner conserva `run.json` y archiva evidencia con `execution_kind=lab`, diferenciada
-de las campañas históricas del producto. Los fallos y estados incompletos también son
-evidencia. No asumir que el comando `resume` del producto restaura una conversación de A.
-
-### Contrato del escenario
-
-| Campo | Contenido |
-|---|---|
-| `schema_version` | `lab-v1` |
-| `id`, `title` | Identidad única y descripción |
-| `messages` | Una o varias intervenciones ordenadas |
-| `instructions` | Rutas opcionales a Markdown dentro del directorio de escenarios |
-| `memory` | Mapa opcional de rutas Markdown y contenido inicial |
-| `requirements` | `llm`, `postgresql`, `tavily`; por defecto `llm` |
-| `limits` | Ajustes de `AgentLimits` para esa condición |
-| `checks` | Lista de comprobaciones deterministas |
-
-Ejemplo mínimo que usa el modelo configurado, sin exigir datos financieros:
-
-```yaml
-schema_version: lab-v1
-id: lab_revision_example
-title: Revisión de una conclusión sintética
-requirements: [llm]
-memory:
-  indice.md: "Caso ficticio; consulta notes/source.md."
-  notes/source.md: "Beneficio 20, de los cuales 12 son extraordinarios."
-messages:
-  - Lee la nota y explica qué permite concluir sobre el beneficio recurrente.
-checks:
-  - {id: finished, kind: completed}
-  - {id: source_read, kind: tool_used, value: read_file}
-```
-
-`requirements` declara preflight, no desactiva herramientas ni añade credenciales.
-LLM/Tavily comprueban presencia de claves, no disponibilidad real del proveedor.
-PostgreSQL comprueba una lectura mínima; no garantiza cobertura suficiente de datos.
-
-Checks disponibles: `completed`, `answer_contains`, `tool_used`, `file_contains`.
-`step` selecciona intervención desde 1. `file_contains` consulta el workspace final;
-no acredita por sí solo el contenido histórico de un paso. Una cadena vacía comprueba
-legibilidad del archivo, no calidad de memoria. Los checks de texto son literales;
-una cita correcta, una revisión bien razonada o un análisis financiero necesitan otra revisión.
-
-### Consultar y exportar
-
-Reutilizar la ruta **absoluta** de salida en estos comandos. En la biblioteca actual,
-algunos comandos de archivo resuelven rutas relativas desde la instalación de Audit,
-mientras `lab` las resuelve desde el directorio de trabajo. Especificar solo la misma
-cadena relativa puede abrir otro archivo.
-
-```powershell
-$auditRoot = Join-Path $PWD.Path "artifacts/audit"
-.\.venv\Scripts\python.exe -m experience_audit history --output $auditRoot
-.\.venv\Scripts\python.exe -m experience_audit show ID_DE_EJECUCION --full --output $auditRoot
-.\.venv\Scripts\python.exe -m experience_audit export ID_DE_EJECUCION --format json --full --output $auditRoot --destination ./artifacts/export.json
-.\.venv\Scripts\python.exe -m experience_audit report RUTA_AL_RUN_JSON
-```
-
-Sustituir los marcadores por el ID de una ejecución archivada y la ruta devuelta por
-`lab`. El informe genera resumen y `dashboard.html`, que se abre localmente. El lanzador
-`ui` de campañas del producto no es la entrada visual de este laboratorio.
-
-Conservar el archivo completo, no solo el dashboard o una copia de la respuesta.
-Las definiciones, snapshots, herramientas y payloads permiten investigar qué ocurrió.
-La captura refleja interacciones observables; no proporciona todo el razonamiento
-privado del modelo. Antes de exportar fuera de la máquina, revisar datos privados.
-Los comandos de limpieza pueden eliminar detalle o ejecuciones: no son mantenimiento
-necesario para investigar y no deben borrar tentativas incómodas de una comparación.
+La integración local, sus escenarios y sus pruebas se retiraron el 2026-10-24.
+El wheel compartido no se modifica. Las campañas actuales usan la CLI propia y
+`python -m research_benchmarks`; los archivos históricos no se reescriben.
 
 ## Verificación proporcionada al cambio
 
@@ -346,12 +270,13 @@ Comandos de comprobación local sin campaña real:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q tests
-.\.venv\Scripts\python.exe -m mypy src/research_agent --follow-imports=silent
+.\.venv\Scripts\python.exe -m mypy src/research_agent src/research_benchmarks --follow-imports=silent
 .\.venv\Scripts\python.exe -m pip check
 git diff --check
 ```
 
-La suite incluye subprocess que bloquea imports de `finmate`, `engine` y `api`.
+La suite incluye subprocess que bloquea imports de `finmate`, `engine` y `api`. El núcleo tampoco importa `experience_audit` ni
+`research_benchmarks`; Audit puede permanecer instalado sin ser usado.
 El comprobador local de enlaces y anclas se ejecuta con
 `.\.venv\Scripts\python.exe scripts/check_docs.py`; no necesita servicios remotos.
 No utiliza el catálogo documental de FinMate. Si también cambia documentación de FinMate,

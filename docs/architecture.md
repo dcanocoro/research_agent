@@ -1,6 +1,6 @@
 # Arquitectura implementada
 
-> Estado local a 2026-10-18. Autoridad: código, schemas y wheel instalado.
+> Estado local a 2026-10-24. Autoridad: código, schemas y wheel instalado.
 
 ## Frontera y componentes
 
@@ -18,6 +18,20 @@ ni migraciones. No hay DCF, cartera, grafo obligatorio ni variantes A0–A3.
 | [Experimentos](../src/research_agent/experiments.py) | Crear/continuar, bloqueo y observación de Git |
 | [build_agent](../src/research_agent/bootstrap.py) | Composición de A con las bibliotecas compartidas |
 | [capture_traces](../src/research_agent/tracing.py) | Logs y payloads locales del proveedor |
+
+## Organización del código
+
+`research_agent` posee el ciclo y la captura. `AgentA.run` delega preparación y cierre
+en `_prepare` y `_finish`. Cada herramienta declara ejecución (`inline`, `thread`,
+`async`), conservación como material y disponibilidad durante consolidación; su
+validador se construye al registrarla. Las operaciones de archivos se ejecutan en
+línea para evitar escrituras en hilos después de cerrar un run.
+
+[research_benchmarks](../src/research_benchmarks/runner.py) posee catálogo, campañas,
+extracción y compactación, en la misma distribución. Depende de A; A no importa
+campañas ni Audit. [archive](../src/research_agent/archive.py) contiene la lectura
+compacta compartida, incluida la recuperación de artefactos históricos. Los nuevos
+manifiestos de campaña registran hashes de ambos paquetes con prefijo de paquete.
 
 ## Estado, instrucciones y ejecuciones
 
@@ -57,8 +71,8 @@ los IDs técnicos permanecen dentro de los registros. La fecha de los nombres ut
 Hay tres estados distintos: archivos persistentes, contexto transitorio de A y evidencia
 de ejecución. Solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
 explícita; el resto se consulta bajo demanda. La CLI crea una instancia nueva por run:
-continuar reutiliza archivos, sin restaurar el chat. Audit conserva su instancia entre
-mensajes del escenario y mantiene su organización propia, compatible con su wheel.
+continuar reutiliza archivos, sin restaurar el chat. La integración local con
+Experience Audit se ha retirado; no se mantiene su contrato de ejecución externa.
 
 Las instrucciones CLI son copias editables de los prompts al crear el experimento;
 los runs usan esas copias, conservando texto y hashes efectivos en el manifiesto.
@@ -133,8 +147,8 @@ fallo, cancelación e interrupción conservan los archivos y capturas disponible
 `respuesta.md` guarda automáticamente la entrega; no actualiza el estado. Los snapshots
 conservan contenidos iniciales/finales de los cuatro formatos, con errores identificados.
 No reconstruyen cada edición intermedia. El archivo se mantiene fuera del alcance de
-escritura del agente. CLI agrupa eventos del ciclo y payloads del proveedor dentro del run;
-Audit mantiene su captura externa existente. No ejecutar capturas simultáneas en un proceso,
+escritura del agente. Todas las ejecuciones agrupan eventos del ciclo y payloads del proveedor dentro del run,
+con nombres españoles. No ejecutar capturas simultáneas en un proceso,
 porque el adaptador compartido emplea configuración global temporal.
 
 El benchmark consolida esa captura **después de ejecutar**: cada sesión conserva
@@ -155,9 +169,9 @@ repositorio propio; sin `.git` propio se indica ausencia, aunque exista un padre
 No se ejecuta init, add, commit, checkout, reset, push ni creación de ramas.
 Las capturas inicial/final permiten auditar runs realizados con cambios sin commit.
 
-`build_agent(workspace, runs, limits)` mantiene el contrato de Audit; los argumentos
-opcionales `experiment` y `run_name` sirven al organizador CLI. Los nombres de archivos
-técnicos del consumidor básico permanecen compatibles. CLI usa la organización española.
+`build_agent(workspace, runs, limits)` permite componer A directamente; los argumentos
+opcionales `experiment` y `run_name` sirven al organizador CLI. La captura utiliza
+siempre el mismo formato propio, también en las construcciones directas de pruebas.
 La operación y los comandos están en [desarrollo](development.md). El
 [baseline](baseline.md) distingue capacidad implementada, resultado observado y
 aceptación semántica pendiente.
