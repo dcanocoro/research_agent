@@ -13,7 +13,8 @@ from .workspace import Workspace
 
 @asynccontextmanager
 async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits(), *,
-                      experiment: Path | None = None, run_name: str = "intervencion") -> AsyncIterator[AgentA]:
+                      experiment: Path | None = None, run_name: str = "intervencion",
+                      simulation: Path | None = None) -> AsyncIterator[AgentA]:
     # Validate experiment paths before constructing clients or database engines.
     disjoint(workspace, runs)
     disjoint(workspace, Path(__file__).parent)
@@ -39,11 +40,22 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     profile = replace(configured_profile(settings, "planner"), name="lab")
     space = Workspace(workspace)
     register_files(registry, space)
-    database = create_engine(settings.DATABASE_URL,
-        connect_args={"connect_timeout": 10} if make_url(settings.DATABASE_URL).get_backend_name() == "postgresql" else {})
-    FindataTools(sessionmaker(bind=database, autoflush=False)).register(registry)
-    register_research(registry, TavilyWebSearchTool(api_key=settings.TAVILY_API_KEY, max_results=5),
-                      TavilyDocumentReader(api_key=settings.TAVILY_API_KEY))
+    database = None
+    historical = {}
+    search = TavilyWebSearchTool(api_key=settings.TAVILY_API_KEY, max_results=5)
+    if simulation is None:
+        database = create_engine(settings.DATABASE_URL,
+            connect_args={"connect_timeout": 10} if make_url(settings.DATABASE_URL).get_backend_name() == "postgresql" else {})
+        FindataTools(sessionmaker(bind=database, autoflush=False)).register(registry)
+        register_research(registry, search, TavilyDocumentReader(api_key=settings.TAVILY_API_KEY))
+    else:
+        from .simulation.state import Simulator
+        from .simulation.tools import register_simulation
+        disjoint(simulation, workspace)
+        disjoint(simulation, runs)
+        simulator = Simulator(simulation)
+        register_simulation(registry, simulator, search)
+        historical = {"simulation": simulator.config, "simulated_date": str(simulator.today)}
     try:
         fingerprints = {}
         for module in (infra, runtime_contracts, findata, research_agent):
@@ -53,7 +65,8 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
                       for p in sorted(package.rglob("*")) if p.suffix in {".py", ".md"}]
             fingerprints[module.__name__] = hashlib.sha256(repr(hashes).encode()).hexdigest()
         yield AgentA(factory.conversation(profile), registry, space, recorder, limits,
-                     configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files"})
+                     configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files", **historical})
     finally:
         await factory.aclose()
-        database.dispose()
+        if database is not None:
+            database.dispose()

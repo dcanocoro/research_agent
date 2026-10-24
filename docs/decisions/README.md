@@ -7,6 +7,9 @@ o garantías. La
 - [ADR-0001 — Estado de archivos por experimento](0001-estado-por-experimento.md):
   aceptada el 2026-10-18 para el laboratorio, con Git manual.
 
+- [ADR-0002 — Simulación longitudinal](0002-simulacion-longitudinal.md):
+  aceptada el 2026-10-24; disponibilidad estimada, universo y separación de estados.
+
 Usar `0001-nombre-breve.md`, con número consecutivo y este contenido mínimo:
 
 ```markdown

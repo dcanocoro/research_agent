@@ -23,19 +23,31 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--conversation", default="cli")
     parser.add_argument("--instructions", type=Path, action="append", default=[])
     parser.add_argument("--timeout-seconds", type=float, default=300)
+    parser.add_argument("--simulation", type=Path, help="Private simulator directory supplied by the longitudinal controller")
+    parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
+    parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON supplied by the controller")
     args = parser.parse_args(raw)
     run_directory: Path | None = None
 
     async def execute(root: Path, prompts: tuple[Path, ...], limits: AgentLimits) -> AgentResult:
         nonlocal run_directory
+        options = {"simulation": args.simulation} if args.simulation is not None else {}
         async with build_agent(root / "estado", root / "ejecuciones", limits,
-                               experiment=root, run_name=args.run_name) as agent:
-            result = await agent.run(AgentRequest(args.message, root.name, args.conversation, prompts))
+                               experiment=root, run_name=args.run_name, **options) as agent:
+            message = args.message
+            metadata = {}
+            if args.simulation is not None:
+                from .simulation.state import Simulator
+                from .simulation.tools import activation_message
+                simulator = Simulator(args.simulation)
+                message = activation_message(simulator, message, args.activation_kind)
+                metadata = {"simulated_date": str(simulator.today), "activation_kind": args.activation_kind}
+            result = await agent.run(AgentRequest(message, root.name, args.conversation, prompts, metadata))
             run_directory = agent.recorder.current
             return result
     try:
         human_name(args.run_name)
-        limits = AgentLimits(timeout_seconds=args.timeout_seconds)
+        limits = AgentLimits(**json.loads(args.limits.read_text(encoding="utf-8"))) if args.limits else AgentLimits(timeout_seconds=args.timeout_seconds)
         root = args.experiment.absolute()
         prompts = prepare_experiment(root, new=args.new, instructions=tuple(args.instructions))
         with experiment_lock(root):

@@ -25,3 +25,5 @@ consultar [estrategia](../strategy.md).
   prioridad de estado y separación de decisiones, hallazgos y entregas.
 - [2026-10-16 — Documentación inicial](2026-10-16-documentation.md): arquitectura,
   extracción, operación y primeras hipótesis. Conserva las verificaciones de aquel corte.
+
+- [2026-10-24 — Simulación longitudinal](2026-10-24-longitudinal.md): herramientas históricas, cartera, calendario y recuperación.

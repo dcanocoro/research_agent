@@ -209,6 +209,10 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
 
 
 def main(argv: list[str] | None = None) -> int:
+    raw = sys.argv[1:] if argv is None else argv
+    if raw and raw[0] == "longitudinal":
+        from .longitudinal import main as longitudinal_main
+        return longitudinal_main(raw[1:])
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="operation", required=True)
     validate = sub.add_parser("validate", help="Validate all definitions without constructing services")

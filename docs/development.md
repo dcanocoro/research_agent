@@ -305,3 +305,11 @@ No incorporar `.env`, payloads privados o estados reales al Git del código. El 
 está ignorado; citar una ruta allí no hace portable la evidencia. Las guías pueden
 describir el procedimiento, mientras las capturas completas se conservan localmente.
 No realizar commit, push o despliegue sin autorización del usuario.
+
+## Laboratorio longitudinal
+
+La [guía del experimento](experiments/colaboracion-historica-v1/protocol.md) documenta
+`longitudinal validate`, `preflight`, `run` y `resume`, y separa prueba sintética y
+campaña histórica. Requiere el wheel experimental de la
+[entrega](deliveries/2026-10-24-longitudinal.md). No reutilizar el wheel anterior para
+este modo ni editar `site-packages`. Las campañas existentes conservan su CLI.

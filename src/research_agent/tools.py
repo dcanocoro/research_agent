@@ -68,6 +68,7 @@ class ToolRegistry:
 
     async def execute(self, call: ResponseFunctionCall, *, allowed_names: frozenset[str] | None = None) -> ToolResult:
         self.recorder.event("lab.tool.started", call_id=call.call_id, tool_name=call.name, arguments=call.arguments)
+        capturing = False
         try:
             if allowed_names is not None and call.name not in allowed_names:
                 raise ValueError("Tool is unavailable in this execution phase.")
@@ -83,6 +84,7 @@ class ToolRegistry:
             else:
                 value = await asyncio.to_thread(tool.function, **call.arguments)
             value = serializable(value)
+            capturing = True
             artifact = self.recorder.artifact(value)
             material = self._material(call.name, value)
             reference = material or artifact
@@ -106,7 +108,7 @@ class ToolRegistry:
             payload = {"ok": False, "error_type": type(exc).__name__}
             if isinstance(exc, ValueError) and type(exc) is ValueError:
                 payload["message"] = str(exc)[:500]
-            if isinstance(exc, OSError):
+            if isinstance(exc, OSError) and capturing:
                 self.recorder.capture_errors.append({"operation": "tool_capture", "error_type": type(exc).__name__})
             self.recorder.event("lab.tool.failed", call_id=call.call_id, tool_name=call.name, **payload)
         self.recorder.save(f"trazas/herramienta-{len(self.recorder.events):04d}.json", {"call": call, "result": payload})

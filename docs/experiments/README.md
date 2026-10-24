@@ -26,6 +26,7 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 
 | ID | Pregunta | Registro |
 |---|---|---|
+| Colaboración histórica v1 | ¿Cómo colabora A durante meses con iniciativa y cartera ficticia? | [Protocolo](colaboracion-historica-v1/protocol.md); 50 empresas y 24 activaciones definidas. [Precios revisados](colaboracion-historica-v1/price-review.md) y [tres activaciones históricas reales completadas](colaboracion-historica-v1/historical-smoke.md); campaña de dos años pendiente. |
 | Longitudinal v1 | ¿Cómo combina A investigación, revisión y memoria en tres historias exigentes? | Tres escenarios de seis sesiones generados; [protocolo](longitudinal-v1/protocol.md). Corpus sintético y rúbricas previas; sin ejecutar. |
 | Benchmark piloto v1 | ¿Qué hace A ante contradicción, continuidad, ruido y fuentes fallidas? | Cuatro casos preparados; [protocolo](benchmark-pilot-v1/protocol.md). Verificación local con servicios simulados; sin campaña real ni aceptación semántica. |
 | Baseline NVIDIA 2026-10-18 | ¿Qué dejó la primera ejecución del estado de archivos? | Observación exploratoria concluida; [hallazgos retrospectivos](baseline-nvidia-2026-10-18/findings.md). Sin protocolo previo ni control. |

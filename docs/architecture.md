@@ -7,7 +7,8 @@
 A posee un único ciclo modelo → herramienta → modelo → respuesta. No importa
 `finmate`, `engine` ni `api`; Findata, Infra y los contratos comunes se consumen desde
 el wheel instalado. Findata abre transacciones PostgreSQL de solo lectura, sin ingestas
-ni migraciones. No hay DCF, cartera, grafo obligatorio ni variantes A0–A3.
+ni migraciones. No hay DCF, grafo obligatorio ni variantes A0–A3. La cartera ficticia existe solo
+en el modo experimental de simulación, separado de Findata y del producto.
 
 | Componente | Responsabilidad |
 |---|---|
@@ -185,3 +186,17 @@ históricos de [E001](experiments/README.md#antecedentes-e001-y-e002) y
 entonces. Sus documentos ya no están en el árbol actual; el
 [registro histórico](experiments/README.md#antecedentes-e001-y-e002) indica su recuperación desde Git. La [decisión](decisions/0001-estado-por-experimento.md)
 registra el cambio local, sin elegir la arquitectura final de FinMate.
+
+## Simulación longitudinal opcional
+
+`research_agent.simulation` posee reloj por activación, herramientas históricas,
+cartera local y comunicaciones explícitas. `build_agent(simulation=...)` sustituye
+las lecturas actuales y Extract por las herramientas acotadas; no abre conexión a
+Findata durante las activaciones. Sin ese argumento la composición es la habitual.
+
+`research_benchmarks.longitudinal` congela escenario, instrucciones, perfil y dataset
+obtenido en solo lectura; ejecuta procesos nuevos y posee calendario/checkpoints.
+El simulador reside fuera del workspace editable. La memoria no es el registro económico.
+La [decisión](decisions/0002-simulacion-longitudinal.md) y el
+[protocolo](experiments/colaboracion-historica-v1/protocol.md) fijan disponibilidad
+estimada, límites de cartera y recuperación; el [baseline previo](baseline.md) se conserva.

@@ -45,8 +45,8 @@ La prioridad vigente se consulta en estrategia, no en la última campaña record
 Hoy existe solo A, con herramientas y estado de archivos por experimento; instrucciones,
 materiales y ejecuciones están separados. CLI permite crear o continuar una prueba.
 Las campañas se ejecutan desde `research_benchmarks`, separado del núcleo.
-La CLI carga guía financiera básica; A0–A3, DCF
-y cartera no están implementados. Los documentos de E001/E002 no están en el árbol
+La CLI carga guía financiera básica. El [entorno longitudinal](experiments/colaboracion-historica-v1/protocol.md)
+añade cartera ficticia y activaciones históricas opcionales; A0–A3 y DCF no están implementados. Los documentos de E001/E002 no están en el árbol
 actual; el registro experimental explica cómo recuperarlos desde Git.
 Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
 La documentación de sus fuentes puede diferir del wheel instalado: verificar antes

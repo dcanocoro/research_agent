@@ -1,9 +1,22 @@
 # Estrategia de investigación
 
-> Agenda revisada el 2026-10-18 con el plan de estado por experimento aceptado por el usuario.
+> Agenda revisada el 2026-10-24 con el encargo longitudinal aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Prioridad actual
+## Encargo vigente: colaboración longitudinal
+
+Actualizado el 2026-10-24 por aprobación explícita del plan del usuario. Construir
+el entorno longitudinal de 50 empresas y hasta 10 posiciones para observar memoria,
+revisión e iniciativa. Se acepta disponibilidad anual estimada de 120 días naturales,
+sin atribuir resultados de alfa. El [protocolo](experiments/colaboracion-historica-v1/protocol.md)
+y la [decisión](decisions/0002-simulacion-longitudinal.md) conservan el alcance.
+La [revisión de precios](experiments/colaboracion-historica-v1/price-review.md) habilita
+el dataset ajustado con las excepciones declaradas. La prueba corta histórica real
+está completada; queda ejecutar el baseline de dos años con esa condición congelada.
+No se incorporan mecanismos cognitivos ni evaluador. El baseline anterior y los
+antecedentes siguientes no se reescriben como resultados de este encargo.
+
+## Prioridad anterior y antecedentes
 
 **Contrastar conservación y continuidad con un estado de archivos por experimento.**
 El [baseline acordado](baseline.md), basado en el plan aceptado el 2026-10-18, sustituye el almacén de expedientes por un único estado

@@ -1,0 +1,52 @@
+{
+  "AVB": {
+    "provider": "Alpha Vantage raw Findata closes + issuer dividends",
+    "currency": "USD",
+    "splits": [],
+    "dividends": [
+      {
+        "record_date": "2023-03-31",
+        "amount": "1.65",
+        "source_url": "https://investors.avalonbay.com/news-events/press-releases/detail/25/avalonbay-communities-inc-announces-2022-operating-results-3-8-dividend-increase-and-initial-2023-financial-outlook"
+      },
+      {
+        "record_date": "2023-06-30",
+        "amount": "1.65",
+        "source_url": "https://investors.avalonbay.com/news-events/press-releases/detail/19/avalonbay-communities-inc-declares-second-quarter-2023-dividends"
+      },
+      {
+        "record_date": "2023-09-29",
+        "amount": "1.65",
+        "source_url": "https://investors.avalonbay.com/news-events/press-releases/detail/12/avalonbay-communities-inc-declares-third-quarter-2023-dividends"
+      },
+      {
+        "record_date": "2023-12-29",
+        "amount": "1.65",
+        "source_url": "https://investors.avalonbay.com/news-events/press-releases/detail/9/avalonbay-communities-inc-declares-fourth-quarter-2023-dividends"
+      },
+      {
+        "record_date": "2024-03-28",
+        "amount": "1.70",
+        "source_url": "https://investors.avalonbay.com/sec-filings/all-sec-filings/content/0000915912-24-000002/q42023ex-992.htm"
+      },
+      {
+        "record_date": "2024-06-28",
+        "amount": "1.70",
+        "source_url": "https://investors.avalonbay.com/news-events/press-releases/detail/395/avalonbay-communities-inc-declares-second-quarter-2024-dividends"
+      },
+      {
+        "record_date": "2024-09-30",
+        "amount": "1.70",
+        "source_url": "https://investors.avalonbay.com/news-events/press-releases/detail/405/avalonbay-communities-inc-declares-third-quarter-2024-dividends"
+      },
+      {
+        "record_date": "2024-12-31",
+        "amount": "1.70",
+        "source_url": "https://investors.avalonbay.com/news-events/press-releases/detail/409/avalonbay-communities-inc-declares-fourth-quarter-2024-dividends"
+      }
+    ],
+    "ex_date_policy": "Regular cash dividends: previous observed trading session before 2024-05-29 record dates, same record date thereafter. Derived, not supplied by the issuer.",
+    "ex_date_policy_source": "https://www.nasdaqtrader.com/TraderNews.aspx?id=ETA2024-29",
+    "reason": "Yahoo historical daily AVB unavailable in this capture; frozen 2023-2024 Findata closes retained."
+  }
+}
