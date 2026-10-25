@@ -13,7 +13,7 @@ from typing import Any, Callable
 from uuid import uuid4
 
 from research_agent.contracts import AgentLimits
-from research_agent.experiments import disjoint, experiment_lock, prepare_experiment
+from research_agent.experiments import disjoint, experiment_lock, prepare_experiment, validate_mandate, deliberative_context
 from research_agent.simulation.state import Simulator, positive, read, save
 from research_agent.workspace import Workspace
 from .catalog import identifier, mapping, read_yaml, text
@@ -78,6 +78,13 @@ def activations(config: dict[str, Any]) -> list[dict[str, str]]:
              "kind": "usuario" if when in config["messages"] else "temporal",
              "message": config["messages"].get(when, "")}
             for i, when in enumerate(sorted(dates), 1)]
+
+
+def activation_mandate(config: dict[str, Any], when: str) -> str:
+    mandate = "\n\n".join(f"## Mensaje del usuario — {day}\n\n{message}"
+                            for day, message in sorted(config["messages"].items()) if day <= when)
+    validate_mandate(mandate)
+    return mandate
 
 
 def export_data(config: dict[str, Any]) -> dict[str, Any]:
@@ -161,6 +168,7 @@ def freeze_files(root: Path) -> dict[str, str]:
 
 
 def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str, Any] | None = None,
+                 condition: str | None = None,
                  launcher: Callable[[list[str], Path, Path], int] = launch,
                  identity: Callable[[], dict[str, Any]] = runtime_identity) -> int:
     campaign = campaign.absolute()
@@ -168,19 +176,32 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
     import research_agent
     disjoint(campaign, Path(research_agent.__file__).parent)
     disjoint(campaign, Path(__file__).parent)
+    if condition not in {None, "baseline", "deliberative"}:
+        raise ValueError("Unknown experimental condition.")
+    if scenario is None and condition is not None:
+        raise ValueError("Resume uses its frozen condition; do not supply condition.")
     if scenario is not None:
         config = load_scenario(scenario)
+        condition = condition or "baseline"
+        if condition == "deliberative":
+            for activation in activations(config):
+                activation_mandate(config, activation["date"])
         disjoint(campaign, scenario)
         campaign.mkdir(parents=True, exist_ok=False)
         (campaign / "definiciones").mkdir()
         save(campaign / "definiciones/scenario.json", config)
         save(campaign / "runtime.json", identity())
         save(campaign / "limits.json", config["limits"])
+        save(campaign / "condition.json", {"condition": condition})
         save(campaign / "progress.json", {"next": 0, "active": None, "attempts": [], "finished": False})
-        prepare_experiment(campaign / "agente", new=True)
+        prepare_experiment(campaign / "agente", new=True, deliberative=condition == "deliberative")
         save(campaign / "instructions.json", freeze_files(campaign / "agente/instrucciones"))
     with experiment_lock(campaign):
         config = read(campaign / "definiciones/scenario.json")
+        condition_path = campaign / "condition.json"
+        condition = read(condition_path)["condition"] if condition_path.exists() else "baseline"
+        if condition not in {"baseline", "deliberative"}:
+            raise ValueError("Unknown frozen experimental condition.")
         frozen_runtime = read(campaign / "runtime.json")
         if frozen_runtime != identity():
             raise ValueError("Runtime/model configuration changed; resume requires frozen configuration.")
@@ -199,6 +220,8 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             staging.rename(simulator_root)
         actual = {"config": digest(campaign / "definiciones/scenario.json"), "data": digest(simulator_root / "data.json"),
                   "simulator_config": digest(simulator_root / "config.json"), "limits": digest(campaign / "limits.json")}
+        if condition_path.exists():
+            actual["condition"] = digest(condition_path)
         if not (campaign / "frozen-inputs.json").exists():
             initial_progress = read(campaign / "progress.json")
             if initial_progress["next"] != 0 or initial_progress["attempts"]:
@@ -218,6 +241,12 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
         def persist() -> None:
             save(campaign / "progress.json", progress)
 
+        def prepare_mandate(when: str) -> None:
+            if condition == "deliberative":
+                mandate_path = experiment / "mandato.md"
+                Workspace._check_links(mandate_path)
+                mandate_path.write_text(activation_mandate(config, when), encoding="utf-8")
+
         def inspect_attempt(attempt: dict[str, Any]) -> bool:
             directory = attempts_root / attempt["id"]
             runs = sorted(p.name for p in (experiment / "ejecuciones").iterdir() if p.is_dir()
@@ -225,8 +254,20 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             if len(runs) != 1:
                 return False
             details, rows = inspect_run(campaign, experiment / "ejecuciones" / runs[0], config["id"], attempt["activation"]["id"])
+            manifest = {}
+            if condition == "deliberative" or "profile" in frozen_runtime:
+                try:
+                    manifest = read(experiment / "ejecuciones" / runs[0] / "manifiesto.json")
+                except (OSError, ValueError):
+                    details["capture_errors"].append({"error": "Child manifest unavailable"})
+                    details["capture_complete"] = False
+            if condition == "deliberative":
+                expected_context = deliberative_context(Workspace(directory / "checkpoint-state", create=False),
+                    activation_mandate(config, attempt["activation"]["date"]))
+                if manifest.get("condition") != condition or manifest.get("persistent_context") != expected_context:
+                    details["capture_errors"].append({"error": "Child persistent context differs from activation/checkpoint"})
+                    details["capture_complete"] = False
             if "profile" in frozen_runtime:
-                manifest = read(experiment / "ejecuciones" / runs[0] / "manifiesto.json")
                 effective = manifest.get("configuration", {})
                 if any(effective.get(key) != value for key, value in frozen_runtime["profile"].items()):
                     details["capture_errors"].append({"error": "Child model/profile differs from frozen runtime"})
@@ -263,6 +304,7 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
         active = progress["active"]
         if active is not None:
             attempt = progress["attempts"][active]
+            prepare_mandate(attempt["activation"]["date"])
             if inspect_attempt(attempt):
                 progress["next"] += 1
                 progress["active"] = None
@@ -271,6 +313,7 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
                 restore(attempt)
         while progress["next"] < len(schedule):
             activation = schedule[progress["next"]]
+            prepare_mandate(activation["date"])
             simulator = Simulator(simulator_root)
             simulator.advance(date.fromisoformat(activation["date"]))
             number = len(progress["attempts"]) + 1
@@ -292,6 +335,8 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
                        "--continue", "--run-name", attempt_id, "--conversation", activation["id"],
                        "--simulation", str(simulator_root), "--activation-kind", activation["kind"],
                        "--limits", str(campaign / "limits.json")]
+            if condition == "deliberative":
+                command.extend(["--mandate", str(experiment / "mandato.md")])
             save(directory / "command.json", command)
             print(f"{activation['date']} {activation['kind']} {attempt_id}", flush=True)
             try:
@@ -334,6 +379,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("scenario", type=Path)
     run.add_argument("--output", type=Path, required=True, help="New campaign directory")
     run.add_argument("--data", type=Path, help="Explicit controlled dataset; otherwise export Findata read-only")
+    run.add_argument("--condition", choices=["baseline", "deliberative"], default="baseline")
     resume = sub.add_parser("resume")
     resume.add_argument("campaign", type=Path)
     args = parser.parse_args(argv)
@@ -353,7 +399,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if report["ready"] else 1
         if args.operation == "resume":
             return run_campaign(args.campaign)
-        return run_campaign(args.output, scenario=args.scenario, data=read(args.data) if args.data else None)
+        return run_campaign(args.output, scenario=args.scenario, data=read(args.data) if args.data else None,
+                            condition=args.condition)
     except (ValueError, OSError, TypeError, KeyError) as exc:
         print(f"longitudinal: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2

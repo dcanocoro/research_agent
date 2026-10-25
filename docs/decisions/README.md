@@ -10,6 +10,10 @@ o garantías. La
 - [ADR-0002 — Simulación longitudinal](0002-simulacion-longitudinal.md):
   aceptada el 2026-10-24; disponibilidad estimada, universo y separación de estados.
 
+- [ADR-0003 — Intención persistente](0003-intencion-persistente.md): aceptada el
+  2026-10-24 como condición experimental; mandato protegido y agenda automática,
+  sin aceptación semántica ni campaña real.
+
 Usar `0001-nombre-breve.md`, con número consecutivo y este contenido mínimo:
 
 ```markdown

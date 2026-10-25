@@ -9,8 +9,23 @@ import os
 import re
 import subprocess
 import unicodedata
+import hashlib
 
 from .workspace import Workspace
+
+
+def validate_mandate(mandate: str) -> None:
+    if not mandate.strip() or len(mandate.encode("utf-8")) > 16384:
+        raise ValueError("Mandate must be nonempty UTF-8 text of at most 16 KiB.")
+
+
+def deliberative_context(workspace: Workspace, mandate: str) -> dict[str, Any]:
+    validate_mandate(mandate)
+    agenda = workspace.read_file("agenda.md", max_bytes=8192)
+    if agenda["next_offset"] is not None:
+        raise ValueError("agenda.md exceeds 8 KiB; compact it explicitly before continuing.")
+    return {name: {"text": content, "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest()}
+            for name, content in (("mandate", mandate), ("agenda", agenda["text"]))}
 
 
 def human_name(value: str) -> str:
@@ -80,7 +95,8 @@ def experiment_lock(root: Path) -> Iterator[None]:
                 locking.flock(stream.fileno(), locking.LOCK_UN)
 
 
-def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] = ()) -> tuple[Path, ...]:
+def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] = (),
+                       deliberative: bool = False) -> tuple[Path, ...]:
     root = root.absolute()
     Workspace._check_links(root)
     # The experiment can live under artifacts/, but never include the source package.
@@ -101,6 +117,10 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         (root / "instrucciones/agente.md").write_text(prompts.joinpath("agent_a.md").read_text(encoding="utf-8"), encoding="utf-8")
         (root / "instrucciones/investigacion-financiera.md").write_text(
             prompts.joinpath("financial_research.md").read_text(encoding="utf-8"), encoding="utf-8")
+        if deliberative:
+            (root / "instrucciones/deliberacion.md").write_text(
+                prompts.joinpath("deliberation.md").read_text(encoding="utf-8"), encoding="utf-8")
+            (root / "estado/agenda.md").write_text("", encoding="utf-8")
         for i, content in enumerate(extras, 1):
             (root / f"instrucciones/adicional-{i:02d}.md").write_text(content, encoding="utf-8")
         (root / ".gitignore").write_text("ejecuciones/\n.run.lock\n.env\n.env.*\n", encoding="utf-8")
@@ -117,4 +137,10 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
     for path in paths:
         Workspace._check_links(path)
         path.read_text(encoding="utf-8")
+    if deliberative:
+        if not (root / "instrucciones/deliberacion.md").is_file():
+            raise ValueError("Deliberative experiment requires instrucciones/deliberacion.md.")
+        deliberative_context(Workspace(root / "estado", create=False), "validation")
+    elif (root / "instrucciones/deliberacion.md").exists():
+        raise ValueError("Deliberative experiment requires --mandate on every activation.")
     return paths

@@ -6,7 +6,8 @@ from dataclasses import asdict
 from pathlib import Path
 from .bootstrap import build_agent
 from .contracts import AgentRequest, AgentLimits, AgentResult
-from .experiments import prepare_experiment, experiment_lock, human_name
+from .experiments import prepare_experiment, experiment_lock, human_name, disjoint, validate_mandate, deliberative_context
+from .workspace import Workspace
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,6 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-name", required=True)
     parser.add_argument("--conversation", default="cli")
     parser.add_argument("--instructions", type=Path, action="append", default=[])
+    parser.add_argument("--mandate", type=Path, help="Trusted persistent user mandate outside state and recordings; enables deliberative condition")
     parser.add_argument("--timeout-seconds", type=float, default=300)
     parser.add_argument("--simulation", type=Path, help="Private simulator directory supplied by the longitudinal controller")
     parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
@@ -42,15 +44,25 @@ def main(argv: list[str] | None = None) -> int:
                 simulator = Simulator(args.simulation)
                 message = activation_message(simulator, message, args.activation_kind)
                 metadata = {"simulated_date": str(simulator.today), "activation_kind": args.activation_kind}
-            result = await agent.run(AgentRequest(message, root.name, args.conversation, prompts, metadata))
+            result = await agent.run(AgentRequest(message, root.name, args.conversation, prompts, metadata, mandate))
             run_directory = agent.recorder.current
             return result
     try:
         human_name(args.run_name)
         limits = AgentLimits(**json.loads(args.limits.read_text(encoding="utf-8"))) if args.limits else AgentLimits(timeout_seconds=args.timeout_seconds)
         root = args.experiment.absolute()
-        prompts = prepare_experiment(root, new=args.new, instructions=tuple(args.instructions))
+        mandate = None
+        if args.mandate is not None:
+            Workspace._check_links(args.mandate)
+            for protected in (root / "estado", root / "ejecuciones"):
+                disjoint(args.mandate, protected)
+            mandate = args.mandate.read_text(encoding="utf-8")
+            validate_mandate(mandate)
+        prompts = prepare_experiment(root, new=args.new, instructions=tuple(args.instructions),
+                                     deliberative=mandate is not None)
         with experiment_lock(root):
+            if mandate is not None:
+                deliberative_context(Workspace(root / "estado", create=False), mandate)
             result = asyncio.run(execute(root, prompts, limits))
     except (ValueError, OSError) as exc:
         parser.exit(2, f"research-agent: {exc}\n")

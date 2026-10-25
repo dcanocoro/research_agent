@@ -182,7 +182,8 @@ def test_preflight_flags_prices_without_blocking_estimated_facts():
 
 
 @pytest.mark.parametrize("failure", ["during", "after_native", "capture", "none"])
-def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure):
+@pytest.mark.parametrize("condition", ["baseline", "deliberative"])
+def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure, condition):
     cfg = config(2)
     cfg["end"] = "2023-03-31"
     path = scenario(tmp_path, cfg)
@@ -196,6 +197,10 @@ def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure
         simulator = Simulator(Path(command[command.index("--simulation") + 1]))
         index = len(calls)
         calls.append(simulator.state["date"])
+        if condition == "deliberative":
+            from research_benchmarks.longitudinal import activation_mandate
+            mandate = root / "mandato.md"
+            assert mandate.read_text(encoding="utf-8") == activation_mandate(cfg, simulator.state["date"])
         if simulator.state["date"] == cfg["start"]:
             assert not simulator.pending()
             assert not (root / "estado/research.md").exists()
@@ -208,6 +213,16 @@ def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure
             failed = True
             raise KeyboardInterrupt
         code = fake_cli(command, out, err)
+        if condition == "deliberative":
+            from research_agent.experiments import deliberative_context
+            from research_agent.workspace import Workspace
+            name = command[command.index("--run-name") + 1]
+            manifest_path = root / "ejecuciones" / name / "manifiesto.json"
+            manifest = read(manifest_path)
+            manifest.update(condition=condition, persistent_context=deliberative_context(
+                Workspace(campaign / "intentos" / name / "checkpoint-state", create=False),
+                (root / "mandato.md").read_text(encoding="utf-8")))
+            save(manifest_path, manifest)
         if not failed and failure == "after_native":
             failed = True
             raise KeyboardInterrupt
@@ -217,7 +232,8 @@ def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure
             (run / "trazas/modelo-0001.json.gz").write_bytes(b"broken")
         return code
 
-    code = run_campaign(campaign, scenario=path, data=dataset(cfg), launcher=worker, identity=lambda: {"fixed": 1})
+    code = run_campaign(campaign, scenario=path, data=dataset(cfg), launcher=worker,
+                        identity=lambda: {"fixed": 1}, condition=condition)
     if failure != "none":
         assert code == 1
         assert run_campaign(campaign, launcher=worker, identity=lambda: {"fixed": 1}) == 0
@@ -237,6 +253,52 @@ def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure
         assert calls == ["2023-01-01", "2023-02-01", "2023-03-01"]
     with pytest.raises(ValueError, match="configuration"):
         run_campaign(campaign, identity=lambda: {"fixed": 2})
+
+
+def test_condition_frozen_and_legacy_campaign(tmp_path):
+    cfg = config(1)
+    cfg["end"] = "2023-03-31"
+    campaign = tmp_path / "legacy"
+    assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
+                        launcher=fake_cli, identity=lambda: {}) == 0
+    save(campaign / "condition.json", {"condition": "deliberative"})
+    with pytest.raises(ValueError, match="Frozen"):
+        run_campaign(campaign, identity=lambda: {})
+    (campaign / "condition.json").unlink()
+    with pytest.raises(ValueError, match="Frozen"):
+        run_campaign(campaign, identity=lambda: {})
+    frozen = read(campaign / "frozen-inputs.json")
+    frozen.pop("condition")
+    save(campaign / "frozen-inputs.json", frozen)
+    assert run_campaign(campaign, identity=lambda: {}) == 0
+    with pytest.raises(ValueError, match="frozen condition"):
+        run_campaign(campaign, identity=lambda: {}, condition="deliberative")
+
+
+@pytest.mark.parametrize("condition", ["baseline", "deliberative"])
+def test_cli_condition_commands_use_explicit_data(tmp_path, monkeypatch, condition):
+    import research_benchmarks.longitudinal as module
+    calls = []
+    monkeypatch.setattr(module, "run_campaign", lambda *args, **kwargs: calls.append((args, kwargs)) or 0)
+    source = tmp_path / "data.json"
+    save(source, {"fixture": "no remote export"})
+    assert module.main(["run", "benchmarks/intencion-persistente-v1/scenario.yaml", "--condition", condition,
+                        "--data", str(source), "--output", str(tmp_path / "campaign")]) == 0
+    assert calls[0][1]["condition"] == condition and calls[0][1]["data"] == {"fixture": "no remote export"}
+    assert module.main(["resume", str(tmp_path / "campaign")]) == 0
+    assert calls[1][1] == {}
+
+
+def test_deliberative_rejects_capture_without_expected_context(tmp_path):
+    cfg = config(1)
+    cfg["end"] = "2023-03-31"
+    campaign = tmp_path / "wrong-context"
+    assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
+                        launcher=fake_cli, identity=lambda: {}, condition="deliberative") == 1
+    progress = read(campaign / "progress.json")
+    assert progress["next"] == 0
+    capture = read(campaign / "intentos" / progress["attempts"][0]["id"] / "capture.json")
+    assert any("persistent context" in error.get("error", "") for error in capture["capture_errors"])
 
 
 def test_tools_temporal_gate_universe_and_no_extract(tmp_path):
@@ -324,7 +386,8 @@ def test_missing_file_is_tool_failure_not_capture_loss(tmp_path, monkeypatch):
     assert recorder.capture_errors == [{"operation": "tool_capture", "error_type": "OSError"}]
 
 
-def test_longitudinal_real_cli_subprocesses_with_controlled_provider(tmp_path):
+@pytest.mark.parametrize("condition", ["baseline", "deliberative"])
+def test_longitudinal_real_cli_subprocesses_with_controlled_provider(tmp_path, condition):
     from research_benchmarks.runner import launch
     cfg = config(2)
     cfg["end"] = "2023-03-31"
@@ -344,6 +407,7 @@ from research_agent.simulation.tools import register_simulation
 from runtime_contracts.llm import AssistantResponse, ResponseFunctionCall, ResponseTurn
 from runtime_contracts.execution import current_run_context
 from infra.adapters.llm_trace import LLMCallTrace
+from research_agent.recording import serializable
 @asynccontextmanager
 async def builder(workspace, runs, limits, **kwargs):
     simulator = Simulator(kwargs.pop('simulation'))
@@ -359,6 +423,17 @@ async def builder(workspace, runs, limits, **kwargs):
         n = 0
         async def respond(self, **request):
             self.n += 1
+            deliberative = (space.root/'agenda.md').exists()
+            if deliberative:
+                messages = '\\n'.join(getattr(x, 'content', '') for x in request['input_items'])
+                assert 'Investiga libremente y conserva lo útil.' in messages
+                assert ('Revisa lo conservado.' in messages) == (str(simulator.today) >= '2023-03-01')
+                agenda = next(x.payload['deliberative_agenda']['text'] for x in request['input_items']
+                              if hasattr(x, 'payload') and 'deliberative_agenda' in x.payload)
+                if self.n == 1:
+                    assert agenda == (space.root/'agenda.md').read_text()
+                if str(simulator.today) != '2023-01-01':
+                    assert agenda.startswith('Continue intention from process ')
             if self.n == 1:
                 if str(simulator.today) == '2023-01-01':
                     item = ResponseFunctionCall('buy', 'portfolio_buy', {'symbol':'S00','amount':'100'})
@@ -368,10 +443,15 @@ async def builder(workspace, runs, limits, **kwargs):
             elif self.n == 2:
                 old = (space.root/'memory.md').read_text() if (space.root/'memory.md').exists() else ''
                 item = ResponseFunctionCall('write', 'write_file', {'path':'memory.md','content':old+str(os.getpid())+'\\n'})
+            elif self.n == 3 and deliberative:
+                item = ResponseFunctionCall('agenda', 'write_file', {'path':'agenda.md',
+                    'content':'Continue intention from process '+str(os.getpid())})
             else:
                 item = AssistantResponse('done')
-            turn = ResponseTurn([item], 'done' if self.n == 3 else '', item if self.n < 3 else None)
-            LLMCallTrace(operation='conversation', model='controlled', provider_request={'input':[]}).emit(
+            done = isinstance(item, AssistantResponse)
+            turn = ResponseTurn([item], 'done' if done else '', None if done else item)
+            LLMCallTrace(operation='conversation', model='controlled',
+                provider_request={'input':serializable(request['input_items']), 'system':request['system']}).emit(
                 context=current_run_context(), response={'output':[]}, result=turn, operational_output=None,
                 status='success', error_type=None, duration_ms=1)
             return turn
@@ -383,10 +463,13 @@ raise SystemExit(cli.main())
         return launch([sys.executable, str(worker), *command[3:]], out, err)
     campaign = tmp_path / "cli-campaign"
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
-                        launcher=launcher, identity=lambda: {}) == 0
+                        launcher=launcher, identity=lambda: {}, condition=condition) == 0
     pids = (campaign / "agente/estado/memory.md").read_text().splitlines()
     assert len(pids) == 3 and len(set(pids)) == 3
     assert len(Simulator(campaign / "simulador").state["orders"]) == 1
+    if condition == "deliberative":
+        assert (campaign / "agente/mandato.md").read_text(encoding="utf-8").count('Investiga libremente') == 1
+        assert run_campaign(campaign, launcher=launcher, identity=lambda: {}) == 0
 
 
 def test_resume_after_interrupted_checkpoint_preparation(tmp_path, monkeypatch):

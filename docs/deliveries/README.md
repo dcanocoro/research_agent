@@ -7,6 +7,8 @@ consultar [estrategia](../strategy.md).
 
 - [2026-10-24 — Simplificación de main sin SQL](2026-10-24-simplification-main.md):
   campañas separadas, herramientas explícitas y captura propia; retirada local de Audit.
+- [2026-10-24 — Intención persistente](2026-10-24-persistent-intention.md): mandato
+  protegido, agenda automática y piloto de seis activaciones preparado sin ejecutar.
 - [2026-10-21 — M1 en el prompt de A](2026-10-21-m1.md): revisión deliberativa en
   los archivos existentes; sin cambios del benchmark ni campaña de aceptación.
 - [2026-10-20 — Evidencia compacta](2026-10-20-compact-evidence.md): trayectoria por

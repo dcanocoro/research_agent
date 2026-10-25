@@ -1,0 +1,126 @@
+schema_version: longitudinal-v1
+id: intencion-persistente-v1
+start: '2023-01-01'
+end: '2023-06-30'
+universe:
+- symbol: A
+  name: Agilent Technologies Inc
+- symbol: AAPL
+  name: Apple Inc.
+- symbol: ABBV
+  name: AbbVie Inc
+- symbol: ABNB
+  name: Airbnb Inc
+- symbol: ABT
+  name: Abbott Laboratories
+- symbol: ACGL
+  name: Arch Capital Group Ltd.
+- symbol: ACN
+  name: Accenture plc
+- symbol: ADBE
+  name: Adobe Systems Incorporated
+- symbol: ADI
+  name: Analog Devices Inc
+- symbol: ADM
+  name: Archer-Daniels-Midland Company
+- symbol: ADP
+  name: Automatic Data Processing Inc
+- symbol: ADSK
+  name: Autodesk Inc
+- symbol: AEE
+  name: Ameren Corp
+- symbol: AEP
+  name: American Electric Power Co Inc
+- symbol: AES
+  name: The AES Corporation
+- symbol: AFL
+  name: Aflac Incorporated
+- symbol: AIG
+  name: American International Group Inc
+- symbol: AIZ
+  name: Assurant, Inc.
+- symbol: AJG
+  name: Arthur J Gallagher & Co
+- symbol: AKAM
+  name: Akamai Technologies Inc
+- symbol: ALB
+  name: Albemarle Corp
+- symbol: ALGN
+  name: Align Technology Inc
+- symbol: ALL
+  name: The Allstate Corporation
+- symbol: ALLE
+  name: Allegion PLC
+- symbol: AMAT
+  name: Applied Materials Inc
+- symbol: AMCR
+  name: Amcor PLC
+- symbol: AMD
+  name: Advanced Micro Devices Inc
+- symbol: AME
+  name: Ametek Inc
+- symbol: AMGN
+  name: Amgen Inc
+- symbol: AMP
+  name: Ameriprise Financial Inc
+- symbol: AMT
+  name: American Tower Corp
+- symbol: AMZN
+  name: Amazon.com Inc
+- symbol: ANET
+  name: Arista Networks
+- symbol: AON
+  name: Aon PLC
+- symbol: AOS
+  name: Smith AO Corporation
+- symbol: APA
+  name: APA Corporation
+- symbol: APD
+  name: Air Products and Chemicals Inc
+- symbol: APH
+  name: Amphenol Corporation
+- symbol: APO
+  name: Apollo Global Management LLC Class A
+- symbol: APTV
+  name: Aptiv PLC
+- symbol: ARE
+  name: Alexandria Real Estate Equities Inc
+- symbol: ATO
+  name: Atmos Energy Corporation
+- symbol: AVB
+  name: AvalonBay Communities Inc
+- symbol: AVGO
+  name: Broadcom Inc
+- symbol: AVY
+  name: Avery Dennison Corp
+- symbol: AWK
+  name: American Water Works
+- symbol: AXON
+  name: Axon Enterprise Inc.
+- symbol: AXP
+  name: American Express Company
+- symbol: AZO
+  name: AutoZone Inc
+- symbol: BA
+  name: The Boeing Company
+initial_cash: '100000'
+max_positions: 10
+annual_lag_days: 120
+messages:
+  '2023-01-01': Soy un inversor a largo plazo. Dispongo de 100.000 USD ficticios y
+    acepto mantener efectivo. Investiga dentro del universo disponible y decide cómo
+    empezar; conserva lo útil para futuras revisiones.
+  '2023-04-01': Revisa cómo ha evolucionado tu evaluación desde el comienzo. Decide
+    si conviene actuar o conservar la cartera.
+limits:
+  max_llm_calls: 18
+  max_tool_calls: 30
+  timeout_seconds: 300
+  finalization_seconds: 45
+  max_context_bytes: 262144
+price_review:
+  status: approved
+  basis: adjusted
+  evidence: docs/experiments/colaboracion-historica-v1/price-review.md; reviewed data
+    sha256:2b65121feae3ae0f2784584f53af6649856d988997eda6eb402f0a71f2b58745; provider/issuer
+    exceptions explicit

@@ -70,7 +70,7 @@ los IDs técnicos permanecen dentro de los registros. La fecha de los nombres ut
 `Europe/Madrid` en el código actual.
 
 Hay tres estados distintos: archivos persistentes, contexto transitorio de A y evidencia
-de ejecución. Solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
+de ejecución. En baseline solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
 explícita; el resto se consulta bajo demanda. La CLI crea una instancia nueva por run:
 continuar reutiliza archivos, sin restaurar el chat. La integración local con
 Experience Audit se ha retirado; no se mantiene su contrato de ejecución externa.
@@ -200,3 +200,30 @@ El simulador reside fuera del workspace editable. La memoria no es el registro e
 La [decisión](decisions/0002-simulacion-longitudinal.md) y el
 [protocolo](experiments/colaboracion-historica-v1/protocol.md) fijan disponibilidad
 estimada, límites de cartera y recuperación; el [baseline previo](baseline.md) se conserva.
+
+## Condición experimental de intención persistente
+
+`AgentRequest.mandate`, opcional y añadido al final del contrato, activa la condición
+deliberativa. La CLI lo recibe mediante `--mandate PATH`, fuera de estado y ejecuciones.
+`prepare_experiment(deliberative=True)` copia `deliberacion.md` y crea `estado/agenda.md`
+vacío. Las continuaciones exigen ambos y el mandato; no migran instrucciones antiguas.
+
+El mandato auténtico se entrega como mensaje de usuario separado; la agenda se entrega
+como `ConversationContext.deliberative_agenda`, memoria revisable sin autoridad.
+Se conservan el índice y las herramientas de recuperación. Mandato no vacío: hasta
+16 KiB UTF-8; agenda: hasta 8 KiB, vacía permitida. Se rechazan ausencias, UTF-8 inválido
+y excesos antes de llamar al modelo, sin truncamiento. El manifiesto registra `condition`
+y `persistent_context` con texto/hash de mandato y agenda inicial. La API directa
+valida el contexto; sin experimento gestionado añade la guía deliberativa del paquete
+si no se proporcionó una copia. En un experimento gestionado exige la copia explícita.
+
+`longitudinal run --condition baseline|deliberative` congela condición y hash.
+En deliberative escribe `agente/mandato.md` con mensajes auténticos hasta la fecha,
+fuera del estado. Cada intento lo reconstruye desde el escenario; al reconocer su
+captura contrasta el manifiesto con el mandato esperado y la agenda del checkpoint.
+Campañas antiguas sin condición se interpretan como baseline, manteniendo los checks
+de identidad. Las dos llamadas de consolidación y la respuesta final no cambian.
+
+El [protocolo](experiments/intencion-persistente-v1/protocol.md) y la
+[decisión experimental](decisions/0003-intencion-persistente.md) delimitan el piloto
+preparado, sin campaña real ni aceptación semántica.

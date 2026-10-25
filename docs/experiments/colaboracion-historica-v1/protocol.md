@@ -7,7 +7,12 @@ La [revisión de precios de las 50 empresas](price-review.md) habilita un datase
 ajustado con procedencia y excepción AVB documentadas. La
 [prueba corta histórica real](historical-smoke.md) completó tres activaciones en
 junio–agosto de 2024. El escenario original pendiente se conserva; el revisado requiere
-el dataset auditado mediante `--data`. La campaña de dos años todavía no se ha ejecutado.
+el dataset auditado mediante `--data`. La campaña de dos años completó 24 activaciones;
+su [informe local](../../../artifacts/campana-historica-completa-v1/informe-ejecucion.md)
+conserva el análisis posterior. Los artefactos son locales e ignorados, no evidencia
+portable. El informe documenta pérdida parcial del mandato y contaminación temporal web;
+no acredita alfa. La [siguiente comparación](../intencion-persistente-v1/protocol.md)
+está preparada y todavía no se ha ejecutado.
 
 ## Pregunta y condiciones
 

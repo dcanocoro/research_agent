@@ -313,3 +313,27 @@ La [guía del experimento](experiments/colaboracion-historica-v1/protocol.md) do
 campaña histórica. Requiere el wheel experimental de la
 [entrega](deliveries/2026-10-24-longitudinal.md). No reutilizar el wheel anterior para
 este modo ni editar `site-packages`. Las campañas existentes conservan su CLI.
+
+### Intención persistente opcional
+
+El [piloto de seis activaciones](experiments/intencion-persistente-v1/protocol.md)
+incluye comandos para comprobar perfil/dataset sin red y ejecutar después dos campañas
+independientes con `--condition baseline` y `--condition deliberative`. Está preparado,
+sin ejecutar. No usar `longitudinal preflight` para un check documental: exporta Findata.
+
+En CLI manual, `--mandate PATH` activa la condición y debe suministrarse en cada
+continuación. El archivo UTF-8 auténtico lo mantiene la persona fuera de `estado/` y
+`ejecuciones/`; no se resume ni se copia automáticamente desde una petición breve.
+Con `--new` se copian instrucciones deliberativas y se crea una agenda vacía. Con
+`--continue` se exigen esos archivos, sin actualizar instrucciones anteriores.
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent "Comienza la investigación" --experiment artifacts/intencion-manual --new --run-name inicial --mandate C:/ruta/mandato.md
+.\.venv\Scripts\python.exe -m research_agent "Continúa" --experiment artifacts/intencion-manual --continue --run-name continuacion --mandate C:/ruta/mandato.md
+```
+
+Estos dos comandos llaman al proveedor. Reemplazar la ruta del mandato por el archivo
+real; no almacenar secretos en él. Mandato no vacío hasta 16 KiB, agenda hasta 8 KiB;
+los errores se diagnostican antes de construir clientes desde la CLI. No apuntar el
+mandato a memoria generada por A: la ruta externa delimita acceso, no autentica autoría.
+El control longitudinal genera el archivo desde los mensajes congelados por fecha.

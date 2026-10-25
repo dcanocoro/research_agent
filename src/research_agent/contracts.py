@@ -27,6 +27,7 @@ class AgentRequest:
     conversation_id: str
     instructions: tuple[Path, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
+    mandate: str | None = None
 
 
 @dataclass(frozen=True)

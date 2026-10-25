@@ -1,9 +1,24 @@
 # Estrategia de investigación
 
-> Agenda revisada el 2026-10-24 con el encargo longitudinal aceptado por el usuario.
+> Agenda revisada el 2026-10-24 con el encargo de intención persistente aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Encargo vigente: colaboración longitudinal
+## Encargo vigente: intención persistente
+
+El usuario aprobó preparar la [condición de intención persistente](experiments/intencion-persistente-v1/protocol.md)
+con mandato auténtico, agenda automática y disciplina de continuidad sobre A. La
+[decisión experimental](decisions/0003-intencion-persistente.md) conserva el alcance:
+implementación y comprobaciones locales, sin ejecutar proveedores ni la campaña real.
+El piloto comparará seis activaciones por condición con datos congelados y web viva;
+su utilidad semántica sigue pendiente. No se elige la arquitectura final de FinMate.
+
+Posteriormente el usuario autorizó ejecutar con 60 llamadas y 20 minutos por activación.
+Ambas condiciones completaron seis activaciones; los [hallazgos preliminares](experiments/intencion-persistente-v1/findings-amplio.md)
+registran continuidad del contexto y cierres autónomos, sin demostrar progreso superior.
+El escenario de 18 llamadas no se ejecutó. La siguiente revisión debe valorar el trabajo
+pendiente y sus bloqueos antes de atribuir la limitación a falta de recursos.
+
+## Antecedente: colaboración longitudinal
 
 Actualizado el 2026-10-24 por aprobación explícita del plan del usuario. Construir
 el entorno longitudinal de 50 empresas y hasta 10 posiciones para observar memoria,
@@ -12,8 +27,10 @@ sin atribuir resultados de alfa. El [protocolo](experiments/colaboracion-histori
 y la [decisión](decisions/0002-simulacion-longitudinal.md) conservan el alcance.
 La [revisión de precios](experiments/colaboracion-historica-v1/price-review.md) habilita
 el dataset ajustado con las excepciones declaradas. La prueba corta histórica real
-está completada; queda ejecutar el baseline de dos años con esa condición congelada.
-No se incorporan mecanismos cognitivos ni evaluador. El baseline anterior y los
+está completada; también se completaron las 24 activaciones de dos años. El
+[informe local](../artifacts/campana-historica-completa-v1/informe-ejecucion.md),
+ignorado y no portable, documenta continuidad, pérdida parcial del mandato y contaminación
+temporal web; no prueba alfa. Ese encargo no incorporó mecanismos cognitivos ni evaluador. El baseline anterior y los
 antecedentes siguientes no se reescriben como resultados de este encargo.
 
 ## Prioridad anterior y antecedentes
