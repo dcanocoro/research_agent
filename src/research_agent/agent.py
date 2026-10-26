@@ -30,6 +30,9 @@ class AgentA:
         self.instructions = instructions
 
     async def run(self, request: AgentRequest) -> AgentResult:
+        if request.continuous is not None:
+            from .continuous import run_continuous
+            return await run_continuous(self, request)
         persistent = deliberative_context(self.workspace, request.mandate) if request.mandate is not None else None
         if self._conversation_id not in (None, request.conversation_id):
             raise ValueError("An AgentA instance belongs to one conversation.")
@@ -218,13 +221,14 @@ class AgentA:
             "workspace_fingerprint": hashlib.sha256(str(self.workspace.root.resolve()).encode()).hexdigest(),
             "limits": asdict(self.limits), "configuration": self.configuration, "metadata": request.metadata,
             "condition": "deliberative" if persistent is not None else "baseline",
+            "continuous": asdict(request.continuous) if request.continuous is not None else None,
             "persistent_context": persistent,
             "closing_policy": {"consolidation_calls": 2, "response_calls": 1,
                                "consolidation_seconds_at_time_threshold": self.limits.finalization_seconds / 3,
                                "response_seconds": self.limits.finalization_seconds * 2 / 3,
                                "context_reserve_bytes": min(32768, self.limits.max_context_bytes // 4),
                                "consolidation_tools": sorted(self.tools.consolidation_tools or ())}
-                              if self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
+                              if request.continuous is None and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
             "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
             "tools": self.tools.specs()})
         return system

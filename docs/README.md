@@ -3,6 +3,9 @@
 Research Agent estudia mecanismos de conocimiento, investigación y revisión para el
 futuro FinMate. El [baseline vigente](baseline.md) identifica el estado que se toma
 como referencia para próximos experimentos, su configuración y evidencias disponibles.
+El [modo continuo experimental](experiments/contexto-continuo-v1/protocol.md) añade
+continuación tras respuestas y contexto renovable con estimación local de tokens;
+no cambia por defecto el ciclo acotado ni el calendario longitudinal.
 La [estrategia](strategy.md) fija la agenda; la arqueología caracteriza un corte
 histórico de FinMate y E001/E002 son antecedentes recuperables desde Git.
 

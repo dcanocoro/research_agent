@@ -21,6 +21,23 @@ class AgentLimits:
 
 
 @dataclass(frozen=True)
+class ContinuousConfig:
+    max_context_tokens: int = 32000
+    consolidation_threshold: int = 24000
+    max_llm_calls: int | None = None
+    max_tool_calls: int | None = None
+    timeout_seconds: float | None = None
+
+    def __post_init__(self) -> None:
+        if not 0 < self.consolidation_threshold < self.max_context_tokens:
+            raise ValueError("Continuous context threshold must be below the token limit.")
+        if any(v is not None and v < 1 for v in (self.max_llm_calls, self.max_tool_calls)):
+            raise ValueError("Continuous call limits must be positive.")
+        if self.timeout_seconds is not None and (not isfinite(self.timeout_seconds) or self.timeout_seconds <= 0):
+            raise ValueError("Continuous timeout must be finite and positive.")
+
+
+@dataclass(frozen=True)
 class AgentRequest:
     message: str
     workspace_id: str
@@ -28,6 +45,7 @@ class AgentRequest:
     instructions: tuple[Path, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
     mandate: str | None = None
+    continuous: ContinuousConfig | None = None
 
 
 @dataclass(frozen=True)

@@ -5,7 +5,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 from .bootstrap import build_agent
-from .contracts import AgentRequest, AgentLimits, AgentResult
+from .contracts import AgentRequest, AgentLimits, AgentResult, ContinuousConfig
 from .experiments import prepare_experiment, experiment_lock, human_name, disjoint, validate_mandate, deliberative_context
 from .workspace import Workspace
 
@@ -28,7 +28,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--simulation", type=Path, help="Private simulator directory supplied by the longitudinal controller")
     parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
     parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON supplied by the controller")
+    parser.add_argument("--continuous", action="store_true", help="Keep A running with bounded renewable context; requires --mandate")
+    parser.add_argument("--context-tokens", type=int, default=None, help="Continuous total token budget (default 32000)")
+    parser.add_argument("--consolidation-tokens", type=int, default=None, help="Continuous consolidation threshold (default 24000)")
+    parser.add_argument("--max-calls", type=int, default=None, help="Optional total model calls in continuous mode")
+    parser.add_argument("--max-tools", type=int, default=None, help="Optional total tool calls in continuous mode")
+    parser.add_argument("--continuous-timeout-seconds", type=float, default=None, help="Optional global continuous duration")
     args = parser.parse_args(raw)
+    continuous_options = (args.context_tokens, args.consolidation_tokens, args.max_calls, args.max_tools, args.continuous_timeout_seconds)
+    if args.continuous and (args.mandate is None or args.limits is not None):
+        parser.error("--continuous requires --mandate and cannot use bounded --limits; use --max-calls/--max-tools instead.")
+    if not args.continuous and any(value is not None for value in continuous_options):
+        parser.error("Continuous budget options require --continuous.")
     run_directory: Path | None = None
 
     async def execute(root: Path, prompts: tuple[Path, ...], limits: AgentLimits) -> AgentResult:
@@ -44,11 +55,16 @@ def main(argv: list[str] | None = None) -> int:
                 simulator = Simulator(args.simulation)
                 message = activation_message(simulator, message, args.activation_kind)
                 metadata = {"simulated_date": str(simulator.today), "activation_kind": args.activation_kind}
-            result = await agent.run(AgentRequest(message, root.name, args.conversation, prompts, metadata, mandate))
+            result = await agent.run(AgentRequest(message, root.name, args.conversation, prompts, metadata, mandate, continuous))
             run_directory = agent.recorder.current
             return result
     try:
         human_name(args.run_name)
+        continuous = ContinuousConfig(
+            max_context_tokens=args.context_tokens if args.context_tokens is not None else 32000,
+            consolidation_threshold=args.consolidation_tokens if args.consolidation_tokens is not None else 24000,
+            max_llm_calls=args.max_calls, max_tool_calls=args.max_tools,
+            timeout_seconds=args.continuous_timeout_seconds) if args.continuous else None
         limits = AgentLimits(**json.loads(args.limits.read_text(encoding="utf-8"))) if args.limits else AgentLimits(timeout_seconds=args.timeout_seconds)
         root = args.experiment.absolute()
         mandate = None
@@ -67,7 +83,9 @@ def main(argv: list[str] | None = None) -> int:
     except (ValueError, OSError) as exc:
         parser.exit(2, f"research-agent: {exc}\n")
     print(result.answer or f"{result.status}: {result.stop_reason}")
+    if args.continuous:
+        print(f"continuous={result.status}: {result.stop_reason}")
     print(f"execution={run_directory}")
     print(f"run_id={result.run_id}")
     print("state=" + json.dumps(asdict(result.state), ensure_ascii=False))
-    return 0 if result.status == "completed" else 1
+    return 0 if result.status == "completed" or (args.continuous and result.stop_reason in {"call_limit", "tool_limit", "time_limit"}) else 1

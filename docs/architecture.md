@@ -4,6 +4,9 @@
 
 ## Frontera y componentes
 
+Desde el 2026-10-26 existe además el [modo continuo opcional](experiments/contexto-continuo-v1/protocol.md).
+La descripción del ciclo acotado siguiente conserva su contrato por defecto.
+
 A posee un único ciclo modelo → herramienta → modelo → respuesta. No importa
 `finmate`, `engine` ni `api`; Findata, Infra y los contratos comunes se consumen desde
 el wheel instalado. Findata abre transacciones PostgreSQL de solo lectura, sin ingestas
@@ -264,3 +267,49 @@ actualización, revisándolos, justificando ausencia de impacto o marcando revis
 `oportunidades.md` conserva comparaciones y `cartera.md` opcional conserva interpretación
 de la asignación; las herramientas siguen siendo autoridad sobre posiciones y operaciones.
 Son instrucciones al LLM, sin enforcement nuevo del runtime ni validación semántica.
+
+## Modo continuo experimental — 2026-10-26
+
+`AgentRequest.continuous: ContinuousConfig | None` activa el mismo A con un ciclo
+renovable implementado en `research_agent.continuous`. Requiere mandato explícito.
+`None` mantiene el ciclo y los límites anteriores. No añade agentes ni planificador.
+El presupuesto global opcional de llamadas, herramientas y duración se define en
+`ContinuousConfig`; `AgentLimits.timeout_seconds` conserva el timeout finito por operación,
+sin imponer sus otros máximos al modo continuo.
+
+Las respuestas son registros intermedios. El runtime añade una continuación técnica
+mediante `ConversationContext`, separada de las peticiones humanas. El calendario no
+avanza: las órdenes simuladas permanecen pendientes. El modo no introduce espera autónoma.
+
+`context_budget.TokenCounter` identifica el encoding mediante `tiktoken==0.14.0`, sin
+fallback para proveedores/modelos no reconocidos. Tokeniza la representación JSON de
+las instrucciones, items tipados y herramientas, incluidas continuaciones opacas.
+El máximo configurable de 32.000 incluye entrada estimada con margen del 10 % y la
+salida máxima efectiva del perfil. El umbral inicial es 24.000. Es una estimación
+local auditable, no el conteo exacto del payload del proveedor ni una garantía del
+consumo remoto; el uso real disponible permanece en las trazas compartidas.
+La [documentación oficial de conteo](https://developers.openai.com/api/docs/guides/token-counting)
+distingue los tokenizers locales del conteo exacto del endpoint; este modo no llama a ese endpoint.
+
+Al llegar al umbral se ofrecen hasta cuatro llamadas de consolidación con herramientas
+de persistencia. Cada una descuenta recursos globales. Después se reconstruye con
+instrucciones, mandato, petición inicial, fecha/metadatos, índice, agenda y presupuesto
+actual. No se conserva cola ni se genera otro resumen. Escrituras opcionales; si falla
+la consolidación, se pausa sin retirar la historia activa. Se rechazan arranques o
+reconstrucciones cuyo contexto protegido no quepa. Un resultado excesivo se entrega
+por referencia paginable conservando el original; nunca se elimina una llamada aislada
+ni se corta una continuación. Si el intercambio no cabe, se pausa sin enviarlo.
+
+`conversacion-completa.jsonl` conserva incrementalmente cada item por número de contexto;
+los resultados originales están en los artefactos referenciados. `conversacion.json`
+conserva solo la ventana activa al cerrar. Los eventos registran método/versiones,
+presupuestos, renovaciones, archivos modificados y causas de pausa. El manifiesto conserva
+configuración continua y no declara la política de cierre acotada. Las capturas del
+proveedor y snapshots mantienen su formato. Las salidas intermedias se registran en eventos;
+`respuesta.md`, cuando existe, conserva la última, sin significar encargo completado.
+
+Errores/cancelación cierran el proceso con evidencia disponible. La continuación explícita
+arranca desde archivos y simulador actuales, con nuevo presupuesto por ejecución; no
+restaura chat ni repite operaciones. Un cierre abrupto no garantiza que lo no escrito
+en memoria se pueda recuperar. La ventana está acotada; el volumen del archivo y las
+listas de captura/eventos en memoria de proceso no tienen un límite total en esta versión.

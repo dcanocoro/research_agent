@@ -3,7 +3,16 @@
 > Agenda revisada el 2026-10-25 con el encargo de metodología financiera aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Encargo vigente: metodología financiera longitudinal
+## Encargo vigente: bucle continuo con contexto acotado
+
+El 2026-10-26 el usuario aprobó implementar el [modo continuo](experiments/contexto-continuo-v1/protocol.md)
+de A con mandato persistente, presupuesto local en tokens y reconstrucción desde archivos.
+El primer contraste mantiene fija la fecha simulada y no cambia el calendario longitudinal.
+El alcance es implementación y verificación local con clientes simulados; no autoriza
+proveedores ni campañas reales. La conservación semántica y la selección de trabajo siguen
+pendientes de observar. No elige arquitectura definitiva para FinMate.
+
+## Antecedente: metodología financiera longitudinal
 
 El 2026-10-25 el usuario aprobó integrar una metodología financiera y una convención
 mínima de conocimiento por empresa en los prompts por defecto. El

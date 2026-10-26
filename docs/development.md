@@ -286,6 +286,46 @@ Un cambio documental no necesita llamadas a modelos o PostgreSQL. Tampoco acredi
 aceptación financiera. No confundir un resultado histórico enlazado con una prueba
 repetida en el entorno actual. Registrar qué se comprobó y qué quedó fuera.
 
+## Ejecutar el modo continuo experimental
+
+El [protocolo](experiments/contexto-continuo-v1/protocol.md) define alcance y aceptación.
+Instalar las dependencias locales actualizadas (incluido `tiktoken==0.14.0`) sin cambiar
+el wheel compartido. El tokenizer puede necesitar descargar su tabla verificada por hash
+al cargarlo por primera vez; después el conteo es local. No se consulta el endpoint de
+conteo ni se llama a un modelo para contar tokens.
+
+Ejemplo de operación para una ejecución futura autorizada, no un check documental:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent "Continúa investigando el mandato" --experiment ./artifacts/continuo --new --run-name inicial --continuous --mandate ./mandato.md --max-calls 60 --continuous-timeout-seconds 1200
+.\.venv\Scripts\python.exe -m research_agent "Retoma desde lo conservado" --experiment ./artifacts/continuo --continue --run-name reanudacion --continuous --mandate ./mandato.md --max-calls 60
+```
+
+`--context-tokens` (32.000) y `--consolidation-tokens` (24.000) controlan la ventana;
+`--max-calls`, `--max-tools` y `--continuous-timeout-seconds` son límites globales
+opcionales por ejecución. Sin ellos continúa hasta interrupción o error. `--timeout-seconds`
+conserva un timeout finito por operación (300 segundos por defecto). No se admite
+`--limits` junto con `--continuous`, ni opciones continuas en modo acotado.
+La API directa recibe `AgentRequest(..., continuous=ContinuousConfig(...))` y necesita
+provider, model y max_output_tokens efectivos en la configuración de A.
+
+Con `--simulation PATH`, usar un simulador previamente preparado y separado del estado:
+se conserva su fecha, no se ejecuta el calendario longitudinal y las órdenes no avanzan
+por renovar contexto. Sin simulador, siguen disponibles las herramientas habituales;
+eso no constituye un escenario histórico congelado.
+
+El modo requiere un mandato externo y un modelo reconocido por el tokenizer; no sustituye
+el modelo configurado. En el entorno revisado, `gpt-6-luna` no tiene mapping en tiktoken
+0.14.0: el modo continuo falla antes de la primera llamada. El modo acotado conserva su
+comportamiento. No asignar un encoding por conjetura para eludir esa validación.
+
+La CLI indica `continuous=interrupted: call_limit|tool_limit|time_limit` en pausas
+controladas y retorna 0; otros fallos retornan 1, argumentos inválidos 2. Una pausa
+no es `completed`. Para reanudar, usar `--continue`: conserva archivos y estado económico,
+abre otro archivo de ejecución y no repite herramientas previas. No hay reinicio automático.
+`conversacion-completa.jsonl` es el historial entre ventanas; el JSON habitual contiene
+la última ventana. Consultar también eventos, resultados originales y trazas de consumo.
+
 ## Baseline y comparabilidad
 
 El [baseline](baseline.md) identifica código, prompts y wheel de referencia. Un run
