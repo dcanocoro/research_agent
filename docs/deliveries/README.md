@@ -5,6 +5,8 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-25 — Metodología financiera longitudinal](2026-10-25-financial-methodology.md):
+  prompts, control congelado y selección de instrucciones; verificación local sin campaña.
 - [2026-10-24 — Simplificación de main sin SQL](2026-10-24-simplification-main.md):
   campañas separadas, herramientas explícitas y captura propia; retirada local de Audit.
 - [2026-10-24 — Intención persistente](2026-10-24-persistent-intention.md): mandato

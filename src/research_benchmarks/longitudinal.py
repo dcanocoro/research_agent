@@ -13,7 +13,7 @@ from typing import Any, Callable
 from uuid import uuid4
 
 from research_agent.contracts import AgentLimits
-from research_agent.experiments import disjoint, experiment_lock, prepare_experiment, validate_mandate, deliberative_context
+from research_agent.experiments import disjoint, experiment_lock, prepare_experiment, validate_mandate, deliberative_context, instruction_bundle
 from research_agent.simulation.state import Simulator, positive, read, save
 from research_agent.workspace import Workspace
 from .catalog import identifier, mapping, read_yaml, text
@@ -169,6 +169,7 @@ def freeze_files(root: Path) -> dict[str, str]:
 
 def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str, Any] | None = None,
                  condition: str | None = None,
+                 instructions_dir: Path | None = None,
                  launcher: Callable[[list[str], Path, Path], int] = launch,
                  identity: Callable[[], dict[str, Any]] = runtime_identity) -> int:
     campaign = campaign.absolute()
@@ -180,6 +181,11 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
         raise ValueError("Unknown experimental condition.")
     if scenario is None and condition is not None:
         raise ValueError("Resume uses its frozen condition; do not supply condition.")
+    if instructions_dir is not None:
+        if scenario is None:
+            raise ValueError("Resume uses frozen instructions; do not supply instructions_dir.")
+        disjoint(campaign, instructions_dir)
+        instruction_bundle(instructions_dir, deliberative=condition == "deliberative")
     if scenario is not None:
         config = load_scenario(scenario)
         condition = condition or "baseline"
@@ -194,7 +200,8 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
         save(campaign / "limits.json", config["limits"])
         save(campaign / "condition.json", {"condition": condition})
         save(campaign / "progress.json", {"next": 0, "active": None, "attempts": [], "finished": False})
-        prepare_experiment(campaign / "agente", new=True, deliberative=condition == "deliberative")
+        prepare_experiment(campaign / "agente", new=True, deliberative=condition == "deliberative",
+                           instructions_dir=instructions_dir)
         save(campaign / "instructions.json", freeze_files(campaign / "agente/instrucciones"))
     with experiment_lock(campaign):
         config = read(campaign / "definiciones/scenario.json")
@@ -380,6 +387,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--output", type=Path, required=True, help="New campaign directory")
     run.add_argument("--data", type=Path, help="Explicit controlled dataset; otherwise export Findata read-only")
     run.add_argument("--condition", choices=["baseline", "deliberative"], default="baseline")
+    run.add_argument("--instructions-dir", type=Path, help="Complete replacement instruction bundle; new campaigns only")
     resume = sub.add_parser("resume")
     resume.add_argument("campaign", type=Path)
     args = parser.parse_args(argv)
@@ -400,7 +408,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.operation == "resume":
             return run_campaign(args.campaign)
         return run_campaign(args.output, scenario=args.scenario, data=read(args.data) if args.data else None,
-                            condition=args.condition)
+                            condition=args.condition, instructions_dir=args.instructions_dir)
     except (ValueError, OSError, TypeError, KeyError) as exc:
         print(f"longitudinal: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2

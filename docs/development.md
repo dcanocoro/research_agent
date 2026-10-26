@@ -337,3 +337,23 @@ real; no almacenar secretos en él. Mandato no vacío hasta 16 KiB, agenda hasta
 los errores se diagnostican antes de construir clientes desde la CLI. No apuntar el
 mandato a memoria generada por A: la ruta externa delimita acceso, no autentica autoría.
 El control longitudinal genera el archivo desde los mensajes congelados por fecha.
+
+## Metodología financiera longitudinal
+
+Los experimentos nuevos copian la metodología financiera y la convención Markdown
+vigentes. Los existentes conservan sus instrucciones; no se migran automáticamente.
+El [nuevo contraste](experiments/analisis-financiero-v1/protocol.md) conserva el control
+histórico y documenta los comandos preparados, sin campaña ejecutada.
+
+`longitudinal run --instructions-dir DIRECTORIO` sustituye las plantillas por un
+conjunto completo de instrucciones al crear una campaña. Para `--condition deliberative`
+exige exactamente `agente.md`, `deliberacion.md` e `investigacion-financiera.md`; para
+baseline, los dos archivos no deliberativos. Todos deben ser archivos UTF-8 no vacíos,
+sin entradas extra. No equivale a la opción aditiva `--instructions` de la CLI manual.
+`resume` solo usa las copias congeladas y rechaza alteraciones. La CLI manual mantiene
+su interfaz actual; `prepare_experiment` ofrece el parámetro a composiciones locales.
+
+La verificación de implementación usa clientes controlados sin proveedores ni bases
+remotas. Los casos y rúbrica semánticos quedan preparados sin ejecutar: su futura
+aplicación requiere corpus por etapas y captura, según el protocolo. Los tests prescritos
+no demuestran elección autónoma de acciones ni razonamiento financiero superior.

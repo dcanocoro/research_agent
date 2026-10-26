@@ -227,3 +227,40 @@ de identidad. Las dos llamadas de consolidación y la respuesta final no cambian
 El [protocolo](experiments/intencion-persistente-v1/protocol.md) y la
 [decisión experimental](decisions/0003-intencion-persistente.md) delimitan el piloto
 preparado, sin campaña real ni aceptación semántica.
+
+## Metodología financiera y selección de instrucciones — 2026-10-25
+
+Los prompts nuevos por defecto incorporan análisis económico acumulativo y la
+convención `empresas/<simbolo>/modelo.md`, `valoracion.md` y `evaluacion.md`: ubicación
+obligatoria al desarrollar una evaluación con continuidad prevista, contenido progresivo.
+No se crean documentos por anticipado ni se exige un expediente para consultas breves.
+Las hipótesis importantes tienen IDs locales; las referencias entre documentos usan
+ruta e ID. La revisión de dependencias la realiza A mediante lectura y búsqueda, sin
+parser ni propagación automática. Índice, agenda, materiales y recuperación selectiva
+mantienen sus contratos; no se carga automáticamente el conjunto de empresas.
+
+El prompt general conserva el núcleo general y remite a la especialización. El
+financiero permite estimaciones justificadas mediante la aritmética existente con
+resultados conservados, sin atribuir un motor DCF ni capacidades nuevas. La agenda
+relaciona preguntas, fundamentos, bloqueos y siguientes acciones sin imponer workflow.
+
+`prepare_experiment(..., instructions_dir=...)` permite sustituir el conjunto inicial
+completo solo al crear un experimento, sin instrucciones adicionales simultáneas. El
+controlador longitudinal expone `run --instructions-dir`; valida nombres canónicos,
+contenido UTF-8 no vacío y ausencia de entradas adicionales antes de construir clientes.
+Las copias efectivas quedan congeladas con los hashes existentes. Las continuaciones
+manuales conservan sus copias; `resume` rechaza cambios y no acepta otro conjunto.
+
+El [protocolo financiero](experiments/analisis-financiero-v1/protocol.md) prepara control
+e intervención bajo la misma condición deliberativa. Hay verificación mecánica con
+clientes controlados; no campaña ni aceptación semántica. No cambia el baseline histórico.
+
+La revisión coordinada del 2026-10-25 unifica los tres prompts en español y asigna un
+propietario por responsabilidad: el general conserva rigor, recuperación selectiva,
+guardado y límites; deliberación elige investigaciones y mantiene la agenda; el financiero
+define metodología, ubicaciones y revisión de dependencias. Al cambiar una hipótesis
+identificada exige consultar sus dependientes relevantes antes de dar por terminada la
+actualización, revisándolos, justificando ausencia de impacto o marcando revisión pendiente.
+`oportunidades.md` conserva comparaciones y `cartera.md` opcional conserva interpretación
+de la asignación; las herramientas siguen siendo autoridad sobre posiciones y operaciones.
+Son instrucciones al LLM, sin enforcement nuevo del runtime ni validación semántica.

@@ -56,3 +56,9 @@ La [condición de intención persistente](experiments/intencion-persistente-v1/p
 añade opcionalmente mandato protegido y agenda automática al mismo A. La ampliación
 de presupuesto completó seis activaciones por condición, con [hallazgos preliminares](experiments/intencion-persistente-v1/findings-amplio.md).
 El escenario de 18 llamadas sigue sin ejecutar; el baseline conserva su comportamiento.
+
+La [metodología financiera longitudinal](experiments/analisis-financiero-v1/protocol.md)
+evoluciona las instrucciones por defecto y propone tres documentos revisables por empresa,
+sin cambiar el runtime. Incluye control histórico congelado y selección de instrucciones
+para una comparación futura. Verificación local sin proveedores; campaña y aceptación
+semántica pendientes. Los experimentos anteriores mantienen sus copias de instrucciones.

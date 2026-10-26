@@ -95,13 +95,42 @@ def experiment_lock(root: Path) -> Iterator[None]:
                 locking.flock(stream.fileno(), locking.LOCK_UN)
 
 
+def instruction_bundle(directory: Path, *, deliberative: bool) -> dict[str, str]:
+    """Read a complete replacement bundle before creating an experiment or clients."""
+    Workspace._check_links(directory)
+    if not directory.is_dir():
+        raise ValueError("Instructions directory must be a directory.")
+    expected = {"agente.md", "investigacion-financiera.md"}
+    if deliberative:
+        expected.add("deliberacion.md")
+    entries = list(directory.iterdir())
+    if {p.name for p in entries} != expected:
+        raise ValueError(f"Instructions directory requires exactly: {', '.join(sorted(expected))}.")
+    result = {}
+    for path in entries:
+        Workspace._check_links(path)
+        if not path.is_file():
+            raise ValueError("Instruction bundle entries must be regular Markdown files.")
+        content = path.read_text(encoding="utf-8")
+        if not content.strip():
+            raise ValueError("Instruction bundle files must be nonempty.")
+        result[path.name] = content
+    return result
+
+
 def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] = (),
-                       deliberative: bool = False) -> tuple[Path, ...]:
+                       deliberative: bool = False, instructions_dir: Path | None = None) -> tuple[Path, ...]:
     root = root.absolute()
     Workspace._check_links(root)
     # The experiment can live under artifacts/, but never include the source package.
     package = Path(str(files("research_agent")))
     disjoint(root, package)
+    bundle = None
+    if instructions_dir is not None:
+        if not new or instructions:
+            raise ValueError("instructions_dir requires a new experiment without additive instructions.")
+        disjoint(root, instructions_dir)
+        bundle = instruction_bundle(instructions_dir, deliberative=deliberative)
     extras = []
     for path in instructions:
         Workspace._check_links(path)
@@ -114,12 +143,14 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         for name in ("instrucciones", "estado", "ejecuciones"):
             (root / name).mkdir()
         prompts = files("research_agent").joinpath("prompts")
-        (root / "instrucciones/agente.md").write_text(prompts.joinpath("agent_a.md").read_text(encoding="utf-8"), encoding="utf-8")
-        (root / "instrucciones/investigacion-financiera.md").write_text(
-            prompts.joinpath("financial_research.md").read_text(encoding="utf-8"), encoding="utf-8")
+        if bundle is None:
+            bundle = {"agente.md": prompts.joinpath("agent_a.md").read_text(encoding="utf-8"),
+                      "investigacion-financiera.md": prompts.joinpath("financial_research.md").read_text(encoding="utf-8")}
+            if deliberative:
+                bundle["deliberacion.md"] = prompts.joinpath("deliberation.md").read_text(encoding="utf-8")
+        for name, content in bundle.items():
+            (root / "instrucciones" / name).write_bytes(content.encode("utf-8"))
         if deliberative:
-            (root / "instrucciones/deliberacion.md").write_text(
-                prompts.joinpath("deliberation.md").read_text(encoding="utf-8"), encoding="utf-8")
             (root / "estado/agenda.md").write_text("", encoding="utf-8")
         for i, content in enumerate(extras, 1):
             (root / f"instrucciones/adicional-{i:02d}.md").write_text(content, encoding="utf-8")

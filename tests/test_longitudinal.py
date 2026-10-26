@@ -301,6 +301,32 @@ def test_deliberative_rejects_capture_without_expected_context(tmp_path):
     assert any("persistent context" in error.get("error", "") for error in capture["capture_errors"])
 
 
+def test_instruction_bundle_rejected_before_identity_or_launch(tmp_path):
+    def forbidden(*args):
+        raise AssertionError("No clients or runtime identity before bundle validation")
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    campaign = tmp_path / "campaign"
+    with pytest.raises(ValueError, match="requires exactly"):
+        run_campaign(campaign, scenario=scenario(tmp_path, config(1)), condition="deliberative",
+                     instructions_dir=bundle, launcher=forbidden, identity=forbidden)
+    assert not campaign.exists()
+    with pytest.raises(ValueError, match="frozen instructions"):
+        run_campaign(campaign, instructions_dir=bundle, launcher=forbidden, identity=forbidden)
+
+
+def test_cli_instruction_bundle_argument(tmp_path, monkeypatch):
+    import research_benchmarks.longitudinal as module
+    calls = []
+    monkeypatch.setattr(module, "run_campaign", lambda *args, **kwargs: calls.append(kwargs) or 0)
+    bundle = "benchmarks/analisis-financiero-v1/control"
+    source = tmp_path / "data.json"
+    save(source, {})
+    assert module.main(["run", "benchmarks/analisis-financiero-v1/scenario.yaml", "--condition", "deliberative",
+                        "--instructions-dir", bundle, "--data", str(source), "--output", str(tmp_path / "c")]) == 0
+    assert calls[0]["instructions_dir"] == Path(bundle)
+
+
 def test_tools_temporal_gate_universe_and_no_extract(tmp_path):
     from research_agent.integrations.file_tools import register_files
     from research_agent.recording import RunRecorder
@@ -386,8 +412,9 @@ def test_missing_file_is_tool_failure_not_capture_loss(tmp_path, monkeypatch):
     assert recorder.capture_errors == [{"operation": "tool_capture", "error_type": "OSError"}]
 
 
-@pytest.mark.parametrize("condition", ["baseline", "deliberative"])
-def test_longitudinal_real_cli_subprocesses_with_controlled_provider(tmp_path, condition):
+@pytest.mark.parametrize("condition,bundle", [("baseline", None), ("deliberative", None),
+                                                 ("deliberative", "control")])
+def test_longitudinal_real_cli_subprocesses_with_controlled_provider(tmp_path, condition, bundle):
     from research_benchmarks.runner import launch
     cfg = config(2)
     cfg["end"] = "2023-03-31"
@@ -462,14 +489,25 @@ raise SystemExit(cli.main())
     def launcher(command, out, err):
         return launch([sys.executable, str(worker), *command[3:]], out, err)
     campaign = tmp_path / "cli-campaign"
+    instructions_dir = Path("benchmarks/analisis-financiero-v1/control") if bundle else None
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
-                        launcher=launcher, identity=lambda: {}, condition=condition) == 0
+                        launcher=launcher, identity=lambda: {}, condition=condition,
+                        instructions_dir=instructions_dir) == 0
     pids = (campaign / "agente/estado/memory.md").read_text().splitlines()
     assert len(pids) == 3 and len(set(pids)) == 3
     assert len(Simulator(campaign / "simulador").state["orders"]) == 1
     if condition == "deliberative":
         assert (campaign / "agente/mandato.md").read_text(encoding="utf-8").count('Investiga libremente') == 1
         assert run_campaign(campaign, launcher=launcher, identity=lambda: {}) == 0
+    if bundle:
+        from research_benchmarks.longitudinal import freeze_files
+        assert read(campaign / "instructions.json") == freeze_files(instructions_dir)
+        for path in (campaign / "agente/ejecuciones").glob("*/manifiesto.json"):
+            effective = {Path(k).name: v["text"] for k, v in read(path)["prompts"].items()}
+            assert effective == {p.name: p.read_text(encoding="utf-8") for p in instructions_dir.glob("*.md")}
+        (campaign / "agente/instrucciones/agente.md").write_text("changed")
+        with pytest.raises(ValueError, match="Instructions changed"):
+            run_campaign(campaign, identity=lambda: {})
 
 
 def test_resume_after_interrupted_checkpoint_preparation(tmp_path, monkeypatch):

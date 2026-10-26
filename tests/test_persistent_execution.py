@@ -71,7 +71,9 @@ def test_deliberative_utf8_exact_limits_and_default_instructions(tmp_path):
     agenda, mandate = "á" * 4096, "ñ" * 8192
     agent.workspace.write_file("agenda.md", agenda)
     assert asyncio.run(agent.run(AgentRequest("Continue", "s", "c", mandate=mandate))).status == "completed"
-    assert "Maintain continuity of intention" in agent.client.requests[0]["system"]
+    from importlib.resources import files
+    prompt = files("research_agent").joinpath("prompts/deliberation.md").read_text(encoding="utf-8")
+    assert prompt in agent.client.requests[0]["system"]
     assert any(isinstance(x, ConversationContext) and x.payload.get("deliberative_agenda", {}).get("text") == agenda
                for x in agent.client.requests[0]["input_items"])
 

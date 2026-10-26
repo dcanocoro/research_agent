@@ -1,9 +1,19 @@
 # Estrategia de investigación
 
-> Agenda revisada el 2026-10-24 con el encargo de intención persistente aceptado por el usuario.
+> Agenda revisada el 2026-10-25 con el encargo de metodología financiera aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Encargo vigente: intención persistente
+## Encargo vigente: metodología financiera longitudinal
+
+El 2026-10-25 el usuario aprobó integrar una metodología financiera y una convención
+mínima de conocimiento por empresa en los prompts por defecto. El
+[protocolo](experiments/analisis-financiero-v1/protocol.md) conserva el contraste frente
+al deliberativo anterior, con control congelado, misma base técnica y estados nuevos.
+El alcance incluye implementación y comprobaciones locales sin proveedores; no autoriza
+campañas ni pruebas con LLM real. La aceptación semántica queda pendiente. La metodología
+y la representación se contrastan juntas, sin elegir arquitectura para FinMate.
+
+## Antecedente: intención persistente
 
 El usuario aprobó preparar la [condición de intención persistente](experiments/intencion-persistente-v1/protocol.md)
 con mandato auténtico, agenda automática y disciplina de continuidad sobre A. La
