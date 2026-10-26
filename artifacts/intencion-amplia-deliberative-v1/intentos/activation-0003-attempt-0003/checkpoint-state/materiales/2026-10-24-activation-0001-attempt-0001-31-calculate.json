@@ -1,0 +1,1 @@
+{"formula_version": "arithmetic-v1", "left": 19588000000, "operation": "divide", "result": 0.2669937981326245, "right": 73365000000, "source_refs": ["materiales/2026-10-24-activation-0001-attempt-0001-30-calculate.json", "findata:financial_facts:alpha_vantage:AAPL:annual:2020-09-30:free_cash_flow"]}

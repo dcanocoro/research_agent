@@ -1,0 +1,19 @@
+[
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\.venv\\Scripts\\python.exe",
+  "-m",
+  "research_agent",
+  "Soy un inversor a largo plazo. Dispongo de 100.000 USD ficticios y acepto mantener efectivo. Investiga dentro del universo disponible y decide cómo empezar; conserva lo útil para futuras revisiones.",
+  "--experiment",
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\artifacts\\intencion-amplia-baseline-v1\\agente",
+  "--continue",
+  "--run-name",
+  "activation-0001-attempt-0001",
+  "--conversation",
+  "activation-0001",
+  "--simulation",
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\artifacts\\intencion-amplia-baseline-v1\\simulador",
+  "--activation-kind",
+  "usuario",
+  "--limits",
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\artifacts\\intencion-amplia-baseline-v1\\limits.json"
+]

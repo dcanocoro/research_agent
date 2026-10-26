@@ -1,0 +1,369 @@
+{
+  "ready": true,
+  "problems": [],
+  "coverage": [
+    {
+      "symbol": "A",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AAPL",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ABBV",
+      "prices": 508,
+      "facts": 109,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ABNB",
+      "prices": 508,
+      "facts": 53,
+      "available_initial_facts": 32,
+      "issues": []
+    },
+    {
+      "symbol": "ABT",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ACGL",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ACN",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ADBE",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ADI",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ADM",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ADP",
+      "prices": 508,
+      "facts": 131,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ADSK",
+      "prices": 508,
+      "facts": 128,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AEE",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AEP",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AES",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AFL",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AIG",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AIZ",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AJG",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AKAM",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ALB",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ALGN",
+      "prices": 508,
+      "facts": 134,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ALL",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ALLE",
+      "prices": 508,
+      "facts": 98,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AMAT",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AMCR",
+      "prices": 508,
+      "facts": 133,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AMD",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AME",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AMGN",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AMP",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AMT",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AMZN",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ANET",
+      "prices": 508,
+      "facts": 96,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AON",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AOS",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "APA",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "APD",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "APH",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "APO",
+      "prices": 508,
+      "facts": 131,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "APTV",
+      "prices": 508,
+      "facts": 130,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ARE",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "ATO",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AVB",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AVGO",
+      "prices": 508,
+      "facts": 133,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AVY",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AWK",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AXON",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AXP",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "AZO",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    },
+    {
+      "symbol": "BA",
+      "prices": 508,
+      "facts": 137,
+      "available_initial_facts": 56,
+      "issues": []
+    }
+  ],
+  "price_review": {
+    "status": "approved",
+    "basis": "adjusted",
+    "evidence": "docs/experiments/colaboracion-historica-v1/price-review.md; reviewed data sha256:2b65121feae3ae0f2784584f53af6649856d988997eda6eb402f0a71f2b58745; provider/issuer exceptions explicit"
+  },
+  "annual_lag_days": 120,
+  "limitations": [
+    "Real observed prices, normalized adjusted units; not traded share prices or broker execution.",
+    "Provider adjusted history is retrospective and can be revised; raw responses are frozen.",
+    "Dividends/distributions follow provider adjustment; no separate cash or spin-off asset accounting.",
+    "Event feed is not an exhaustive legal corporate-action registry; market/reference anomalies require review.",
+    "Stored Findata fundamentals may have been restated; publication availability may be estimated."
+  ]
+}

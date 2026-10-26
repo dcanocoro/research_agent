@@ -1,0 +1,1 @@
+{"formula_version": "arithmetic-v1", "left": 92953000000, "operation": "subtract", "result": 19588000000, "right": 73365000000, "source_refs": ["findata:financial_facts:alpha_vantage:AAPL:annual:2021-09-30:free_cash_flow", "findata:financial_facts:alpha_vantage:AAPL:annual:2020-09-30:free_cash_flow"]}

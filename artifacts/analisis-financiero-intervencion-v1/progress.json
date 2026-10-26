@@ -1,0 +1,105 @@
+{
+  "next": 6,
+  "active": null,
+  "attempts": [
+    {
+      "id": "activation-0001-attempt-0001",
+      "activation": {
+        "id": "activation-0001",
+        "date": "2023-01-01",
+        "kind": "usuario",
+        "message": "Soy un inversor a largo plazo. Dispongo de 100.000 USD ficticios y acepto mantener efectivo. Investiga dentro del universo disponible y decide cómo empezar; conserva lo útil para futuras revisiones."
+      },
+      "status": "completed",
+      "runs_before": [],
+      "returncode": 0,
+      "run": "2026-10-25-activation-0001-attempt-0001"
+    },
+    {
+      "id": "activation-0002-attempt-0002",
+      "activation": {
+        "id": "activation-0002",
+        "date": "2023-02-01",
+        "kind": "temporal",
+        "message": ""
+      },
+      "status": "completed",
+      "runs_before": [
+        "2026-10-25-activation-0001-attempt-0001"
+      ],
+      "returncode": 0,
+      "run": "2026-10-25-activation-0002-attempt-0002"
+    },
+    {
+      "id": "activation-0003-attempt-0003",
+      "activation": {
+        "id": "activation-0003",
+        "date": "2023-03-01",
+        "kind": "temporal",
+        "message": ""
+      },
+      "status": "completed",
+      "runs_before": [
+        "2026-10-25-activation-0001-attempt-0001",
+        "2026-10-25-activation-0002-attempt-0002"
+      ],
+      "returncode": 0,
+      "run": "2026-10-25-activation-0003-attempt-0003"
+    },
+    {
+      "id": "activation-0004-attempt-0004",
+      "activation": {
+        "id": "activation-0004",
+        "date": "2023-04-01",
+        "kind": "usuario",
+        "message": "Revisa cómo ha evolucionado tu evaluación desde el comienzo. Decide si conviene actuar o conservar la cartera."
+      },
+      "status": "completed",
+      "runs_before": [
+        "2026-10-25-activation-0001-attempt-0001",
+        "2026-10-25-activation-0002-attempt-0002",
+        "2026-10-25-activation-0003-attempt-0003"
+      ],
+      "returncode": 0,
+      "run": "2026-10-25-activation-0004-attempt-0004"
+    },
+    {
+      "id": "activation-0005-attempt-0005",
+      "activation": {
+        "id": "activation-0005",
+        "date": "2023-05-01",
+        "kind": "temporal",
+        "message": ""
+      },
+      "status": "completed",
+      "runs_before": [
+        "2026-10-25-activation-0001-attempt-0001",
+        "2026-10-25-activation-0002-attempt-0002",
+        "2026-10-25-activation-0003-attempt-0003",
+        "2026-10-25-activation-0004-attempt-0004"
+      ],
+      "returncode": 0,
+      "run": "2026-10-25-activation-0005-attempt-0005"
+    },
+    {
+      "id": "activation-0006-attempt-0006",
+      "activation": {
+        "id": "activation-0006",
+        "date": "2023-06-01",
+        "kind": "temporal",
+        "message": ""
+      },
+      "status": "completed",
+      "runs_before": [
+        "2026-10-25-activation-0001-attempt-0001",
+        "2026-10-25-activation-0002-attempt-0002",
+        "2026-10-25-activation-0003-attempt-0003",
+        "2026-10-25-activation-0004-attempt-0004",
+        "2026-10-25-activation-0005-attempt-0005"
+      ],
+      "returncode": 0,
+      "run": "2026-10-25-activation-0006-attempt-0006"
+    }
+  ],
+  "finished": true
+}

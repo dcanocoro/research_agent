@@ -1,0 +1,12 @@
+{
+  "run_id": "8663a7fe-feee-4ec8-ba2d-6fd1178349f4",
+  "run_directory": "agente/ejecuciones/2026-10-24-activation-0004-attempt-0004",
+  "agent_status": "completed",
+  "stop_reason": "answered",
+  "llm_calls": 36,
+  "tool_calls": 35,
+  "duration_seconds": 198.151871,
+  "capture_errors": [],
+  "capture_complete": true,
+  "document_tool_failure_observed": false
+}

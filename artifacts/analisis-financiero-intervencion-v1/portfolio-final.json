@@ -1,0 +1,39 @@
+{
+  "as_of": "2023-06-30",
+  "currency": "USD",
+  "cash": "75000",
+  "available_cash": "75000",
+  "positions": [
+    {
+      "symbol": "AAPL",
+      "quantity": "155.8286969316020410044293560509390",
+      "price": {
+        "symbol": "AAPL",
+        "date": "2023-06-30",
+        "close": "149.7228586783664191882920970316174",
+        "unit": "USD_per_normalized_adjusted_unit",
+        "provider": "yahoo_finance_chart",
+        "source_ref": "sha256:6859954bc57a0e9d78f7d473d595064f6520800422a4543c363962d0f3034d9f",
+        "anchor_date": "2022-12-30"
+      },
+      "value": "23331.11796872424324208483045926780"
+    },
+    {
+      "symbol": "ADP",
+      "quantity": "100.5049283798236244227049060434879",
+      "price": {
+        "symbol": "ADP",
+        "date": "2023-06-30",
+        "close": "93.07481853116919643566155805029702",
+        "unit": "USD_per_normalized_adjusted_unit",
+        "provider": "yahoo_finance_chart",
+        "source_ref": "sha256:3e68cc116cae2bbd476ddefd9167c45ed72517c822f29d68f86b1303d2505ecb",
+        "anchor_date": "2022-12-30"
+      },
+      "value": "9354.477970440240760578245093806340"
+    }
+  ],
+  "pending_orders": [],
+  "equity": "107685.5959391644840026630755530741",
+  "max_positions": 10
+}

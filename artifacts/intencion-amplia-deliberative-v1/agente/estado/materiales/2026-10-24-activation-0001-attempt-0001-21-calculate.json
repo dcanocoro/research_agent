@@ -1,0 +1,1 @@
+{"formula_version": "arithmetic-v1", "left": 9367181000, "operation": "divide", "result": 0.15207868649544792, "right": 61594305000, "source_refs": ["findata:financial_facts:alpha_vantage:ACN:annual:2022-08-31:operating_income", "findata:financial_facts:alpha_vantage:ACN:annual:2022-08-31:total_revenue"]}

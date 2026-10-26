@@ -1,0 +1,21 @@
+[
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\.venv\\Scripts\\python.exe",
+  "-m",
+  "research_agent",
+  "",
+  "--experiment",
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\artifacts\\analisis-financiero-intervencion-v1\\agente",
+  "--continue",
+  "--run-name",
+  "activation-0003-attempt-0003",
+  "--conversation",
+  "activation-0003",
+  "--simulation",
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\artifacts\\analisis-financiero-intervencion-v1\\simulador",
+  "--activation-kind",
+  "temporal",
+  "--limits",
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\artifacts\\analisis-financiero-intervencion-v1\\limits.json",
+  "--mandate",
+  "C:\\Users\\Daniel\\Proyectos\\research_agent\\artifacts\\analisis-financiero-intervencion-v1\\agente\\mandato.md"
+]

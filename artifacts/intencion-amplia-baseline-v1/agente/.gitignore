@@ -1,0 +1,4 @@
+ejecuciones/
+.run.lock
+.env
+.env.*

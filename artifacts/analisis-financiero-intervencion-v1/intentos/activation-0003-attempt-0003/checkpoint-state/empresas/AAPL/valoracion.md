@@ -1,0 +1,12 @@
+# Apple Inc. (AAPL) — valoración
+
+Fecha de corte: 2023-01-01. Importes en USD salvo indicación. Esta es una valoración incompleta; no hay valor intrínseco ni precio objetivo sustentable con los datos disponibles.
+
+## V1 — FCF observado y bloqueo de valor por acción
+- FY2022 (terminado 2022-09-24): ventas $394,328 M; caja operativa $122,151 M y compras de inmovilizado $10,708 M. FCF derivado = $111,443 M. FY2021 FCF informado en fundamentales = $92,953 M (disponibilidad estimada 2022-01-28). Diferencia = $18,490 M, equivalente a 19,9% sobre FY2021; margen FCF FY22 = 28,3% ventas. Fuentes/cálculos: `materiales/2026-10-25-activation-0001-attempt-0001-08-search-web.json`, `materiales/2026-10-25-activation-0001-attempt-0001-34-search-web.json`, `materiales/2026-10-25-activation-0001-attempt-0001-06-read-financials.json`, `materiales/2026-10-25-activation-0001-attempt-0001-35-calculate.json`, `materiales/2026-10-25-activation-0001-attempt-0001-21-calculate.json`, `materiales/2026-10-25-activation-0001-attempt-0001-22-calculate.json`, `materiales/2026-10-25-activation-0001-attempt-0001-32-calculate.json`.
+- No extrapolar el crecimiento FY22 (periodo con condiciones particulares y un solo año); un caso base prudente requeriría hipótesis explícitas de renovación de hardware, monetización de Services, márgenes, reinversión y crecimiento terminal.
+- Faltan número de acciones compatible, capitalización de mercado/valor de capital en fecha y precio nominal por acción. La cotización suministrada es una unidad ajustada normalizada (100 al ancla), no precio real comparable con estados financieros. Por tanto no es posible calcular de forma verificable FCF yield, múltiplos, DCF por acción o margen de seguridad. La noticia de descenso de valor de mercado no sustituye una capitalización fechada precisa: `materiales/2026-10-25-activation-0001-attempt-0001-18-search-web.json`.
+
+Métodos siguientes: estimar escenarios de FCF a 5–10 años y terminal usando hipótesis justificadas; reconciliar deuda y caja con valor de capital; contrastar rendimiento esperado con alternativa de efectivo. Pendiente hasta disponer de precio/capitalización y acciones compatibles y proyecciones defendibles. No presentar $111,443 M como beneficio ni como valor empresarial.
+
+Dependencias: negocio `empresas/AAPL/modelo.md#H1`; riesgos `empresas/AAPL/modelo.md#H2`; postura provisional `empresas/AAPL/evaluacion.md#E1`.

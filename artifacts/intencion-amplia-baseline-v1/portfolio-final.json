@@ -1,0 +1,67 @@
+{
+  "as_of": "2023-06-30",
+  "currency": "USD",
+  "cash": "60000",
+  "available_cash": "60000",
+  "positions": [
+    {
+      "symbol": "AAPL",
+      "quantity": "103.8857979544013606696195707006260",
+      "price": {
+        "symbol": "AAPL",
+        "date": "2023-06-30",
+        "close": "149.7228586783664191882920970316174",
+        "unit": "USD_per_normalized_adjusted_unit",
+        "provider": "yahoo_finance_chart",
+        "source_ref": "sha256:6859954bc57a0e9d78f7d473d595064f6520800422a4543c363962d0f3034d9f",
+        "anchor_date": "2022-12-30"
+      },
+      "value": "15554.07864581616216138988697284520"
+    },
+    {
+      "symbol": "ACN",
+      "quantity": "98.73455240710768009038419197754561",
+      "price": {
+        "symbol": "ACN",
+        "date": "2023-06-30",
+        "close": "116.5713260115783423611107689320943",
+        "unit": "USD_per_normalized_adjusted_unit",
+        "provider": "yahoo_finance_chart",
+        "source_ref": "sha256:d528fc08baa86d92d359d4c81bfe9ebdf01c004288ca38d5898b89a3222f8428",
+        "anchor_date": "2022-12-30"
+      },
+      "value": "11509.61769725621654356041119907093"
+    },
+    {
+      "symbol": "ADP",
+      "quantity": "100.5049283798236244227049060434879",
+      "price": {
+        "symbol": "ADP",
+        "date": "2023-06-30",
+        "close": "93.07481853116919643566155805029702",
+        "unit": "USD_per_normalized_adjusted_unit",
+        "provider": "yahoo_finance_chart",
+        "source_ref": "sha256:3e68cc116cae2bbd476ddefd9167c45ed72517c822f29d68f86b1303d2505ecb",
+        "anchor_date": "2022-12-30"
+      },
+      "value": "9354.477970440240760578245093806340"
+    },
+    {
+      "symbol": "AXP",
+      "quantity": "100.4282420020757118970695173782397",
+      "price": {
+        "symbol": "AXP",
+        "date": "2023-06-30",
+        "close": "118.7488359880935310437090212606830",
+        "unit": "USD_per_normalized_adjusted_unit",
+        "provider": "yahoo_finance_chart",
+        "source_ref": "sha256:06b30a8f6f4196cbe52363334389496c71e4e34f110bf997a60972233b5c5538",
+        "anchor_date": "2022-12-30"
+      },
+      "value": "11925.73683807705462591576476523409"
+    }
+  ],
+  "pending_orders": [],
+  "equity": "108343.9111515896740914443080309566",
+  "max_positions": 10
+}
