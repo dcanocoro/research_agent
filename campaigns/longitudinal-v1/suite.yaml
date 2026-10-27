@@ -1,6 +1,0 @@
-schema_version: campaign-suite-v1
-id: longitudinal-v1
-cases:
-- S1/case.yaml
-- S2/case.yaml
-- S3/case.yaml
