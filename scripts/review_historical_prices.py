@@ -14,7 +14,7 @@ import httpx
 import yaml
 
 from research_agent.simulation.state import positive, read, save
-from research_benchmarks.longitudinal import export_data, load_scenario, preflight
+from research_campaigns.longitudinal import export_data, load_scenario, preflight
 
 
 ENDPOINT = "https://query1.finance.yahoo.com/v8/finance/chart/"
@@ -124,7 +124,7 @@ def normalize_issuer(symbol: str, original: list[dict], actions: dict, start: da
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", type=Path, default=Path("benchmarks/colaboracion-historica-v1/scenario.yaml"))
+    parser.add_argument("--scenario", type=Path, default=Path("campaigns/colaboracion-historica-v1/scenario.yaml"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--facts", type=Path, help="Previously frozen real Findata export; otherwise export read-only")
     parser.add_argument("--cached-responses", type=Path, help="Replay already captured Yahoo JSON without network")

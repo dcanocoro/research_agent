@@ -5,7 +5,7 @@ Fecha: 2026-10-20. Base Git: `eb673ef` y diff local de esta entrega, sin commit 
 Se añade un controlador local que valida definiciones, prepara experimentos, ejecuta
 la CLI existente por sesión y reúne evidencia nativa. El [protocolo](../experiments/benchmark-pilot-v1/protocol.md)
 define B1, E2, F3 y G2, ocho sesiones y revisión humana. Los
-[comandos](../development.md#benchmark-piloto) permiten validar, ejecutar un caso o
+[comandos](../development.md#campañas) permiten validar, ejecutar un caso o
 regenerar pasos sin proveedor. No cambia ciclo, prompts, bibliotecas compartidas o Audit.
 
 Verificación local:

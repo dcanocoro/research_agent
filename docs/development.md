@@ -9,13 +9,13 @@ Una distribución instalable puede aportar varios paquetes importables:
 
 | Distribución | Declaración | Paquetes que aporta |
 |---|---|---|
-| `research-agent==0.1.0` | [pyproject local](../pyproject.toml) | `research_agent`, `research_benchmarks` |
+| `research-agent==0.1.0` | [pyproject local](../pyproject.toml) | `research_agent`, `research_campaigns` |
 | `findata==0.1.0` | [pyproject de FinMate](../../FinMate/pyproject.toml) | `findata`, `infra`, `runtime_contracts`, `experience_audit`, módulos de observabilidad y otros paquetes del producto |
 
 Findata, Infra y Experience Audit se instalan juntas desde el wheel local `findata`.
 Que incluya código del producto no autoriza a cargarlo: los tests de frontera rechazan
 `finmate`, `engine` y `api`. El núcleo tampoco importa `experience_audit` ni
-`research_benchmarks`; Audit puede permanecer instalado sin ser usado.
+`research_campaigns`; Audit puede permanecer instalado sin ser usado.
 
 ```mermaid
 flowchart LR
@@ -23,7 +23,7 @@ flowchart LR
     W --> V[Entorno propio de Research Agent]
     R[Fuentes externas research_agent] -->|Instalación editable| V
     V --> A[CLI de Research Agent]
-    B[research_benchmarks] --> A
+    B[research_campaigns] --> A
 ```
 
 ### Bibliotecas reutilizadas
@@ -34,7 +34,7 @@ flowchart LR
 | Infra | `LLMFactory`, perfil, clientes, replay, reintentos, búsqueda y extracción Tavily | Sin fallback entre modelos añadido por el laboratorio |
 | runtime_contracts | Mensajes, herramientas, continuaciones, errores, documentos y contexto técnico | Sin entidades, ORM o SDKs del producto |
 | Observabilidad | Correlación y captura local de logs/payloads | Nombres históricos `engine.llm*`; sin exportador configurado aquí |
-| research_benchmarks | Catálogo, campañas, extracción y compactación | Depende de Research Agent; no se importa desde el núcleo |
+| research_campaigns | Definiciones, ejecución y revisión de campañas | Depende de Research Agent; no se importa desde el núcleo |
 
 Engine mantiene reexportaciones de contratos por compatibilidad con sus consumidores.
 El agente importa las definiciones canónicas de `runtime_contracts`; no necesita cargar
@@ -174,87 +174,28 @@ cambios pendientes al inicio/final, sin atribuirse el repositorio padre. No tene
 es válido. Git manual conserva solo versiones que se hayan registrado; los snapshots
 del run conservan sus extremos, sin prometer todas las ediciones intermedias.
 
-## Benchmark piloto
+## Campañas
 
-Desde la raíz del repositorio:
-
-```powershell
-.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v1
-.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v1 --output artifacts/benchmark
-.\.venv\Scripts\python.exe -m research_benchmarks run benchmarks/longitudinal-v1 --case S2 --output artifacts/benchmark
-```
-
-`validate` no construye clientes ni consulta servicios. `run` llama al agente real y
-requiere la configuración de proveedor, Findata y Tavily habitual; no realiza ingestas
-ni migraciones. Ejecuta una sesión por subprocess, en secuencia, conservando archivos
-sin restaurar el chat. Los límites son los actuales de A. No modifica prompts ni
-el wheel instalado. El [protocolo](experiments/longitudinal-v1/protocol.md)
-posee definiciones, rúbricas y límites de interpretación.
-
-Cada invocación crea una carpeta de campaña nueva bajo `--output` e imprime su ruta.
-`--case` elige un ID exacto; sin filtro, el orden es S1, S2 y S3. No hay resume ni
-reintentos automáticos de sesiones. Una sesión fallida o con captura incompleta bloquea
-las siguientes de su caso; los otros casos continúan. Ctrl+C conserva lo disponible.
-Retornos: 0 = todas las sesiones completadas con captura íntegra; 1 = fallo operativo,
-interrupción o captura incompleta; 2 = argumentos/definiciones inválidos. No son notas
-de calidad financiera.
-
-Consultar primero `LEEME.md` y `resumen.json`, que incluye los metadatos de cada sesión
-y apunta a `casos/ID/ejecuciones/`. Al cerrar la campaña se consolida la captura nativa,
-sin cambiar el agente. Cada sesión completa contiene cinco archivos: `ejecucion.json`
-(petición, configuración, resultado y hashes), `trayectoria.jsonl.gz`, `respuesta.md`
-y los dos snapshots. Las instrucciones efectivas se congelan por hash bajo
-`definiciones/instrucciones/`; fuentes y rúbricas también permanecen fuera del estado.
-La revisión de calidad sigue siendo humana/Codex, con criterios y citas de evidencia;
-el índice no inventa puntuaciones ni explicaciones de acciones.
-
-La trayectoria reúne eventos, entradas/salidas del modelo y ejecuciones de herramientas.
-Conserva separadamente el resultado original y el entregado al modelo, aunque pueda
-reconstruir ambos desde un único contenido. Los snapshots conservan texto del conocimiento
-y referencias verificadas a materiales. Las citas históricas de resultados siguen
-disponibles mediante `read_artifact`; no apuntan necesariamente a archivos individuales.
-No se guarda conversación, stdout correcto ni errores vacíos como copias adicionales.
-Si hay captura incompleta, se retienen los originales nativos y diagnósticos.
-
-Para exportar una campaña anterior a otra carpeta, conservando el origen intacto:
+La [guía de campañas](campaigns.md) posee la interfaz, modalidades, estructura de
+resultados y límites de recuperación. El paquete `research_campaigns` prepara y
+lanza A; no se importa desde el núcleo.
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_benchmarks compact artifacts/benchmark/ID --output artifacts/benchmark-compact/ID
+.\.venv\Scripts\python.exe -m research_campaigns validate campaigns/longitudinal-v1
+.\.venv\Scripts\python.exe -m research_campaigns run campaigns/longitudinal-v1 --case S2 --output artifacts/nueva-campana
+.\.venv\Scripts\python.exe -m research_campaigns report artifacts/nueva-campana
 ```
 
-El destino debe ser nuevo y separado del origen. La conversión verifica reconstrucción
-de resultados de herramientas y snapshots antes de retirar copias en el destino. No
-consulta proveedores. `recording_format` identifica cada sesión; capturas antiguas y
-compactas son consultables por el mismo extractor.
-
-Para regenerar la vista breve sin ejecutar el agente:
-
-```powershell
-.\.venv\Scripts\python.exe -m research_benchmarks extract RUTA_DE_CAMPAÑA
-```
-
-`pasos.jsonl` incluye caso, sesión, run, acción, identificadores disponibles, fragmentos
-breves y referencias al original. No estima razonamiento privado ni puntúa respuestas.
-En formato compacto una herramienta y su resultado comparten un registro `tool_execution`;
-`line` identifica la secuencia descomprimida de `trayectoria.jsonl.gz`.
-`extraccion.json` informa de capturas ausentes o dañadas al regenerar, sin modificar
-los registros originales de sesión.
-Los campos desconocidos permanecen nulos; los hashes detectan modificaciones de las
-entradas publicadas. No hay Excel ni evaluación automática en esta versión.
-`artifacts/` es local e ignorado; conservar el archivo completo para revisar o trasladar
-evidencia, previa revisión de datos privados.
-
-Para inspección detallada desde Python, las funciones públicas del módulo
-`research_agent.archive` son `records(run)`, `full_result(campaign, record)`,
-`delivered_result(campaign, record)` y `restore_snapshot(campaign, snapshot)`.
-Las dos últimas reconstruyen lo efectivamente entregado y el estado histórico, sin
-inferencias. Las referencias a materiales e instrucciones comprueban sus hashes.
+`validate` no consulta proveedores ni bases. `run` sí ejecuta el agente real.
+Cada destino es la carpeta exacta y debe ser nuevo. Revisar primero `README.md`.
+No hay conversión compacta ni compatibilidad con los comandos y capturas retirados;
+los artefactos anteriores permanecen intactos.
 
 ## Experience Audit histórico
 
 La integración local, sus escenarios y sus pruebas se retiraron el 2026-10-24.
 El wheel compartido no se modifica. Las campañas actuales usan la CLI propia y
-`python -m research_benchmarks`; los archivos históricos no se reescriben.
+`python -m research_campaigns`; los archivos históricos no se reescriben.
 
 ## Verificación proporcionada al cambio
 
@@ -270,13 +211,13 @@ Comandos de comprobación local sin campaña real:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q tests
-.\.venv\Scripts\python.exe -m mypy src/research_agent src/research_benchmarks --follow-imports=silent
+.\.venv\Scripts\python.exe -m mypy src/research_agent src/research_campaigns --follow-imports=silent
 .\.venv\Scripts\python.exe -m pip check
 git diff --check
 ```
 
 La suite incluye subprocess que bloquea imports de `finmate`, `engine` y `api`. El núcleo tampoco importa `experience_audit` ni
-`research_benchmarks`; Audit puede permanecer instalado sin ser usado.
+`research_campaigns`; Audit puede permanecer instalado sin ser usado.
 El comprobador local de enlaces y anclas se ejecuta con
 `.\.venv\Scripts\python.exe scripts/check_docs.py`; no necesita servicios remotos.
 No utiliza el catálogo documental de FinMate. Si también cambia documentación de FinMate,
@@ -357,14 +298,14 @@ La [guía del experimento](experiments/colaboracion-historica-v1/protocol.md) do
 `longitudinal validate`, `preflight`, `run` y `resume`, y separa prueba sintética y
 campaña histórica. Requiere el wheel experimental de la
 [entrega](deliveries/2026-10-24-longitudinal.md). No reutilizar el wheel anterior para
-este modo ni editar `site-packages`. Las campañas existentes conservan su CLI.
+este modo ni editar `site-packages`. Los artefactos existentes se conservan sin compatibilidad de comandos; ver [campañas](campaigns.md).
 
 ### Intención persistente opcional
 
 El [piloto de seis activaciones](experiments/intencion-persistente-v1/protocol.md)
 incluye comandos para comprobar perfil/dataset sin red y ejecutar después dos campañas
 independientes con `--condition baseline` y `--condition deliberative`. Está preparado,
-sin ejecutar. No usar `longitudinal preflight` para un check documental: exporta Findata.
+sin ejecutar. Usar `validate --data` para comprobar un dataset local sin consultar Findata.
 
 En CLI manual, `--mandate PATH` activa la condición y debe suministrarse en cada
 continuación. El archivo UTF-8 auténtico lo mantiene la persona fuera de `estado/` y
@@ -390,7 +331,7 @@ vigentes. Los existentes conservan sus instrucciones; no se migran automáticame
 El [nuevo contraste](experiments/analisis-financiero-v1/protocol.md) conserva el control
 histórico y documenta los comandos preparados, sin campaña ejecutada.
 
-`longitudinal run --instructions-dir DIRECTORIO` sustituye las plantillas por un
+`research_campaigns run DEFINICION --instructions-dir DIRECTORIO` sustituye las plantillas por un
 conjunto completo de instrucciones al crear una campaña. Para `--condition deliberative`
 exige exactamente `agente.md`, `deliberacion.md` e `investigacion-financiera.md`; para
 baseline, los dos archivos no deliberativos. Todos deben ser archivos UTF-8 no vacíos,

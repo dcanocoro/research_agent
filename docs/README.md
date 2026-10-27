@@ -9,7 +9,7 @@ no cambia por defecto el ciclo acotado ni el calendario longitudinal.
 La [estrategia](strategy.md) fija la agenda; la arqueología caracteriza un corte
 histórico de FinMate y E001/E002 son antecedentes recuperables desde Git.
 
-## Cinco referencias principales
+## Referencias principales
 
 | Documento | Qué resuelve |
 |---|---|
@@ -17,6 +17,7 @@ histórico de FinMate y E001/E002 son antecedentes recuperables desde Git.
 | [Estrategia](strategy.md) | Qué investigar, en qué orden y con qué criterios de avance |
 | [Arquitectura](architecture.md) | Qué está implementado, quién lo posee y cuáles son sus límites |
 | [Experimentos](experiments.md) | Cómo comparar mecanismos y qué conclusiones permite la evidencia |
+| [Campañas](campaigns.md) | Definir, ejecutar y revisar campañas locales |
 | [Desarrollo](development.md) | Instalar, actualizar dependencias, ejecutar, verificar y entregar |
 
 Para diseñar, empezar por visión y estrategia; para programar, seguir arquitectura,
@@ -47,7 +48,7 @@ La prioridad vigente se consulta en estrategia, no en la última campaña record
 
 Hoy existe solo A, con herramientas y estado de archivos por experimento; instrucciones,
 materiales y ejecuciones están separados. CLI permite crear o continuar una prueba.
-Las campañas se ejecutan desde `research_benchmarks`, separado del núcleo.
+Las campañas se ejecutan desde `research_campaigns`, separado del núcleo.
 La CLI carga guía financiera básica. El [entorno longitudinal](experiments/colaboracion-historica-v1/protocol.md)
 añade cartera ficticia y activaciones históricas opcionales; A0–A3 y DCF no están implementados. Los documentos de E001/E002 no están en el árbol
 actual; el registro experimental explica cómo recuperarlos desde Git.

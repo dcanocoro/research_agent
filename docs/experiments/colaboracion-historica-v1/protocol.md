@@ -1,5 +1,8 @@
 # Colaboración histórica v1
 
+> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
+> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+
 Estado: infraestructura implementada; aceptación corta y preflight registrados en la
 [entrega](../../deliveries/2026-10-24-longitudinal.md). No es una evaluación de alfa.
 
@@ -8,7 +11,7 @@ ajustado con procedencia y excepción AVB documentadas. La
 [prueba corta histórica real](historical-smoke.md) completó tres activaciones en
 junio–agosto de 2024. El escenario original pendiente se conserva; el revisado requiere
 el dataset auditado mediante `--data`. La campaña de dos años completó 24 activaciones;
-su [informe local](../../../artifacts/campana-historica-completa-v1/informe-ejecucion.md)
+su informe local (`../../../artifacts/campana-historica-completa-v1/informe-ejecucion.md`; no disponible en este checkout)
 conserva el análisis posterior. Los artefactos son locales e ignorados, no evidencia
 portable. El informe documenta pérdida parcial del mandato y contaminación temporal web;
 no acredita alfa. La [siguiente comparación](../intencion-persistente-v1/protocol.md)
@@ -20,7 +23,7 @@ Observar continuidad, investigación, revisión, iniciativa y gestión de una ca
 ficticia durante ejecuciones independientes de A. Se conserva el ciclo y los prompts
 vigentes; no se añade evaluador ni planificación cognitiva.
 
-El [escenario](../../../benchmarks/colaboracion-historica-v1/scenario.yaml) fija
+El [escenario](../../../campaigns/colaboracion-historica-v1/scenario.yaml) fija
 2023–2024, 50 empresas, 100.000 USD, máximo de 10 posiciones, 24 oportunidades
 mensuales y ocho mensajes trimestrales. Mensaje y revisión coincidentes se fusionan.
 Las otras 16 activaciones no incluyen un mensaje humano nuevo. Se mantienen los

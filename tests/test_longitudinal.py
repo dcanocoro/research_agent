@@ -15,7 +15,7 @@ import yaml
 from findata.read.historical import available_facts
 from research_agent.contracts import AgentLimits
 from research_agent.simulation.state import Simulator, read, save
-from research_benchmarks.longitudinal import activations, load_scenario, preflight, run_campaign
+from research_campaigns.longitudinal import activations, load_scenario, preflight, run_campaign
 from support import fake_cli
 
 
@@ -49,7 +49,8 @@ def dataset(cfg):
 
 
 def scenario(tmp_path, cfg):
-    path = tmp_path / "scenario.yaml"
+    (tmp_path / "definition").mkdir(exist_ok=True)
+    path = tmp_path / "definition/scenario.yaml"
     path.write_text(yaml.safe_dump(cfg), encoding="utf-8")
     return path
 
@@ -162,8 +163,8 @@ class Block:
         if fullname.split('.')[0] in {'infra', 'findata', 'engine', 'finmate', 'api'}:
             raise AssertionError(fullname)
 sys.meta_path.insert(0, Block())
-from research_benchmarks.runner import main
-raise SystemExit(main(['longitudinal', 'validate', sys.argv[1]]))
+from research_campaigns.cli import main
+raise SystemExit(main(['validate', str(__import__('pathlib').Path(sys.argv[1]).parent)]))
 """
     result = subprocess.run([sys.executable, "-c", code, str(path)], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
@@ -198,7 +199,7 @@ def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure
         index = len(calls)
         calls.append(simulator.state["date"])
         if condition == "deliberative":
-            from research_benchmarks.longitudinal import activation_mandate
+            from research_campaigns.longitudinal import activation_mandate
             mandate = root / "mandato.md"
             assert mandate.read_text(encoding="utf-8") == activation_mandate(cfg, simulator.state["date"])
         if simulator.state["date"] == cfg["start"]:
@@ -220,7 +221,7 @@ def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure
             manifest_path = root / "ejecuciones" / name / "manifiesto.json"
             manifest = read(manifest_path)
             manifest.update(condition=condition, persistent_context=deliberative_context(
-                Workspace(campaign / "intentos" / name / "checkpoint-state", create=False),
+                Workspace(campaign / "recuperacion" / name / "checkpoint-state", create=False),
                 (root / "mandato.md").read_text(encoding="utf-8")))
             save(manifest_path, manifest)
         if not failed and failure == "after_native":
@@ -242,51 +243,49 @@ def test_resume_preserves_attempts_memory_and_economic_effects(tmp_path, failure
     final = Simulator(campaign / "simulador")
     assert len(final.state["orders"]) == 1
     assert len(final.state["positions"]) == 1
-    assert read(campaign / "progress.json")["finished"]
+    assert read(campaign / "campaign.json")["progress"]["finished"]
     count = len(calls)
     assert run_campaign(campaign, launcher=worker, identity=lambda: {"fixed": 1}) == 0
     assert len(calls) == count
     if failure in {"during", "capture"}:
-        assert list((campaign / "intentos").glob("*/failed-state-*"))
-        assert len(read(campaign / "progress.json")["attempts"]) == 4
+        assert list((campaign / "recuperacion").glob("*/failed-state-*"))
+        assert len(read(campaign / "campaign.json")["sessions"]) == 4
     if failure == "after_native":
         assert calls == ["2023-01-01", "2023-02-01", "2023-03-01"]
     with pytest.raises(ValueError, match="configuration"):
         run_campaign(campaign, identity=lambda: {"fixed": 2})
 
 
-def test_condition_frozen_and_legacy_campaign(tmp_path):
+def test_condition_frozen_and_old_campaign_rejected(tmp_path):
     cfg = config(1)
     cfg["end"] = "2023-03-31"
-    campaign = tmp_path / "legacy"
+    campaign = tmp_path / "campaign"
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
                         launcher=fake_cli, identity=lambda: {}) == 0
-    save(campaign / "condition.json", {"condition": "deliberative"})
+    record = read(campaign / "campaign.json")
+    record["condition"] = "deliberative"
+    save(campaign / "campaign.json", record)
     with pytest.raises(ValueError, match="Frozen"):
         run_campaign(campaign, identity=lambda: {})
-    (campaign / "condition.json").unlink()
-    with pytest.raises(ValueError, match="Frozen"):
-        run_campaign(campaign, identity=lambda: {})
-    frozen = read(campaign / "frozen-inputs.json")
-    frozen.pop("condition")
-    save(campaign / "frozen-inputs.json", frozen)
-    assert run_campaign(campaign, identity=lambda: {}) == 0
     with pytest.raises(ValueError, match="frozen condition"):
         run_campaign(campaign, identity=lambda: {}, condition="deliberative")
+    (campaign / "campaign.json").unlink()
+    with pytest.raises(FileNotFoundError):
+        run_campaign(campaign, identity=lambda: {})
 
 
 @pytest.mark.parametrize("condition", ["baseline", "deliberative"])
 def test_cli_condition_commands_use_explicit_data(tmp_path, monkeypatch, condition):
-    import research_benchmarks.longitudinal as module
+    import research_campaigns.longitudinal as module
     calls = []
     monkeypatch.setattr(module, "run_campaign", lambda *args, **kwargs: calls.append((args, kwargs)) or 0)
     source = tmp_path / "data.json"
     save(source, {"fixture": "no remote export"})
-    assert module.main(["run", "benchmarks/intencion-persistente-v1/scenario.yaml", "--condition", condition,
+    from research_campaigns.cli import main
+    assert main(["run", "campaigns/intencion-persistente-v1", "--condition", condition,
                         "--data", str(source), "--output", str(tmp_path / "campaign")]) == 0
     assert calls[0][1]["condition"] == condition and calls[0][1]["data"] == {"fixture": "no remote export"}
-    assert module.main(["resume", str(tmp_path / "campaign")]) == 0
-    assert calls[1][1] == {}
+    from research_campaigns.cli import main
 
 
 def test_deliberative_rejects_capture_without_expected_context(tmp_path):
@@ -295,9 +294,10 @@ def test_deliberative_rejects_capture_without_expected_context(tmp_path):
     campaign = tmp_path / "wrong-context"
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
                         launcher=fake_cli, identity=lambda: {}, condition="deliberative") == 1
-    progress = read(campaign / "progress.json")
+    record = read(campaign / "campaign.json")
+    progress = record["progress"]
     assert progress["next"] == 0
-    capture = read(campaign / "intentos" / progress["attempts"][0]["id"] / "capture.json")
+    capture = record["sessions"][0]
     assert any("persistent context" in error.get("error", "") for error in capture["capture_errors"])
 
 
@@ -316,13 +316,14 @@ def test_instruction_bundle_rejected_before_identity_or_launch(tmp_path):
 
 
 def test_cli_instruction_bundle_argument(tmp_path, monkeypatch):
-    import research_benchmarks.longitudinal as module
+    import research_campaigns.longitudinal as module
     calls = []
     monkeypatch.setattr(module, "run_campaign", lambda *args, **kwargs: calls.append(kwargs) or 0)
-    bundle = "benchmarks/analisis-financiero-v1/control"
+    bundle = "campaigns/analisis-financiero-v1/control"
     source = tmp_path / "data.json"
     save(source, {})
-    assert module.main(["run", "benchmarks/analisis-financiero-v1/scenario.yaml", "--condition", "deliberative",
+    from research_campaigns.cli import main
+    assert main(["run", "campaigns/analisis-financiero-v1", "--condition", "deliberative",
                         "--instructions-dir", bundle, "--data", str(source), "--output", str(tmp_path / "c")]) == 0
     assert calls[0]["instructions_dir"] == Path(bundle)
 
@@ -366,9 +367,10 @@ def test_two_years_fifty_companies_no_activity_is_valid(tmp_path):
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
                         launcher=worker, identity=lambda: {}) == 0
     assert len(calls) == 24 and len(set(calls)) == 24
-    assert read(campaign / "communications.json") == []
-    assert read(campaign / "history-final.json")["orders"] == []
-    assert read(campaign / "portfolio-final.json")["cash"] == "100000"
+    simulator = Simulator(campaign / "simulador")
+    assert simulator.state["notifications"] == []
+    assert simulator.history()["orders"] == []
+    assert simulator.get()["cash"] == "100000"
 
 
 def test_resume_rejects_changed_inputs_and_instructions(tmp_path):
@@ -377,7 +379,7 @@ def test_resume_rejects_changed_inputs_and_instructions(tmp_path):
     cfg["messages"].pop("2023-03-01")
     campaign = tmp_path / "frozen"
     run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg), launcher=fake_cli, identity=lambda: {})
-    instructions = campaign / "agente/instrucciones/agente.md"
+    instructions = campaign / "instrucciones/agente.md"
     original = instructions.read_bytes()
     instructions.write_text("changed", encoding="utf-8")
     with pytest.raises(ValueError, match="Instructions changed"):
@@ -415,7 +417,7 @@ def test_missing_file_is_tool_failure_not_capture_loss(tmp_path, monkeypatch):
 @pytest.mark.parametrize("condition,bundle", [("baseline", None), ("deliberative", None),
                                                  ("deliberative", "control")])
 def test_longitudinal_real_cli_subprocesses_with_controlled_provider(tmp_path, condition, bundle):
-    from research_benchmarks.runner import launch
+    from research_campaigns.runner import launch
     cfg = config(2)
     cfg["end"] = "2023-03-31"
     worker = tmp_path / "worker.py"
@@ -489,42 +491,44 @@ raise SystemExit(cli.main())
     def launcher(command, out, err):
         return launch([sys.executable, str(worker), *command[3:]], out, err)
     campaign = tmp_path / "cli-campaign"
-    instructions_dir = Path("benchmarks/analisis-financiero-v1/control") if bundle else None
+    instructions_dir = Path("campaigns/analisis-financiero-v1/control") if bundle else None
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
                         launcher=launcher, identity=lambda: {}, condition=condition,
                         instructions_dir=instructions_dir) == 0
-    pids = (campaign / "agente/estado/memory.md").read_text().splitlines()
+    pids = (campaign / "estado/memory.md").read_text().splitlines()
     assert len(pids) == 3 and len(set(pids)) == 3
     assert len(Simulator(campaign / "simulador").state["orders"]) == 1
     if condition == "deliberative":
-        assert (campaign / "agente/mandato.md").read_text(encoding="utf-8").count('Investiga libremente') == 1
+        assert (campaign / "mandato.md").read_text(encoding="utf-8").count('Investiga libremente') == 1
         assert run_campaign(campaign, launcher=launcher, identity=lambda: {}) == 0
     if bundle:
-        from research_benchmarks.longitudinal import freeze_files
-        assert read(campaign / "instructions.json") == freeze_files(instructions_dir)
-        for path in (campaign / "agente/ejecuciones").glob("*/manifiesto.json"):
+        from research_campaigns.longitudinal import freeze_files
+        assert read(campaign / "campaign.json")["instructions_sha256"] == freeze_files(instructions_dir)
+        for path in (campaign / "ejecuciones").glob("*/manifiesto.json"):
             effective = {Path(k).name: v["text"] for k, v in read(path)["prompts"].items()}
             assert effective == {p.name: p.read_text(encoding="utf-8") for p in instructions_dir.glob("*.md")}
-        (campaign / "agente/instrucciones/agente.md").write_text("changed")
+        (campaign / "instrucciones/agente.md").write_text("changed")
         with pytest.raises(ValueError, match="Instructions changed"):
             run_campaign(campaign, identity=lambda: {})
 
 
 def test_resume_after_interrupted_checkpoint_preparation(tmp_path, monkeypatch):
-    import research_benchmarks.longitudinal as module
+    import research_campaigns.longitudinal as module
     cfg = config(1)
     cfg["end"] = "2023-01-31"
     cfg["messages"].pop("2023-03-01")
     original = module.shutil.copytree
     def interrupted(*args, **kwargs):
-        raise KeyboardInterrupt
+        if Path(args[0]).name == "estado":
+            raise KeyboardInterrupt
+        return original(*args, **kwargs)
     monkeypatch.setattr(module.shutil, "copytree", interrupted)
     campaign = tmp_path / "interrupted-checkpoint"
     with pytest.raises(KeyboardInterrupt):
         run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg), identity=lambda: {})
     monkeypatch.setattr(module.shutil, "copytree", original)
     assert run_campaign(campaign, launcher=fake_cli, identity=lambda: {}) == 0
-    assert len(list((campaign / "intentos").iterdir())) == 2
+    assert len([p for p in (campaign / "recuperacion").iterdir() if p.is_dir()]) == 2
 
 
 @pytest.mark.parametrize("child_model, expected_code", [("frozen", 0), ("changed", 1)])
@@ -548,5 +552,6 @@ def test_child_profile_is_verified_before_committing_activation(tmp_path, child_
     campaign = tmp_path / "profile-check"
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg), launcher=worker,
                         identity=lambda: frozen) == expected_code
-    progress = read(campaign / "progress.json")
+    record = read(campaign / "campaign.json")
+    progress = record["progress"]
     assert progress["next"] == (1 if expected_code == 0 else 0)

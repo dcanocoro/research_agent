@@ -1,5 +1,8 @@
 # Contexto continuo v1
 
+> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
+> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+
 Estado: piloto original y repetición con entrega corregida ejecutados; ver [hallazgos](findings.md).
 Fecha: 2026-10-26. Encargo: sustituir el tokenizer y preparar el escenario, con
 verificación local. Encargo posterior explícito: corregir la entrega y repetir el piloto
@@ -33,11 +36,11 @@ La [arquitectura](../../architecture.md#modo-continuo-experimental--2026-10-26) 
 
 ## Escenario congelado del piloto
 
-Las [definiciones](../../../benchmarks/contexto-continuo-v1) contienen
-[configuración](../../../benchmarks/contexto-continuo-v1/scenario.json),
-[mandato](../../../benchmarks/contexto-continuo-v1/mandato.md),
-[petición](../../../benchmarks/contexto-continuo-v1/peticion.md) y
-[rúbrica](../../../benchmarks/contexto-continuo-v1/rubrica.md).
+Las [definiciones](../../../campaigns/contexto-continuo-v1) contienen
+[configuración](../../../campaigns/contexto-continuo-v1/scenario.json),
+[mandato](../../../campaigns/contexto-continuo-v1/mandato.md),
+[petición](../../../campaigns/contexto-continuo-v1/peticion.md) y
+[rúbrica](../../../campaigns/contexto-continuo-v1/rubrica.md).
 
 - Fecha única: 2023-01-01, sin avance de calendario. Universo de 50 empresas, 100000 USD
   ficticios, máximo diez posiciones, cartera y memoria nuevas. Las órdenes quedan pendientes.
@@ -146,9 +149,9 @@ observaciones de cada intento y la interpretación.
 Encargo del 2026-10-27: incorporar en español las orientaciones sobre progreso,
 conocimiento, recuperación y coherencia, y reducir la frecuencia de recomposición.
 Implementado y verificado localmente; campaña v3 sin ejecutar. Las
-[definiciones v3](../../../benchmarks/contexto-continuo-v3/scenario.json) conservan
+[definiciones v3](../../../campaigns/contexto-continuo-v3/scenario.json) conservan
 mandato, petición, dataset, perfil, fecha, máximo de contexto y presupuestos del piloto.
-La [rúbrica ampliada](../../../benchmarks/contexto-continuo-v3/rubrica.md) añade criterios
+La [rúbrica ampliada](../../../campaigns/contexto-continuo-v3/rubrica.md) añade criterios
 de autorregulación. Las definiciones v1 y las copias de los intentos anteriores se conservan.
 
 Los prompts vigentes de agente, deliberación y análisis financiero refuerzan revisión

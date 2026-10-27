@@ -1,7 +1,6 @@
 """Historical activations, private simulator inputs, and recoverable sequential execution."""
 from __future__ import annotations
 
-import argparse
 from dataclasses import asdict, replace
 from datetime import date, datetime, timezone
 import hashlib
@@ -18,11 +17,9 @@ from research_agent.simulation.state import Simulator, positive, read, save
 from research_agent.workspace import Workspace
 from .catalog import identifier, mapping, read_yaml, text
 from .evidence import inspect_run
-from .runner import dependencies, launch
-
-
-def digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+from .report import persist
+from .runner import launch, execute
+from .storage import create, load, dependencies, digest, freeze_files
 
 
 def load_scenario(path: Path) -> dict[str, Any]:
@@ -81,7 +78,7 @@ def activations(config: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def activation_mandate(config: dict[str, Any], when: str) -> str:
-    mandate = "\n\n".join(f"## Mensaje del usuario — {day}\n\n{message}"
+    mandate = "\n\n".join(f"## Mensaje del usuario â€” {day}\n\n{message}"
                             for day, message in sorted(config["messages"].items()) if day <= when)
     validate_mandate(mandate)
     return mandate
@@ -147,7 +144,7 @@ def preflight(config: dict[str, Any], data: dict[str, Any]) -> dict[str, Any]:
 
 def runtime_identity() -> dict[str, Any]:
     import research_agent
-    import research_benchmarks
+    import research_campaigns
     from findata.settings import settings
     from infra.llm_factory import configured_profile
     import infra
@@ -155,16 +152,12 @@ def runtime_identity() -> dict[str, Any]:
     import runtime_contracts
     result: dict[str, Any] = {"profile": asdict(replace(configured_profile(settings, "planner"), name="lab")),
                               "dependencies": dependencies(), "python": sys.version, "source": {}}
-    for module in (research_agent, research_benchmarks, infra, findata, runtime_contracts):
+    for module in (research_agent, research_campaigns, infra, findata, runtime_contracts):
         assert module.__file__ is not None
         package = Path(module.__file__).parent
         result["source"][module.__name__] = {str(p.relative_to(package)): digest(p)
                                               for p in sorted(package.rglob("*")) if p.suffix in {".py", ".md"}}
     return result
-
-
-def freeze_files(root: Path) -> dict[str, str]:
-    return {str(p.relative_to(root)): digest(p) for p in sorted(root.rglob("*")) if p.is_file()}
 
 
 def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str, Any] | None = None,
@@ -193,60 +186,61 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             for activation in activations(config):
                 activation_mandate(config, activation["date"])
         disjoint(campaign, scenario)
-        campaign.mkdir(parents=True, exist_ok=False)
-        (campaign / "definiciones").mkdir()
-        save(campaign / "definiciones/scenario.json", config)
-        save(campaign / "runtime.json", identity())
-        save(campaign / "limits.json", config["limits"])
-        save(campaign / "condition.json", {"condition": condition})
-        save(campaign / "progress.json", {"next": 0, "active": None, "attempts": [], "finished": False})
-        prepare_experiment(campaign / "agente", new=True, deliberative=condition == "deliberative",
-                           instructions_dir=instructions_dir)
-        save(campaign / "instructions.json", freeze_files(campaign / "agente/instrucciones"))
-    with experiment_lock(campaign):
-        config = read(campaign / "definiciones/scenario.json")
-        condition_path = campaign / "condition.json"
-        condition = read(condition_path)["condition"] if condition_path.exists() else "baseline"
+        record = create(campaign, scenario.parent, "historical", config["id"],
+                        [scenario, *scenario.parent.glob("*.md")],
+                        deliberative=condition == "deliberative", instructions_dir=instructions_dir)
+        record.update(config=config, condition=condition, limits=config["limits"], runtime=identity(),
+                      instructions_sha256=freeze_files(campaign / "instrucciones"),
+                      progress={"next": 0, "active": None, "finished": False})
+        persist(campaign, record)
+    if scenario is None:
+        load(campaign)  # Reject unsupported captures before creating control directories.
+    (campaign / "recuperacion").mkdir(exist_ok=True)
+    with experiment_lock(campaign / "recuperacion"):
+        record = load(campaign)
+        if record["mode"] != "historical":
+            raise ValueError("Only historical campaigns support resume.")
+        config = record["config"]
+        condition = record["condition"]
         if condition not in {"baseline", "deliberative"}:
             raise ValueError("Unknown frozen experimental condition.")
-        frozen_runtime = read(campaign / "runtime.json")
+        frozen_runtime = record["runtime"]
         if frozen_runtime != identity():
             raise ValueError("Runtime/model configuration changed; resume requires frozen configuration.")
-        if read(campaign / "instructions.json") != freeze_files(campaign / "agente/instrucciones"):
+        if record["instructions_sha256"] != freeze_files(campaign / "instrucciones"):
             raise ValueError("Instructions changed; resume refused.")
         simulator_root = campaign / "simulador"
         if not simulator_root.exists():
             source = data if data is not None else export_data(config)
             report = preflight(config, source)
-            save(campaign / "preflight.json", report)
+            record["preflight"] = report
+            persist(campaign, record)
             if not report["ready"]:
-                save(campaign / "blocked-data.json", source)
+                record.update(status="blocked", stop_reason="dataset_preflight_failed")
+                persist(campaign, record)
                 return 1
             staging = campaign / ("simulator-setup-" + uuid4().hex)
             Simulator.create(staging, config, source)
             staging.rename(simulator_root)
-        actual = {"config": digest(campaign / "definiciones/scenario.json"), "data": digest(simulator_root / "data.json"),
-                  "simulator_config": digest(simulator_root / "config.json"), "limits": digest(campaign / "limits.json")}
-        if condition_path.exists():
-            actual["condition"] = digest(condition_path)
-        if not (campaign / "frozen-inputs.json").exists():
-            initial_progress = read(campaign / "progress.json")
-            if initial_progress["next"] != 0 or initial_progress["attempts"]:
+        actual = {"definition": freeze_files(campaign / "definicion"), "data": digest(simulator_root / "data.json"),
+                  "simulator_config": digest(simulator_root / "config.json"), "condition": condition,
+                  "config": hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()}
+        if "frozen_inputs" not in record:
+            if record["progress"]["next"] != 0 or record["sessions"]:
                 raise ValueError("Missing frozen inputs for a previously started campaign.")
-            save(campaign / "frozen-inputs.json", actual)
-        frozen = read(campaign / "frozen-inputs.json")
-        if frozen != actual:
+            record["frozen_inputs"] = actual
+        if record["frozen_inputs"] != actual:
             raise ValueError("Frozen scenario/data/limits changed.")
-        progress = read(campaign / "progress.json")
+        progress = record["progress"]
         if progress["finished"]:
             return 0
         schedule = activations(config)
-        experiment = campaign / "agente"
-        attempts_root = campaign / "intentos"
+        experiment = campaign
+        attempts_root = campaign / "recuperacion"
         attempts_root.mkdir(exist_ok=True)
 
-        def persist() -> None:
-            save(campaign / "progress.json", progress)
+        def commit() -> None:
+            persist(campaign, record)
 
         def prepare_mandate(when: str) -> None:
             if condition == "deliberative":
@@ -260,7 +254,7 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
                           and p.name not in attempt["runs_before"])
             if len(runs) != 1:
                 return False
-            details, rows = inspect_run(campaign, experiment / "ejecuciones" / runs[0], config["id"], attempt["activation"]["id"])
+            details = inspect_run(campaign, experiment / "ejecuciones" / runs[0], frozen_runtime)
             manifest = {}
             if condition == "deliberative" or "profile" in frozen_runtime:
                 try:
@@ -274,22 +268,9 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
                 if manifest.get("condition") != condition or manifest.get("persistent_context") != expected_context:
                     details["capture_errors"].append({"error": "Child persistent context differs from activation/checkpoint"})
                     details["capture_complete"] = False
-            if "profile" in frozen_runtime:
-                effective = manifest.get("configuration", {})
-                if any(effective.get(key) != value for key, value in frozen_runtime["profile"].items()):
-                    details["capture_errors"].append({"error": "Child model/profile differs from frozen runtime"})
-                    details["capture_complete"] = False
-                for package in ("research_agent", "infra", "findata", "runtime_contracts"):
-                    expected = hashlib.sha256(repr(list(frozen_runtime["source"][package].items())).encode()).hexdigest()
-                    if effective.get("code_sha256", {}).get(package) != expected:
-                        details["capture_errors"].append({"error": f"Child source differs from frozen runtime: {package}"})
-                        details["capture_complete"] = False
-            save(directory / "capture.json", details)
-            save(directory / "steps.json", rows)
-            if details.get("agent_status") != "completed" or not details.get("capture_complete"):
+            attempt.update(details)
+            if attempt.get("returncode", 0) != 0 or details.get("agent_status") != "completed" or not details.get("capture_complete"):
                 return False
-            save(directory / "simulator-after.json", read(simulator_root / "state.json"))
-            save(directory / "memory-after.json", freeze_files(experiment / "estado"))
             attempt.update(status="completed", run=runs[0])
             return True
 
@@ -306,16 +287,16 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             save(simulator_root / "state.json", read(directory / "simulator-before.json"))
             attempt["status"] = "interrupted"
             progress["active"] = None
-            persist()
+            commit()
 
         active = progress["active"]
         if active is not None:
-            attempt = progress["attempts"][active]
+            attempt = record["sessions"][active]
             prepare_mandate(attempt["activation"]["date"])
             if inspect_attempt(attempt):
                 progress["next"] += 1
                 progress["active"] = None
-                persist()
+                commit()
             else:
                 restore(attempt)
         while progress["next"] < len(schedule):
@@ -323,7 +304,7 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             prepare_mandate(activation["date"])
             simulator = Simulator(simulator_root)
             simulator.advance(date.fromisoformat(activation["date"]))
-            number = len(progress["attempts"]) + 1
+            number = len(record["sessions"]) + 1
             # A crash while preparing a checkpoint can leave an unlaunched directory.
             # Preserve it and choose a fresh name on resume.
             while (attempts_root / f"{activation['id']}-attempt-{number:04d}").exists():
@@ -335,87 +316,29 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             save(directory / "simulator-before.json", simulator.state)
             attempt = {"id": attempt_id, "activation": activation, "status": "running",
                        "runs_before": [p.name for p in (experiment / "ejecuciones").iterdir() if p.is_dir()]}
-            progress["active"] = len(progress["attempts"])
-            progress["attempts"].append(attempt)
-            persist()
+            progress["active"] = len(record["sessions"])
+            record["sessions"].append(attempt)
+            commit()
             command = [sys.executable, "-m", "research_agent", activation["message"], "--experiment", str(experiment),
                        "--continue", "--run-name", attempt_id, "--conversation", activation["id"],
                        "--simulation", str(simulator_root), "--activation-kind", activation["kind"],
-                       "--limits", str(campaign / "limits.json")]
+                       "--limits", str(campaign / "campaign.json")]
             if condition == "deliberative":
                 command.extend(["--mandate", str(experiment / "mandato.md")])
-            save(directory / "command.json", command)
-            print(f"{activation['date']} {activation['kind']} {attempt_id}", flush=True)
-            try:
-                attempt["returncode"] = launcher(command, directory / "stdout.txt", directory / "stderr.txt")
-                complete = inspect_attempt(attempt)
-                if attempt["returncode"] != 0 or not complete:
+            execute(campaign, experiment, record, attempt, command, launcher=launcher)
+            if attempt["status"] != "completed" or not inspect_attempt(attempt):
+                if attempt["status"] == "completed":
                     attempt["status"] = "failed"
-                    persist()
-                    return 1
-            except KeyboardInterrupt:
-                attempt["status"] = "interrupted"
-                persist()
+                record["status"] = attempt["status"]
+                commit()
                 return 1
-            except Exception:
-                attempt["status"] = "failed"
-                persist()
-                raise
             progress["next"] += 1
             progress["active"] = None
-            persist()
+            commit()
         simulator = Simulator(simulator_root)
         simulator.advance(date.fromisoformat(config["end"]), finish=True)
-        save(campaign / "portfolio-final.json", simulator.get())
-        save(campaign / "history-final.json", simulator.history())
-        save(campaign / "communications.json", simulator.state["notifications"])
+        record.update(status="completed", stop_reason="all_activations_completed")
         progress["finished"] = True
-        persist()
+        commit()
         return 0
 
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    sub = parser.add_subparsers(dest="operation", required=True)
-    validate = sub.add_parser("validate")
-    validate.add_argument("scenario", type=Path)
-    pre = sub.add_parser("preflight")
-    pre.add_argument("scenario", type=Path)
-    pre.add_argument("--output", type=Path, required=True)
-    run = sub.add_parser("run")
-    run.add_argument("scenario", type=Path)
-    run.add_argument("--output", type=Path, required=True, help="New campaign directory")
-    run.add_argument("--data", type=Path, help="Explicit controlled dataset; otherwise export Findata read-only")
-    run.add_argument("--condition", choices=["baseline", "deliberative"], default="baseline")
-    run.add_argument("--instructions-dir", type=Path, help="Complete replacement instruction bundle; new campaigns only")
-    resume = sub.add_parser("resume")
-    resume.add_argument("campaign", type=Path)
-    args = parser.parse_args(argv)
-    try:
-        if args.operation == "validate":
-            config = load_scenario(args.scenario)
-            print(f"valid: {config['id']}; companies={len(config['universe'])}; activations={len(activations(config))}")
-            return 0
-        if args.operation == "preflight":
-            config = load_scenario(args.scenario)
-            args.output.mkdir(parents=True, exist_ok=False)
-            source = export_data(config)
-            save(args.output / "data.json", source)
-            report = preflight(config, source)
-            save(args.output / "preflight.json", report)
-            print(f"ready={report['ready']}; report={args.output / 'preflight.json'}")
-            return 0 if report["ready"] else 1
-        if args.operation == "resume":
-            return run_campaign(args.campaign)
-        return run_campaign(args.output, scenario=args.scenario, data=read(args.data) if args.data else None,
-                            condition=args.condition, instructions_dir=args.instructions_dir)
-    except (ValueError, OSError, TypeError, KeyError) as exc:
-        print(f"longitudinal: {type(exc).__name__}: {exc}", file=sys.stderr)
-        return 2
-    except KeyboardInterrupt:
-        print("longitudinal: interrupted; available checkpoints and attempts are preserved", file=sys.stderr)
-        return 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

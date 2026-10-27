@@ -13,12 +13,12 @@ La [metodología](../../experiments.md) distingue operación y aceptación semá
 
 | Caso | Definición | Sesiones | Referencia del revisor |
 |---|---|---|---|
-| B1 | Fuentes contradictorias (`benchmarks/pilot-v1/B1/case.yaml` en Git) | 1 | Rúbrica (`benchmarks/pilot-v1/B1/rubric.md` en Git) |
-| E2 | Continuidad (`benchmarks/pilot-v1/E2/case.yaml` en Git) | 4 | Rúbrica (`benchmarks/pilot-v1/E2/rubric.md` en Git) |
-| F3 | Información irrelevante (`benchmarks/pilot-v1/F3/case.yaml` en Git) | 2 | Rúbrica (`benchmarks/pilot-v1/F3/rubric.md` en Git) |
-| G2 | Fuentes fallidas (`benchmarks/pilot-v1/G2/case.yaml` en Git) | 1 | Rúbrica (`benchmarks/pilot-v1/G2/rubric.md` en Git) |
+| B1 | Fuentes contradictorias (`campaigns/pilot-v1/B1/case.yaml` en Git) | 1 | Rúbrica (`campaigns/pilot-v1/B1/rubric.md` en Git) |
+| E2 | Continuidad (`campaigns/pilot-v1/E2/case.yaml` en Git) | 4 | Rúbrica (`campaigns/pilot-v1/E2/rubric.md` en Git) |
+| F3 | Información irrelevante (`campaigns/pilot-v1/F3/case.yaml` en Git) | 2 | Rúbrica (`campaigns/pilot-v1/F3/rubric.md` en Git) |
+| G2 | Fuentes fallidas (`campaigns/pilot-v1/G2/case.yaml` en Git) | 1 | Rúbrica (`campaigns/pilot-v1/G2/rubric.md` en Git) |
 
-La suite (`benchmarks/pilot-v1/suite.yaml` en Git) fija este orden. Las dificultades
+La suite (`campaigns/pilot-v1/suite.yaml` en Git) fija este orden. Las dificultades
 dependen de incertidumbre, compatibilidad de datos y recuperación, no del número de
 mensajes. Los documentos incluyen procedencia, fecha y carácter sintético/hipotético;
 no convertirlos en datos actuales de una empresa real.
@@ -55,7 +55,7 @@ argumentos, contenido y alternativas. No hay intervención oculta sobre el trans
 Se usa una tentativa, límites predeterminados y ejecución secuencial. Un fallo o captura
 incompleta bloquea las siguientes sesiones del caso, pero no otros casos. Ctrl+C detiene
 la campaña y conserva lo disponible. Las nuevas invocaciones crean campañas nuevas;
-no existe resume. La [operación](../../development.md#benchmark-piloto) documenta comandos.
+no existe resume. La [operación](../../development.md#campañas) documenta comandos.
 
 ## Evidencia y aceptación
 

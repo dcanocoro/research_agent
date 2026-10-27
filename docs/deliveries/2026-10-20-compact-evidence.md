@@ -8,7 +8,7 @@ y estados inicial/final. Las herramientas mantienen argumentos, resultado origin
 resultado entregado. Los materiales e instrucciones se referencian por hash; las
 citas antiguas de resultados siguen funcionando. Capturas incompletas se retienen.
 
-La [operación](../development.md#benchmark-piloto) documenta lectura y exportación a
+La [operación](../development.md#campañas) documenta lectura y exportación a
 una carpeta separada. El [protocolo](../experiments/benchmark-pilot-v1/protocol.md)
 define revisión por Codex/humano con evidencia y sin puntuación automática.
 

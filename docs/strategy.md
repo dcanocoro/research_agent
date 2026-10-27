@@ -65,7 +65,7 @@ y la [decisión](decisions/0002-simulacion-longitudinal.md) conservan el alcance
 La [revisión de precios](experiments/colaboracion-historica-v1/price-review.md) habilita
 el dataset ajustado con las excepciones declaradas. La prueba corta histórica real
 está completada; también se completaron las 24 activaciones de dos años. El
-[informe local](../artifacts/campana-historica-completa-v1/informe-ejecucion.md),
+informe local (`../artifacts/campana-historica-completa-v1/informe-ejecucion.md`; no disponible en este checkout),
 ignorado y no portable, documenta continuidad, pérdida parcial del mandato y contaminación
 temporal web; no prueba alfa. Ese encargo no incorporó mecanismos cognitivos ni evaluador. El baseline anterior y los
 antecedentes siguientes no se reescriben como resultados de este encargo.

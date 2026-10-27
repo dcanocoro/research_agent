@@ -5,6 +5,8 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-27 — Campañas y revisión](2026-10-27-campaigns.md): registro único,
+  `README.md`, captura nativa y simplificación de código y resultados.
 - [2026-10-27 — Autorregulación v3](2026-10-27-self-regulation-v3.md): prompts en
   español, umbral mayor y piloto preparado sin ejecutar proveedores.
 - [2026-10-26 — Entrega de resultados al cruzar el umbral](2026-10-26-context-delivery.md):

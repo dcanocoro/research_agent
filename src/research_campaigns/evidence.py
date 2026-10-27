@@ -2,33 +2,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+import hashlib
 import gzip
 import json
 from pathlib import Path
 from typing import Any
 
 from research_agent.workspace import Workspace
-from research_agent.archive import digest
 
 
-def save(path: Path, value: Any) -> None:
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def brief(value: Any) -> str | None:
-    if value is None:
-        return None
-    result = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
-    result = " ".join(result.split())
-    return result if len(result) <= 240 else result[:237] + "..."
-
-
-def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    if (run / "ejecucion.json").exists():
-        from .archive import inspect_compact
-        return inspect_compact(campaign, run, case_id, session_id)
+def inspect_run(campaign: Path, run: Path, runtime: dict[str, Any] | None = None) -> dict[str, Any]:
     errors: list[dict[str, Any]] = []
-    rows: list[dict[str, Any]] = []
 
     def ref(path: Path) -> str:
         return path.relative_to(campaign).as_posix()
@@ -52,6 +36,16 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
             return kind() if kind is not None else None
 
     manifest = read(run / "manifiesto.json")
+    runtime = runtime or {}
+    if "profile" in runtime:
+        effective = manifest.get("configuration", {})
+        if any(effective.get(key) != value for key, value in runtime["profile"].items()):
+            issue(run / "manifiesto.json", "Child model/profile differs from frozen runtime")
+        for package in ("research_agent", "infra", "findata", "runtime_contracts"):
+            if package in runtime.get("source", {}):
+                expected = hashlib.sha256(repr(list(runtime["source"][package].items())).encode()).hexdigest()
+                if effective.get("code_sha256", {}).get(package) != expected:
+                    issue(run / "manifiesto.json", f"Child source differs from frozen runtime: {package}")
     result = read(run / "resultado.json")
     read(run / "estado-inicial.json")
     read(run / "estado-final.json")
@@ -87,14 +81,6 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
                 issue(path, f"Invalid event at line {number}")
         return parsed
 
-    def row(action: str, path: Path, event: dict[str, Any], *, line: int | None = None,
-            input_value: Any = None, output_value: Any = None, evidence: list[str] | None = None) -> None:
-        rows.append({"case_id": case_id, "session_id": session_id, "run_id": run_id,
-                     "action": action, "occurred_at": event.get("occurred_at"),
-                     "llm_call_id": event.get("llm_call_id"), "call_id": event.get("call_id"),
-                     "tool": event.get("tool_name"), "input": brief(input_value), "output": brief(output_value),
-                     "source": ref(path), "line": line, "evidence": evidence or []})
-
     tool_payloads: dict[str, tuple[dict[str, Any], Path]] = {}
     for path in sorted((run / "trazas").glob("herramienta-*.json")):
         payload = read(path)
@@ -118,18 +104,13 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
             issue(native_path, f"Inconsistent event run_id at line {line}")
         if name not in {"lab.tool.started", "lab.tool.completed", "lab.tool.failed", "lab.phase.timeout"}:
             continue
-        input_value = event.get("arguments")
-        output_value: Any = event.get("error_type")
-        evidence = []
         if name == "lab.tool.started":
             starts += 1
         if name in {"lab.tool.completed", "lab.tool.failed"}:
             payload_entry = tool_payloads.get(event.get("call_id", ""))
             if payload_entry:
                 payload, path = payload_entry
-                input_value = (payload.get("call") or {}).get("arguments")
                 output_value = payload.get("result")
-                evidence.append(ref(path))
                 reference = output_value.get("artifact_ref") if isinstance(output_value, dict) else None
                 if isinstance(reference, str):
                     parts = reference.split("/")
@@ -141,15 +122,12 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
                         else:
                             raise ValueError("Invalid original result reference")
                         read(original, None)
-                        evidence.append(ref(original))
                     except ValueError:
                         issue(path, "Invalid original result reference")
             else:
                 issue(native_path, f"Missing tool payload at line {line}")
             if name == "lab.tool.failed" and event.get("tool_name") == "read_document":
                 failed_document = True
-        row("tool_call" if name == "lab.tool.started" else "tool_result" if name == "lab.tool.completed" else "error",
-            native_path, event, line=line, input_value=input_value, output_value=output_value, evidence=evidence)
 
     provider_path = run / "trazas/events.jsonl"
     provider = events(provider_path)
@@ -164,19 +142,14 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
             issue(provider_path, f"Missing or duplicate llm_call_id at line {line}")
             continue
         seen_calls.add(llm_id)
-        payload = {}
-        evidence = []
         archive = event.get("archive_file")
         if isinstance(archive, str) and Path(archive).name == archive and archive.endswith(".json.gz"):
             payload_path = run / "trazas" / archive
-            payload = read(payload_path)
-            evidence.append(ref(payload_path))
+            read(payload_path)
         else:
             issue(provider_path, f"Missing provider payload at line {line}")
         if event.get("capture_error") or event.get("archive_error"):
             issue(provider_path, f"Provider capture error at line {line}")
-        row("model_call", provider_path, event, line=line,
-            input_value=payload.get("provider_input"), output_value=payload.get("provider_output"), evidence=evidence)
 
     llm_calls = result.get("llm_calls")
     tool_calls = result.get("tool_calls")
@@ -192,12 +165,8 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
             answer = answer_path.read_text(encoding="utf-8")
             if answer != result.get("answer"):
                 issue(answer_path, "Answer differs from result")
-            row("final_answer", answer_path, terminal[-1] if terminal else {}, output_value=answer)
         except (OSError, UnicodeError) as exc:
             issue(answer_path, type(exc).__name__)
-    rows.sort(key=lambda r: (r["occurred_at"] or "", r["source"], r["line"] or 0))
-    for order, item in enumerate(rows, 1):
-        item["order"] = order
     duration = None
     try:
         duration = (datetime.fromisoformat(terminal[-1]["occurred_at"]) - datetime.fromisoformat(native[0][1]["occurred_at"])).total_seconds()
@@ -206,31 +175,5 @@ def inspect_run(campaign: Path, run: Path, case_id: str, session_id: str) -> tup
     return {"run_id": run_id, "run_directory": ref(run), "agent_status": result.get("status"),
             "stop_reason": result.get("stop_reason"), "llm_calls": llm_calls, "tool_calls": tool_calls,
             "duration_seconds": duration, "capture_errors": errors, "capture_complete": not errors,
-            "document_tool_failure_observed": failed_document}, rows
+            "document_tool_failure_observed": failed_document}
 
-
-def extract(campaign: Path) -> list[dict[str, Any]]:
-    """Regenerate steps and capture diagnostics; never edit native/session evidence."""
-    rows = []
-    diagnostics = []
-    paths = sorted((campaign / "sesiones").glob("*.json"))
-    sessions = ([json.loads(path.read_text(encoding="utf-8")) for path in paths] if paths else
-                json.loads((campaign / "resumen.json").read_text(encoding="utf-8"))["sessions"])
-    for session in sessions:
-        if session.get("run_directory"):
-            run = campaign / session["run_directory"]
-            if not run.resolve().is_relative_to(campaign.resolve()):
-                raise ValueError("Run reference escapes campaign")
-            details, steps = inspect_run(campaign, run, session["case_id"], session["session_id"])
-            diagnostics.append({"case_id": session["case_id"], "session_id": session["session_id"],
-                                "capture_complete": details["capture_complete"], "capture_errors": details["capture_errors"]})
-            rows.extend(steps)
-        else:
-            diagnostics.append({"case_id": session["case_id"], "session_id": session["session_id"],
-                                "capture_complete": False, "capture_errors": session.get("capture_errors", []),
-                                "status": session["status"]})
-    with (campaign / "pasos.jsonl").open("w", encoding="utf-8") as stream:
-        for item in rows:
-            stream.write(json.dumps(item, ensure_ascii=False) + "\n")
-    save(campaign / "extraccion.json", {"sessions": diagnostics})
-    return rows

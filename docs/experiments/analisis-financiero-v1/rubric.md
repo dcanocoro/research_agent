@@ -1,7 +1,7 @@
 # Rúbrica de revisión semántica — análisis financiero v1
 
 Estado: preparada, sin aplicación ni resultados. Solo para el revisor; no cargar como
-instrucción ni material del agente. Corpus: [casos](../../../benchmarks/analisis-financiero-v1/semantic-cases.json).
+instrucción ni material del agente. Corpus: [casos](../../../campaigns/analisis-financiero-v1/semantic-cases.json).
 
 | Caso | Evidencia que debe revisar la persona evaluadora |
 |---|---|

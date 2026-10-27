@@ -11,7 +11,7 @@ import pytest
 from research_agent.experiments import prepare_experiment
 
 
-CONTROL = Path(__file__).resolve().parents[1] / "benchmarks/analisis-financiero-v1/control"
+CONTROL = Path(__file__).resolve().parents[1] / "campaigns/analisis-financiero-v1/control"
 
 
 def test_frozen_control_and_default_replacement(tmp_path):

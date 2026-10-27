@@ -9,9 +9,13 @@ import sys
 import pytest
 import yaml
 
-from research_benchmarks.runner import launch, main, run_suite
-from research_benchmarks.catalog import load_suite
-from research_benchmarks.evidence import extract, save
+from research_campaigns.runner import launch
+from research_campaigns.cli import main
+from research_campaigns.suite import run_suite
+from research_campaigns.catalog import load_suite
+from research_campaigns.evidence import inspect_run
+from research_campaigns.storage import save
+from research_campaigns.report import report
 from research_agent.workspace import Workspace
 
 
@@ -29,15 +33,15 @@ class Block:
         if fullname.split('.')[0] in {'infra','findata','engine','finmate','api'}:
             raise AssertionError(fullname)
 sys.meta_path.insert(0, Block())
-from research_benchmarks.runner import main
-raise SystemExit(main(['validate', 'benchmarks/longitudinal-v1']))
+from research_campaigns.cli import main
+raise SystemExit(main(['validate', 'campaigns/longitudinal-v1']))
 """
     result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert "cases=3; sessions=18" in result.stdout
 
 
-@pytest.mark.parametrize("package", ["research_agent", "research_benchmarks"])
+@pytest.mark.parametrize("package", ["research_agent", "research_campaigns"])
 def test_campaign_output_cannot_overlap_either_source_package(tmp_path, package):
     from importlib.util import find_spec
     source = Path(find_spec(package).origin).parent
@@ -94,20 +98,19 @@ def test_isolation_publication_and_extraction(tmp_path):
             assert state.read_file("entradas/future.md")["text"] == "future evidence"
         seen.append((exp, session))
         return fake_cli(command, out, err)
-    campaign, code = run_suite(load_suite(root), tmp_path / "out", launcher=worker, compact=False)
+    campaign, code = run_suite(load_suite(root), tmp_path / "out", launcher=worker)
     assert code == 0 and len(seen) == 4
-    summary = json.loads((campaign / "resumen.json").read_text())
-    assert summary["sessions_completed"] == 4 and summary["llm_calls"] == 4
+    summary = json.loads((campaign / "campaign.json").read_text())
+    assert sum(s["status"] == "completed" for s in summary["sessions"]) == 4
+    assert sum(s["llm_calls"] for s in summary["sessions"]) == 4
     assert len({exp for exp, _ in seen}) == 2
-    original = (campaign / "pasos.jsonl").read_bytes()
-    rows = extract(campaign)
-    assert (campaign / "pasos.jsonl").read_bytes() == original
-    assert len(rows) == 8
-    assert all((campaign / r["source"]).exists() for r in rows)
-    assert all((campaign / p).exists() for r in rows for p in r["evidence"])
-    second, code = run_suite(load_suite(root), tmp_path / "out", selected="C0", launcher=worker, compact=False)
+    original = (campaign / "campaign.json").read_bytes()
+    report(campaign)
+    assert (campaign / "campaign.json").read_bytes() == original
+    assert len(list((campaign / "casos").glob("*/ejecuciones/*/respuesta.md"))) == 4
+    second, code = run_suite(load_suite(root), tmp_path / "second", selected="C0", launcher=worker)
     assert code == 0 and second != campaign
-    assert (campaign / "pasos.jsonl").read_bytes() == original
+    assert (campaign / "campaign.json").read_bytes() == original
 
 
 @pytest.mark.parametrize("failure", ["operational", "missing_payload", "truncated_payload", "corrupt_event", "interruption", "no_run"])
@@ -135,9 +138,9 @@ def test_failures_preserve_evidence_and_skip_dependents(tmp_path, failure):
         if failure == "interruption":
             raise KeyboardInterrupt
         return code
-    campaign, code = run_suite(load_suite(root), tmp_path / "out", launcher=worker, compact=False)
+    campaign, code = run_suite(load_suite(root), tmp_path / "out", launcher=worker)
     assert code == 1
-    summary = json.loads((campaign / "resumen.json").read_text())
+    summary = json.loads((campaign / "campaign.json").read_text())
     assert summary["sessions"][1]["status"] == "not_executed"
     assert summary["sessions"][0]["status"] == ("interrupted" if failure == "interruption" else "failed")
     assert (campaign / summary["sessions"][0]["stdout"]).exists()
@@ -151,8 +154,8 @@ def test_publication_cannot_overwrite_agent_file(tmp_path):
         exp = Path(command[command.index("--experiment") + 1])
         (exp / "estado/entradas/future.md").write_text("agent content")
         return fake_cli(command, out, err)
-    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1)), tmp_path / "out", launcher=worker, compact=False)
-    summary = json.loads((campaign / "resumen.json").read_text())
+    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1)), tmp_path / "out", launcher=worker)
+    summary = json.loads((campaign / "campaign.json").read_text())
     assert code == 1 and summary["sessions"][1]["error"] == "FileExistsError"
     assert (campaign / "casos/C0/estado/entradas/future.md").read_text() == "agent content"
 
@@ -162,14 +165,14 @@ def test_modified_stimulus_is_reported(tmp_path):
         exp = Path(command[command.index("--experiment") + 1])
         (exp / "estado/entradas/initial.md").write_text("modified")
         return fake_cli(command, out, err)
-    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=worker, compact=False)
+    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=worker)
     assert code == 0  # Data mutation is evidence for review, not an invented semantic verdict.
-    session = json.loads((campaign / "sesiones/C0-s0.json").read_text())
+    session = json.loads((campaign / "campaign.json").read_text())["sessions"][0]
     assert session["input_modifications"][0]["path"] == "entradas/initial.md"
 
 
 def test_longitudinal_suite_with_simulated_agent_and_no_providers(tmp_path):
-    suite = load_suite(ROOT / "benchmarks/longitudinal-v1")
+    suite = load_suite(ROOT / "campaigns/longitudinal-v1")
     attempted = []
     def worker(command, out, err):
         exp = Path(command[command.index("--experiment") + 1])
@@ -182,29 +185,27 @@ def test_longitudinal_suite_with_simulated_agent_and_no_providers(tmp_path):
         assert not any("rubric" in p.name for p in (exp / "estado").rglob("*"))
         attempted.append((exp.name, session_id))
         return fake_cli(command, out, err)
-    campaign, code = run_suite(suite, tmp_path / "out", launcher=worker, compact=False)
+    campaign, code = run_suite(suite, tmp_path / "out", launcher=worker)
     assert code == 0
     assert attempted == [(case.id, session.id) for case in suite.cases for session in case.sessions]
     assert len(attempted) == 18
-    sources = json.loads((campaign / "manifiesto.json").read_text())["source_sha256"]
-    assert "research_agent/agent.py" in sources and "research_benchmarks/runner.py" in sources
+    sources = json.loads((campaign / "campaign.json").read_text())["runtime"]["source"]
+    assert "agent.py" in sources["research_agent"] and "runner.py" in sources["research_campaigns"]
 
 
 def test_regeneration_reports_missing_capture_without_changing_sessions(tmp_path):
-    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=fake_cli, compact=False)
+    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=fake_cli)
     assert code == 0
-    session_file = campaign / "sesiones/C0-s0.json"
+    session_file = campaign / "campaign.json"
     before = session_file.read_bytes()
-    session = json.loads(before)
+    session = json.loads(before)["sessions"][0]
     (campaign / session["run_directory"] / "trazas/modelo-0001.json.gz").unlink()
-    extract(campaign)
-    diagnostic = json.loads((campaign / "extraccion.json").read_text())["sessions"][0]
-    assert not diagnostic["capture_complete"] and diagnostic["capture_errors"]
+    report(campaign)
+    assert "FileNotFoundError" in (campaign / "README.md").read_text(encoding="utf-8")
     assert session_file.read_bytes() == before
 
 
-@pytest.mark.parametrize("compact", [False, True])
-def test_real_subprocess_sessions_use_agent_cli_and_native_recorder(tmp_path, compact):
+def test_real_subprocess_sessions_use_agent_cli_and_native_recorder(tmp_path):
     # The worker substitutes only the composition of external services in this test.
     # The runner, CLI, AgentA, file tools, recorder and scoped provider capture are real.
     worker = tmp_path / "worker.py"
@@ -250,18 +251,16 @@ raise SystemExit(cli.main())
 ''', encoding="utf-8")
     def subprocess_worker(command, out, err):
         return launch([sys.executable, str(worker), *command[3:]], out, err)
-    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1)), tmp_path / "out", launcher=subprocess_worker, compact=compact)
-    assert code == 0, (campaign / "resumen.json").read_text()
+    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1)), tmp_path / "out", launcher=subprocess_worker)
+    assert code == 0, (campaign / "campaign.json").read_text()
     pids = (campaign / "casos/C0/estado/remembered.md").read_text().splitlines()
     assert len(pids) == 2 and pids[0] != pids[1]
-    rows = extract(campaign)
-    assert sum(r["action"] == "model_call" for r in rows) == 6
-    if compact:
-        assert sum(r["action"] == "tool_execution" for r in rows) == 4
-    else:
-        assert sum(r["action"] == "tool_call" for r in rows) == 4
-        assert sum(r["action"] == "tool_result" for r in rows) == 4
-    assert sum(r["action"] == "final_answer" for r in rows) == 2
+    sessions = json.loads((campaign / "campaign.json").read_text())["sessions"]
+    for session in sessions:
+        run = campaign / session["run_directory"]
+        capture = inspect_run(campaign, run)
+        assert capture["capture_complete"] and capture["llm_calls"] == 3 and capture["tool_calls"] == 2
+        assert (run / "respuesta.md").read_text() == "done"
 
 
 def test_invalid_cli_is_exit_two_without_output(tmp_path):
@@ -302,88 +301,67 @@ def tool_fixture(command, out, err, *, limited=False):
 
 
 @pytest.mark.parametrize("limited", [False, True])
-def test_compact_export_is_lossless_and_source_is_unchanged(tmp_path, limited):
-    from research_benchmarks.archive import export_campaign, records, delivered_result, full_result, restore_snapshot
-    from research_benchmarks.evidence import digest, inspect_run
-    def worker(command, out, err):
-        return tool_fixture(command, out, err, limited=limited)
-    source, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=worker, compact=False)
-    assert code == 0
-    native = source / "casos/C0/ejecuciones/s0"
-    source_hashes = {p.relative_to(source): digest(p) for p in source.rglob("*") if p.is_file()}
-    original_tool = json.loads((native / "trazas/herramienta-0004.json").read_text(encoding="utf-8"))
-    original_state = json.loads((native / "estado-final.json").read_text(encoding="utf-8"))
-    with gzip.open(native / "trazas/modelo-0001.json.gz", "rt", encoding="utf-8") as stream:
-        original_model = json.load(stream)
-    destination = export_campaign(source, tmp_path / "compact")
-    run = destination / native.relative_to(source)
-    assert len([p for p in run.rglob("*") if p.is_file()]) == 5
-    assert {p.relative_to(source): digest(p) for p in source.rglob("*") if p.is_file()} == source_hashes
-    trace = records(run)
-    tool = next(e for e in trace if e["kind"] == "tool")
-    assert tool["call"] == original_tool["call"]
-    assert delivered_result(destination, tool) == original_tool["result"]
-    assert full_result(destination, tool) == original_state_to_raw(original_state)
-    assert next(e for e in trace if e["kind"] == "model")["payload"] == original_model
-    assert restore_snapshot(destination, json.loads((run / "estado-final.json").read_text(encoding="utf-8"))) == original_state
-    details, _ = inspect_run(destination, run, "C0", "s0")
-    assert details["capture_complete"], details
-    assert (destination / "LEEME.md").exists()
-    assert not list((destination / "sesiones").glob("*.json"))
-    assert not list((destination / "sesiones").glob("*.stdout.txt"))
-    # Existing citations remain readable, including byte pagination and opaque calls.
+def test_native_evidence_and_artifact_pagination_preserved(tmp_path, limited):
+    from research_campaigns.storage import digest
     from research_agent.recording import RunRecorder
-    recorder = RunRecorder(run.parent)
-    recorder.workspace_fingerprint = None  # Fixture manifests have no fingerprint.
-    page = recorder.read_artifact("archivo/s0/resultado-herramienta-0001.json", max_bytes=31)
-    assert page["next_offset"] is not None
-    assert page["text"]
-    # Reading compact history must work when campaign orchestration is unavailable.
-    isolated = subprocess.run([sys.executable, "-c", """
-import sys
-class Reject:
-    def find_spec(self, fullname, *args):
-        if fullname.split('.')[0] in {'research_benchmarks', 'experience_audit', 'finmate', 'engine', 'api'}:
-            raise AssertionError(fullname)
-sys.meta_path.insert(0, Reject())
-from pathlib import Path
-from research_agent.recording import RunRecorder
-recorder = RunRecorder(Path(sys.argv[1]))
-assert recorder.read_artifact('archivo/s0/resultado-herramienta-0001.json')['text']
-""", str(run.parent)], capture_output=True, text=True)
-    assert isolated.returncode == 0, isolated.stderr
-    recorder.workspace_fingerprint = "unrelated-workspace"
-    with pytest.raises(FileNotFoundError):
-        recorder.read_artifact("archivo/s0/resultado-herramienta-0001.json")
-    with pytest.raises(ValueError):
-        export_campaign(source, source / "nested")
-
-
-def original_state_to_raw(state):
-    return json.loads(state["materiales/source.json"])
-
-
-def test_default_compact_and_corruption_diagnostics(tmp_path):
-    from research_benchmarks.evidence import inspect_run
-    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=tool_fixture)
+    root, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out",
+                           launcher=lambda c, o, e: tool_fixture(c, o, e, limited=limited))
     assert code == 0
-    summary = json.loads((campaign / "resumen.json").read_text())
-    assert summary["recording_format"] == "benchmark-compact-v1"
-    run = campaign / summary["sessions"][0]["run_directory"]
-    (run / "respuesta.md").write_text("changed")
-    details, _ = inspect_run(campaign, run, "C0", "s0")
-    assert not details["capture_complete"]
-    assert "hash mismatch" in details["capture_errors"][0]["error"]
+    run = root / "casos/C0/ejecuciones/s0"
+    before = {p.relative_to(root): digest(p) for p in root.rglob("*") if p.is_file()}
+    report(root)
+    assert before == {p.relative_to(root): digest(p) for p in root.rglob("*") if p.is_file()}
+    tool = json.loads((run / "trazas/herramienta-0004.json").read_text(encoding="utf-8"))
+    state = json.loads((run / "estado-final.json").read_text(encoding="utf-8"))
+    original = json.loads((run / "trazas/resultado-herramienta-0001.json").read_text(encoding="utf-8"))
+    assert original == json.loads(state["materiales/source.json"])
+    assert tool["result"]["value"] == ({"limited": True, "artifact_ref": "materiales/source.json"} if limited else original)
+    recorder = RunRecorder(run.parent)
+    page = recorder.read_artifact("archivo/s0/resultado-herramienta-0001.json", max_bytes=31)
+    assert page["next_offset"] is not None and page["text"]
+    forbidden = {"pasos.jsonl", "steps.json", "extraccion.json", "resumen.json", "ejecucion.json", "trayectoria.jsonl.gz"}
+    assert not any(p.name in forbidden for p in root.rglob("*"))
+    assert not list((root / "casos").glob("*/ejecuciones/*.stdout.txt"))
 
 
-def test_incomplete_native_capture_is_retained(tmp_path):
-    def worker(command, out, err):
-        return fake_cli(command, out, err, missing="trazas/modelo-0001.json.gz")
-    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=worker)
-    assert code == 1
-    session = json.loads((campaign / "resumen.json").read_text())["sessions"][0]
-    run = campaign / session["run_directory"]
-    assert session["recording_format"] == "native-incomplete"
-    assert (run / "conversacion.json").exists()
-    assert not (run / "ejecucion.json").exists()
-    assert (campaign / session["stdout"]).exists()
+@pytest.mark.parametrize("operation", ["extract", "compact", "longitudinal", "prepare", "check"])
+def test_retired_commands_rejected(operation):
+    with pytest.raises(SystemExit) as error:
+        main([operation])
+    assert error.value.code == 2
+
+
+def test_definition_options_and_resume_rejected_without_execution(tmp_path):
+    from research_campaigns.cli import definition
+    root = catalog(tmp_path)
+    (root / "scenario.json").write_text("{}")
+    with pytest.raises(ValueError, match="exactly one"):
+        definition(root)
+    (root / "scenario.json").unlink()
+    for option in (["--condition", "baseline"], ["--instructions-dir", str(root)], ["--data", str(root)]):
+        with pytest.raises(SystemExit) as error:
+            main(["run", str(root), "--output", str(tmp_path / "unused"), *option])
+        assert error.value.code == 2 and not (tmp_path / "unused").exists()
+    campaign, _ = run_suite(load_suite(root), tmp_path / "campaign", launcher=fake_cli)
+    with pytest.raises(SystemExit) as error:
+        main(["resume", str(campaign)])
+    assert error.value.code == 2
+    assert main(["report", str(campaign)]) == 0
+    with pytest.raises(FileExistsError):
+        run_suite(load_suite(root), campaign, launcher=fake_cli)
+
+
+def test_atomic_record_preserves_previous_version_on_replace_failure(tmp_path, monkeypatch):
+    from research_campaigns.storage import save
+    target = tmp_path / "campaign.json"
+    save(target, {"status": "prepared"})
+    original = Path.replace
+    def fail(source, destination):
+        if destination == target:
+            raise OSError("controlled replace failure")
+        return original(source, destination)
+    monkeypatch.setattr(Path, "replace", fail)
+    with pytest.raises(OSError):
+        save(target, {"status": "running"})
+    assert json.loads(target.read_text()) == {"status": "prepared"}
+    assert list(tmp_path.iterdir()) == [target]

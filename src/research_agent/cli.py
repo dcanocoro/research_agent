@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout-seconds", type=float, default=300)
     parser.add_argument("--simulation", type=Path, help="Private simulator directory supplied by the longitudinal controller")
     parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
-    parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON supplied by the controller")
+    parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON or campaign record containing limits")
     parser.add_argument("--continuous", action="store_true", help="Keep A running with bounded renewable context; requires --mandate")
     parser.add_argument("--context-bytes", type=int, default=None, help="Continuous local byte budget including reserves (default 524288)")
     parser.add_argument("--consolidation-bytes", type=int, default=None, help="Continuous byte consolidation threshold including reserves (default 262144)")
@@ -65,7 +65,8 @@ def main(argv: list[str] | None = None) -> int:
             consolidation_threshold_bytes=args.consolidation_bytes if args.consolidation_bytes is not None else 262144,
             max_llm_calls=args.max_calls, max_tool_calls=args.max_tools,
             timeout_seconds=args.continuous_timeout_seconds) if args.continuous else None
-        limits = AgentLimits(**json.loads(args.limits.read_text(encoding="utf-8"))) if args.limits else AgentLimits(timeout_seconds=args.timeout_seconds)
+        limits_data = json.loads(args.limits.read_text(encoding="utf-8")) if args.limits else {"timeout_seconds": args.timeout_seconds}
+        limits = AgentLimits(**limits_data.get("limits", limits_data))
         root = args.experiment.absolute()
         mandate = None
         if args.mandate is not None:

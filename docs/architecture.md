@@ -31,11 +31,11 @@ en `_prepare` y `_finish`. Cada herramienta declara ejecución (`inline`, `threa
 validador se construye al registrarla. Las operaciones de archivos se ejecutan en
 línea para evitar escrituras en hilos después de cerrar un run.
 
-[research_benchmarks](../src/research_benchmarks/runner.py) posee catálogo, campañas,
-extracción y compactación, en la misma distribución. Depende de A; A no importa
-campañas ni Audit. [archive](../src/research_agent/archive.py) contiene la lectura
-compacta compartida, incluida la recuperación de artefactos históricos. Los nuevos
-manifiestos de campaña registran hashes de ambos paquetes con prefijo de paquete.
+[research_campaigns](../src/research_campaigns/cli.py) posee definiciones, campañas
+y revisión en la misma distribución. Depende de A; A no importa campañas ni Audit.
+Las campañas conservan la captura nativa de cada ejecución; no hay conversión compacta
+ni lectores de los formatos retirados. La [guía de campañas](campaigns.md) describe
+el registro único, las modalidades y la recuperación.
 
 ## Estado, instrucciones y ejecuciones
 
@@ -155,15 +155,12 @@ escritura del agente. Todas las ejecuciones agrupan eventos del ciclo y payloads
 con nombres españoles. No ejecutar capturas simultáneas en un proceso,
 porque el adaptador compartido emplea configuración global temporal.
 
-El benchmark consolida esa captura **después de ejecutar**: cada sesión conserva
-`ejecucion.json`, `trayectoria.jsonl.gz`, respuesta y dos snapshots. La trayectoria
-reúne eventos, payloads del modelo y herramientas; distingue resultado original y
-resultado entregado, conservando argumentos y escrituras intermedias. Los materiales
-se referencian por ruta/hash en lugar de repetirse en los snapshots. Las referencias
-históricas `archivo/run/resultado-herramienta-N.json` siguen funcionando mediante
-`read_artifact`, con la misma comprobación de identidad del workspace. No modifica
-las decisiones de A ni sus límites. Capturas incompletas se conservan en formato nativo.
-La [operación](development.md#benchmark-piloto) explica lectura y exportación sin proveedor.
+Las campañas conservan esa captura nativa y generan un `README.md` con enlaces a
+respuestas, snapshots, eventos y trazas. `campaign.json` concentra el control y los
+diagnósticos. No se compacta ni transforma la evidencia al cerrar. Las referencias
+`archivo/run/resultado-herramienta-N.json` se leen desde sus archivos nativos con
+comprobación de identidad del workspace. La [guía de campañas](campaigns.md)
+explica las modalidades, revisión y límites de recuperación.
 
 ## Git manual e interfaces
 
@@ -197,7 +194,7 @@ cartera local y comunicaciones explícitas. `build_agent(simulation=...)` sustit
 las lecturas actuales y Extract por las herramientas acotadas; no abre conexión a
 Findata durante las activaciones. Sin ese argumento la composición es la habitual.
 
-`research_benchmarks.longitudinal` congela escenario, instrucciones, perfil y dataset
+`research_campaigns` congela escenario, instrucciones, perfil y dataset
 obtenido en solo lectura; ejecuta procesos nuevos y posee calendario/checkpoints.
 El simulador reside fuera del workspace editable. La memoria no es el registro económico.
 La [decisión](decisions/0002-simulacion-longitudinal.md) y el
@@ -323,7 +320,6 @@ en memoria se pueda recuperar. La ventana está acotada; el volumen del archivo 
 listas de captura/eventos en memoria de proceso no tienen un límite total en esta versión.
 
 El piloto de [contexto continuo](experiments/contexto-continuo-v1/protocol.md) se prepara
-sin clientes ni bases con `research_benchmarks.continuous`. Congela mandato, instrucciones,
-perfil, fuentes instaladas, dataset y estado nuevo, y proporciona una comprobación previa
-al comando manual. No cambia el lanzador longitudinal. En simulación, `allow_web: false`
+sin clientes ni bases durante las comprobaciones de `research_campaigns`. Congela mandato, instrucciones,
+perfil, fuentes instaladas, dataset y estado nuevo, y comprueba las condiciones antes del lanzamiento integrado. En simulación, `allow_web: false`
 omite `search_web`; su ausencia conserva el comportamiento anterior con web.

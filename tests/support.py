@@ -3,7 +3,7 @@ import gzip
 import json
 from pathlib import Path
 import yaml
-from research_benchmarks.evidence import save
+from research_campaigns.storage import save
 
 
 class ScriptedClient:
@@ -37,7 +37,7 @@ def catalog(tmp_path, cases=2, sessions=2):
                      for i in range(sessions)]}
         (case / "case.yaml").write_text(yaml.safe_dump(value), encoding="utf-8")
         paths.append(f"C{n}/case.yaml")
-    (root / "suite.yaml").write_text(yaml.safe_dump({"schema_version": "benchmark-v1", "id": "test", "cases": paths}), encoding="utf-8")
+    (root / "suite.yaml").write_text(yaml.safe_dump({"schema_version": "campaign-suite-v1", "id": "test", "cases": paths}), encoding="utf-8")
     return root
 
 

@@ -148,7 +148,7 @@ import sys, importlib.abc, tempfile, asyncio
 from pathlib import Path
 class Reject(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, *args):
-        if fullname.split('.')[0] in {'finmate','engine','api','experience_audit','research_benchmarks'}:
+        if fullname.split('.')[0] in {'finmate','engine','api','experience_audit','research_campaigns'}:
             raise RuntimeError('Forbidden import: '+fullname)
 sys.meta_path.insert(0, Reject())
 from research_agent.bootstrap import build_agent
@@ -168,7 +168,7 @@ async def check():
             assert 'save_case' not in {s.name for s in agent.tools.specs()}
             assert agent.instructions == ()
 asyncio.run(check())
-assert not any(n.split('.')[0] in {'finmate','engine','api','experience_audit','research_benchmarks'} for n in sys.modules)
+assert not any(n.split('.')[0] in {'finmate','engine','api','experience_audit','research_campaigns'} for n in sys.modules)
 '''
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
@@ -196,7 +196,7 @@ def test_static_import_boundary():
                 names = [a.name for a in node.names] if isinstance(node, ast.Import) else [node.module or ""] if isinstance(node, ast.ImportFrom) else []
                 forbidden = {"finmate", "engine", "api"}
                 if root.name == "research_agent":
-                    forbidden |= {"experience_audit", "research_benchmarks"}
+                    forbidden |= {"experience_audit", "research_campaigns"}
                 assert not {n.split(".")[0] for n in names} & forbidden, path
 
 
@@ -230,10 +230,11 @@ def test_prior_artifacts_are_readable_only_in_the_same_workspace(tmp_path):
         recorder.read_artifact(reference)
 
 
-def test_legacy_native_artifact_is_still_readable(tmp_path):
+def test_legacy_native_manifest_is_not_supported(tmp_path):
     recorder = RunRecorder(tmp_path / "runs")
     recorder.start("old", {"workspace_fingerprint": "same"})
     reference = recorder.artifact({"original": "historical"})
     (recorder.current / "manifiesto.json").rename(recorder.current / "manifest.json")
     recorder.start("new", {"workspace_fingerprint": "same"})
-    assert "historical" in recorder.read_artifact(reference)["text"]
+    with pytest.raises(FileNotFoundError):
+        recorder.read_artifact(reference)

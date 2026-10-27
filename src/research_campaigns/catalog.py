@@ -1,4 +1,4 @@
-"""Offline definitions for the exploratory benchmark; no service construction."""
+"""Offline document campaign definitions; no service construction."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -108,8 +108,8 @@ def read_yaml(path: Path) -> Any:
 def load_suite(root: Path) -> Suite:
     root = root.absolute()
     raw = mapping(read_yaml(inside(root, "suite.yaml")), {"schema_version", "id", "cases"})
-    if raw["schema_version"] != "benchmark-v1" or not isinstance(raw["cases"], list) or not raw["cases"]:
-        raise ValueError("Expected benchmark-v1 and a nonempty cases list.")
+    if raw["schema_version"] != "campaign-suite-v1" or not isinstance(raw["cases"], list) or not raw["cases"]:
+        raise ValueError("Expected campaign-suite-v1 and a nonempty cases list.")
     cases: list[Case] = []
     case_ids: set[str] = set()
     for entry in raw["cases"]:

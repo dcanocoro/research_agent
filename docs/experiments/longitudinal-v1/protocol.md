@@ -8,11 +8,11 @@ No implementa M1/M2, variantes A0–A3, nuevos agentes, cambios de herramientas 
 
 | Escenario | Definición | Rúbrica | Secuencia de seis sesiones |
 |---|---|---|---|
-| S1 ASML | [YAML](../../../benchmarks/longitudinal-v1/S1/case.yaml) | [Revisión](../../../benchmarks/longitudinal-v1/S1/rubric.md) | Inicio, priorización, dos consultas, contradicción, precio, recuperación. |
-| S2 NVIDIA | [YAML](../../../benchmarks/longitudinal-v1/S2/case.yaml) | [Revisión](../../../benchmarks/longitudinal-v1/S2/rubric.md) | Inicio, ruido, hipótesis, deterioro, evidencia mixta, historia. |
-| S3 Ford | [YAML](../../../benchmarks/longitudinal-v1/S3/case.yaml) | [Revisión](../../../benchmarks/longitudinal-v1/S3/rubric.md) | Inicio, perímetro, ausencia documental, nueva fecha, premisa falsa, cierre. |
+| S1 ASML | [YAML](../../../campaigns/longitudinal-v1/S1/case.yaml) | [Revisión](../../../campaigns/longitudinal-v1/S1/rubric.md) | Inicio, priorización, dos consultas, contradicción, precio, recuperación. |
+| S2 NVIDIA | [YAML](../../../campaigns/longitudinal-v1/S2/case.yaml) | [Revisión](../../../campaigns/longitudinal-v1/S2/rubric.md) | Inicio, ruido, hipótesis, deterioro, evidencia mixta, historia. |
+| S3 Ford | [YAML](../../../campaigns/longitudinal-v1/S3/case.yaml) | [Revisión](../../../campaigns/longitudinal-v1/S3/rubric.md) | Inicio, perímetro, ausencia documental, nueva fecha, premisa falsa, cierre. |
 
-La [suite](../../../benchmarks/longitudinal-v1/suite.yaml) declara S1→S2→S3:
+La [suite](../../../campaigns/longitudinal-v1/suite.yaml) declara S1→S2→S3:
 18 sesiones. El piloto anterior se conserva como antecedente separado; no se cambian
 su catálogo ni sus capturas. Esta suite es la nueva propuesta para el encargo, sin
 alterar por ello la estrategia general o aceptar mecanismos.
@@ -51,7 +51,7 @@ Se reutiliza `benchmark-v1`, sin campos nuevos ni cambios de código. El control
 existente inicia procesos independientes por sesión, continúa archivos sin chat y
 conserva respuesta, herramientas y estados para revisión. Véase el
 [protocolo del controlador](../benchmark-pilot-v1/protocol.md) y la
-[operación](../../development.md#benchmark-piloto).
+[operación](../../development.md#campañas).
 
 El corpus queda fijado en archivos versionables; el runner congela los referenciados
 al preparar una campaña. Esto NO desactiva herramientas remotas: la restricción de

@@ -1,4 +1,4 @@
-schema_version: benchmark-v1
+schema_version: campaign-suite-v1
 id: longitudinal-v1
 cases:
 - S1/case.yaml

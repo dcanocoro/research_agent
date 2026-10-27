@@ -12,7 +12,7 @@ tokens se rechazan. No se cambia el modelo ni el wheel. La salida máxima del LL
 conserva su unidad de tokens; el consumo real disponible permanece en sus trazas.
 
 El [protocolo](../experiments/contexto-continuo-v1/protocol.md) posee escenario, límites,
-comandos y aceptación; sus [definiciones](../../benchmarks/contexto-continuo-v1) incluyen
+comandos y aceptación; sus [definiciones](../../campaigns/contexto-continuo-v1) incluyen
 mandato, petición, configuración y rúbrica externa. Una preparación offline reutiliza
 validadores, simulador y CLI existentes, crea estado nuevo y congela las entradas.
 No añade otro ciclo de ejecución ni modifica el lanzador longitudinal.

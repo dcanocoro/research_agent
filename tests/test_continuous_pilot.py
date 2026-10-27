@@ -13,7 +13,7 @@ from research_agent.simulation.state import Simulator, read, save
 from research_agent.simulation.tools import register_simulation
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
-from research_benchmarks import continuous as pilot
+from research_campaigns import continuous as pilot
 from research_agent.agent import AgentA
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 
@@ -30,7 +30,7 @@ def prepared_inputs(tmp_path, monkeypatch, request):
 
     monkeypatch.setattr(socket.socket, "connect", forbidden)
     definition = tmp_path / "definition"
-    shutil.copytree(Path(__file__).parents[1] / "benchmarks" / request.param, definition)
+    shutil.copytree(Path(__file__).parents[1] / "campaigns" / request.param, definition)
     config = read(definition / "scenario.json")
     config["universe"] = [{"symbol": "TEST", "name": "Synthetic fixture"}]
     config["price_review"] = {"status": "approved", "basis": "synthetic"}
@@ -55,20 +55,20 @@ def test_prepare_freezes_new_state_and_builds_luna_command_without_network(prepa
     sim = Simulator(root / "simulador")
     assert sim.state == {"date": "2023-01-01", "cash": "100000", "positions": {}, "orders": [], "notifications": []}
     assert source.read_bytes() == before == (root / "simulador/data.json").read_bytes()
-    assert list((root / "agente/ejecuciones").iterdir()) == []
-    assert Workspace(root / "agente/estado").snapshot() == {"agenda.md": ""}
-    command = read(root / "command.json")
+    assert list((root / "ejecuciones").iterdir()) == []
+    assert Workspace(root / "estado").snapshot() == {"agenda.md": ""}
+    command = read(root / "campaign.json")["command"]
     assert "--continuous" in command and "--context-bytes" in command and "--limits" not in command
     assert command[command.index("--max-calls") + 1] == "60"
-    report = read(root / "preflight.json")
+    report = read(root / "campaign.json")["preflight"]
     assert report["ready"] and not report["provider_checked"] and not report["campaign_executed"]
-    threshold = read(root / "scenario.json")["continuous"]["consolidation_threshold_bytes"]
+    threshold = read(root / "definicion/scenario.json")["continuous"]["consolidation_threshold_bytes"]
     assert command[command.index("--consolidation-bytes") + 1] == str(threshold)
     assert report["initial_budget"]["budgeted_bytes"] + report["startup_margin_bytes"] < threshold
-    assert read(root / "preparacion.json")["runtime"]["profile"]["model"] == "gpt-6-luna"
+    assert read(root / "campaign.json")["runtime"]["profile"]["model"] == "gpt-6-luna"
 
 
-@pytest.mark.parametrize("changed", ["mandato.md", "simulador/state.json", "command.json", "agente/ejecuciones/attempt.txt"])
+@pytest.mark.parametrize("changed", ["definicion/mandato.md", "simulador/state.json", "definicion/peticion.md", "ejecuciones/attempt.txt"])
 def test_check_rejects_changed_or_used_pilot(prepared_inputs, changed):
     root, definition, source, _ = prepared_inputs
     pilot.prepare(root, definition, source)
@@ -95,6 +95,7 @@ def test_prepare_rejects_wrong_data_or_profile_before_creating_destination(prepa
     with pytest.raises(ValueError, match="hash mismatch"):
         pilot.prepare(root, definition, source)
     assert not root.exists()
+
     config = read(definition / "scenario.json")
     config["dataset_sha256"] = pilot.digest(source)
     save(definition / "scenario.json", config)
@@ -104,6 +105,26 @@ def test_prepare_rejects_wrong_data_or_profile_before_creating_destination(prepa
     assert not root.exists()
 
 
+def test_run_integrates_preparation_launch_report_and_frozen_profile(prepared_inputs):
+    from support import fake_cli
+    root, definition, source, identity = prepared_inputs
+    def worker(command, out, err):
+        assert Path(command[command.index("--experiment") + 1]) == root
+        assert (root / "README.md").is_file()
+        result = fake_cli(command, out, err)
+        manifest = root / "ejecuciones/piloto/manifiesto.json"
+        value = read(manifest)
+        value["configuration"] = identity["profile"]
+        save(manifest, value)
+        return result
+    assert pilot.run_campaign(root, definition, source, launcher=worker) == 0
+    record = read(root / "campaign.json")
+    assert record["mode"] == "continuous" and record["status"] == "completed"
+    assert "--continuous" in record["sessions"][0]["command"]
+    assert not any((root / name).exists() for name in ("command.json", "preparacion.json", "preflight.json", "agente"))
+    assert "Respuesta" in (root / "README.md").read_text(encoding="utf-8")
+
+
 def test_fixed_corpus_pilot_offers_no_web_tool_but_legacy_default_keeps_it(prepared_inputs):
     root, definition, source, _ = prepared_inputs
     pilot.prepare(root, definition, source)
@@ -111,7 +132,7 @@ def test_fixed_corpus_pilot_offers_no_web_tool_but_legacy_default_keeps_it(prepa
     for allow_web in (False, True):
         simulator.config["allow_web"] = allow_web
         registry = ToolRegistry(RunRecorder(root / "runs"))
-        register_files(registry, Workspace(root / "agente/estado"))
+        register_files(registry, Workspace(root / "estado"))
         register_simulation(registry, simulator, None)
         assert ("search_web" in {tool.name for tool in registry.specs()}) is allow_web
     del simulator.config["allow_web"]
@@ -157,11 +178,11 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
                      configuration={**identity["profile"], "simulated_date": str(simulator.today)})
 
     monkeypatch.setattr("research_agent.cli.build_agent", build)
-    command = read(root / "command.json")[3:]
+    command = read(root / "campaign.json")["command"][3:]
     # V3 needs two research responses per window before crossing its higher threshold.
     command[command.index("--max-calls") + 1] = "14"
     assert main(command) == 0
-    run = next((root / "agente/ejecuciones").iterdir())
+    run = next((root / "ejecuciones").iterdir())
     events = [json.loads(line) for line in (run / "eventos.jsonl").read_text(encoding="utf-8").splitlines()]
     assert len([e for e in events if e["event"] == "lab.context.renewed"]) == 3
     assert all(e["budgeted_bytes"] <= 524288 for e in events if e["event"] == "lab.context.budget")

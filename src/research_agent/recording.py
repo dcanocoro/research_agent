@@ -75,33 +75,8 @@ class RunRecorder:
             raise ValueError("Invalid artifact reference.")
         bounded = Workspace(self.root, create=False)
         run = bounded.path(parts[1])
-        if (run / "ejecucion.json").exists():
-            from .archive import read_json, records, full_result
-            metadata = read_json(run / "ejecucion.json")["manifest"]
-            if metadata.get("workspace_fingerprint") != self.workspace_fingerprint:
-                raise FileNotFoundError("Artifact belongs to another workspace.")
-            entry = next((e for e in records(run) if e["kind"] == "tool" and e.get("artifact_name") == parts[2]), None)
-            if entry is None:
-                raise FileNotFoundError("Unknown archived tool result")
-            value = encoded(full_result(run.parents[3], entry))
-            if offset < 0 or not 1 <= max_bytes <= 32768:
-                raise ValueError("Invalid read window.")
-            end = min(offset + max_bytes, len(value))
-            for trim in range(4):
-                try:
-                    text = value[offset:max(offset, end - trim)].decode("utf-8")
-                    end = max(offset, end - trim)
-                    break
-                except UnicodeDecodeError:
-                    continue
-            else:
-                raise ValueError("File is not UTF-8, or offset is not a character boundary.")
-            return {"reference": reference, "path": parts[2], "offset": offset, "text": text,
-                    "next_offset": end if end < len(value) else None}
         bounded.path(f"{parts[1]}/trazas/{parts[2]}")
         manifest = run / "manifiesto.json"
-        if not manifest.exists():
-            manifest = run / "manifest.json"
         Workspace._check_links(manifest)
         metadata = json.loads(manifest.read_bytes())
         if metadata.get("workspace_fingerprint") != self.workspace_fingerprint:

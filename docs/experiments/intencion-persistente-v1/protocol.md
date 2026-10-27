@@ -1,5 +1,8 @@
 # Intención persistente v1
 
+> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
+> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+
 Estado: condición inicial de 18 llamadas preparada sin ejecutar; **ampliación real
 completada en ambas condiciones**, con [hallazgos preliminares](findings-amplio.md). Encargo
 aceptado el 2026-10-24. La [decisión experimental](../../decisions/0003-intencion-persistente.md)
@@ -8,7 +11,7 @@ registra la elección; no acredita una mejora semántica.
 ## Ampliación de presupuesto autorizada — 2026-10-24
 
 Después de preparar la condición de 18 llamadas, el usuario autorizó ejecutar ambas
-condiciones con más recursos. El [escenario ampliado](../../../benchmarks/intencion-persistente-v1/scenario-amplio.yaml)
+condiciones con más recursos. El [escenario ampliado](../../../campaigns/intencion-persistente-v1/scenario-amplio.yaml)
 conserva universo, mensajes, fechas, datos y restricciones; cambia solo ID y límites:
 60 llamadas al modelo, 90 herramientas, 1200 segundos, reserva temporal de 90 segundos
 y contexto serializado de 1048576 bytes por activación. El perfil permanece OpenAI
@@ -36,7 +39,7 @@ de interpretación; no atribuyen calidad financiera al cierre operativo.
 investigaciones, resolver incertidumbres y revisar prioridades entre procesos?
 Se contrasta el paquete mandato + agenda + instrucciones; no sus contribuciones aisladas.
 
-El [escenario](../../../benchmarks/intencion-persistente-v1/scenario.yaml) conserva
+El [escenario](../../../campaigns/intencion-persistente-v1/scenario.yaml) conserva
 las 50 identidades, 100.000 USD, máximo de diez posiciones, disponibilidad anual
 estimada de 120 días y restricciones del escenario histórico revisado. Se acorta a
 enero–junio de 2023: seis activaciones mensuales; mensajes auténticos en enero y abril,

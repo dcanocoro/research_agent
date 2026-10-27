@@ -28,7 +28,7 @@ Con el entorno y `.env` preparados según [desarrollo e instalación](docs/devel
 ```powershell
 .\.venv\Scripts\python.exe -m research_agent "Investiga NVIDIA" --experiment ./artifacts/nvidia-conservacion --new --run-name investigacion-inicial
 .\.venv\Scripts\python.exe -m research_agent "Continúa desde lo conservado" --experiment ./artifacts/nvidia-conservacion --continue --run-name revision-documental
-.\.venv\Scripts\python.exe -m research_benchmarks validate benchmarks/longitudinal-v1
+.\.venv\Scripts\python.exe -m research_campaigns validate campaigns/longitudinal-v1
 ```
 
 Los comandos reales pueden consumir servicios LLM, Tavily y PostgreSQL según la tarea.

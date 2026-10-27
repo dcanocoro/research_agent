@@ -52,8 +52,8 @@ reales. Su controlador prepara archivos, invoca la CLI y recoge evidencia; no ca
 el ciclo de A ni usa jueces automáticos. Tiene verificación local con servicios
 simulados, sin campaña real. Web y PostgreSQL siguen siendo variables externas.
 
-Las campañas actuales usan `python -m research_benchmarks`, separado del núcleo,
-con las definiciones de `benchmarks/`. La integración local con Experience Audit y
+Las campañas actuales usan `python -m research_campaigns`, separado del núcleo,
+con las definiciones de `campaigns/`. La integración local con Experience Audit y
 sus escenarios se retiraron el 2026-10-24. Los checks mecánicos no evalúan por sí
 solos la veracidad o calidad financiera.
 

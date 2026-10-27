@@ -10,7 +10,7 @@ dist/
 .pytest_cache/
 .mypy_cache/
 
-# Preparación y capturas locales del piloto continuo; definiciones en benchmarks/.
+# Preparación y capturas locales del piloto continuo; definiciones en campaigns/.
 /artifacts/contexto-continuo-v1/
 /artifacts/contexto-continuo-v3/
 

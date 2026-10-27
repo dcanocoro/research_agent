@@ -1,5 +1,8 @@
 # Análisis financiero longitudinal v1
 
+> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
+> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+
 Estado: implementación y verificaciones locales; contraste y aceptación semántica
 **sin ejecutar**. Encargo aprobado el 2026-10-25. No acredita calidad financiera ni
 una arquitectura elegida para FinMate.
@@ -24,13 +27,13 @@ son referencias textuales con ruta e ID, sin grafo, parser ni propagación autom
 ## Condiciones congeladas
 
 - **Control:** los tres textos efectivos de la campaña deliberativa ampliada, preservados
-  en [control](../../../benchmarks/analisis-financiero-v1/control).
+  en [control](../../../campaigns/analisis-financiero-v1/control).
 - **Intervención:** los tres prompts nuevos por defecto del paquete, copiados al crear
   una campaña nueva. Congelar revisión de código y sus hashes antes de ejecutar ambos brazos.
 - Ambos usan `--condition deliberative`, empiezan con estados y carteras nuevos y no
   comparten memoria. La campaña anterior es antecedente, no el brazo control futuro.
 
-La [procedencia](../../../benchmarks/analisis-financiero-v1/control-provenance.json)
+La [procedencia](../../../campaigns/analisis-financiero-v1/control-provenance.json)
 registra hashes y seis manifiestos locales verificados: todos contienen el mismo texto
 efectivo y coinciden con los archivos históricos leídos como UTF-8. Las diferencias de
 hash inicialmente observadas entre algunas plantillas y copias eran de finales de línea,
@@ -38,7 +41,7 @@ no de contenido efectivo. Las copias versionadas contienen el texto exacto de lo
 codificado UTF-8/LF, sin payloads privados. La evidencia original completa sigue local e
 ignorada; los textos de control y sus hashes sí son portables.
 
-El [escenario](../../../benchmarks/analisis-financiero-v1/scenario.yaml) deriva del
+El [escenario](../../../campaigns/analisis-financiero-v1/scenario.yaml) deriva del
 ampliado anterior cambiando únicamente su ID: enero–junio de 2023, seis activaciones,
 mismos mensajes, 50 empresas, 100.000 USD ficticios, máximo diez posiciones y lag anual
 estimado de 120 días. Límites por activación: 60 llamadas, 90 herramientas, 1200 segundos,
@@ -87,7 +90,7 @@ local; la web sigue viva y sus resultados pueden diferir entre condiciones.
 
 ## Pruebas pequeñas y aceptación semántica pendiente
 
-Los [casos preparados](../../../benchmarks/analisis-financiero-v1/semantic-cases.json)
+Los [casos preparados](../../../campaigns/analisis-financiero-v1/semantic-cases.json)
 son un corpus sintético por etapas, no un schema ejecutable del controlador. No se ha
 implementado otro runner. Una prueba posterior requerirá un transporte controlado:
 publicar exclusivamente las fuentes de la etapa actual, impedir web y datos externos,

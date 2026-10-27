@@ -1,7 +1,6 @@
-"""Offline preparation of the manual continuous pilot; never launches providers."""
+"""Prepare a fixed-date pilot offline, then launch the native continuous agent."""
 from __future__ import annotations
 
-import argparse
 from dataclasses import asdict
 from importlib.metadata import distribution
 import json
@@ -14,14 +13,17 @@ from research_agent.agent import AgentA
 from research_agent.context_budget import ByteCounter
 from research_agent.continuous import POLICY, context_seed
 from research_agent.contracts import AgentRequest, ContinuousConfig
-from research_agent.experiments import disjoint, prepare_experiment, validate_mandate
+from research_agent.experiments import disjoint, validate_mandate
 from research_agent.integrations.file_tools import register_files
 from research_agent.recording import RunRecorder
-from research_agent.simulation.state import Simulator, read, save
+from research_agent.simulation.state import Simulator, read
 from research_agent.simulation.tools import activation_message, register_simulation
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
-from .longitudinal import digest, freeze_files, preflight, runtime_identity
+from .longitudinal import preflight, runtime_identity
+from .storage import create, load, digest, freeze_files
+from .report import persist
+from .runner import launch, execute
 
 
 def installed_identity() -> dict[str, Any]:
@@ -34,20 +36,34 @@ def installed_identity() -> dict[str, Any]:
 
 def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
     """Use the runtime seed and schemas without constructing a client or DB engine."""
-    space = Workspace(root / "agente/estado", create=False)
-    registry = ToolRegistry(RunRecorder(root / "agente/ejecuciones"))
+    space = Workspace(root / "estado", create=False)
+    registry = ToolRegistry(RunRecorder(root / "ejecuciones"))
     register_files(registry, space)
     simulator = Simulator(root / "simulador")
     register_simulation(registry, simulator, None)  # Web is disabled in this pilot.
     agent = AgentA(cast(Any, None), registry, space, registry.recorder,
                    configuration={**profile, "simulated_date": str(simulator.today)})
-    message = activation_message(simulator, (root / "peticion.md").read_text(encoding="utf-8"), "usuario")
-    request = AgentRequest(message, "agente", "cli", mandate=(root / "mandato.md").read_text(encoding="utf-8"),
+    message = activation_message(simulator, (root / "definicion/peticion.md").read_text(encoding="utf-8"), "usuario")
+    request = AgentRequest(message, "agente", "cli", mandate=(root / "definicion/mandato.md").read_text(encoding="utf-8"),
                            metadata={"simulated_date": str(simulator.today), "activation_kind": "usuario"})
-    paths = sorted((root / "agente/instrucciones").glob("*.md"), key=lambda p: (p.name != "agente.md", p.name))
+    paths = sorted((root / "instrucciones").glob("*.md"), key=lambda p: (p.name != "agente.md", p.name))
     system = "\n\n".join(p.read_text(encoding="utf-8") for p in paths) + "\n\n" + POLICY
     return ByteCounter().measure(system, context_seed(agent, request, "initial"), registry.specs(), profile["max_output_tokens"])
 
+
+
+def validate(definition: Path) -> dict[str, Any]:
+    config = read(definition / "scenario.json")
+    if config["schema_version"] != "continuous-pilot-v1" or config["allow_web"] is not False or config["start"] != config["end"]:
+        raise ValueError("Expected fixed-date continuous pilot with web disabled.")
+    continuous = ContinuousConfig(**config["continuous"])
+    if any(value is None for value in (continuous.max_llm_calls, continuous.max_tool_calls, continuous.timeout_seconds)):
+        raise ValueError("The pilot requires finite global call, tool and time limits.")
+    validate_mandate((definition / "mandato.md").read_text(encoding="utf-8"))
+    for name in ("peticion.md", "rubrica.md"):
+        if not (definition / name).read_text(encoding="utf-8").strip():
+            raise ValueError(f"Nonempty {name} required.")
+    return config
 
 def prepare(root: Path, definition: Path, source_data: Path) -> None:
     root, definition, source_data = root.absolute(), definition.absolute(), source_data.absolute()
@@ -55,12 +71,8 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
         Workspace._check_links(path)
     disjoint(root, definition)
     disjoint(root, source_data)
-    config = read(definition / "scenario.json")
-    if config["schema_version"] != "continuous-pilot-v1" or config["allow_web"] is not False or config["start"] != config["end"]:
-        raise ValueError("Expected fixed-date continuous pilot with web disabled.")
+    config = validate(definition)
     continuous = ContinuousConfig(**config["continuous"])
-    if any(value is None for value in (continuous.max_llm_calls, continuous.max_tool_calls, continuous.timeout_seconds)):
-        raise ValueError("The pilot requires finite global call, tool and time limits.")
     if digest(source_data) != config["dataset_sha256"]:
         raise ValueError("Frozen source dataset hash mismatch.")
     data = read(source_data)
@@ -71,63 +83,55 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
     if any(identity["profile"].get(k) != v for k, v in config["expected_profile"].items()):
         raise ValueError("Configured model/profile differs from scenario; no automatic substitution.")
     validate_mandate((definition / "mandato.md").read_text(encoding="utf-8"))
-    root.mkdir(parents=True, exist_ok=False)
-    for name in ("scenario.json", "mandato.md", "peticion.md", "rubrica.md"):
-        shutil.copyfile(definition / name, root / name)
-    prepare_experiment(root / "agente", new=True, deliberative=True)
+    record = create(root, definition, "continuous", config["id"],
+                    [definition / name for name in ("scenario.json", "mandato.md", "peticion.md", "rubrica.md")],
+                    deliberative=True)
+    persist(root, record)
     Simulator.create(root / "simulador", config, data)
     # Preserve the original bytes as well as their semantic content and provenance.
     shutil.copyfile(source_data, root / "simulador/data.json")
     size = initial_budget(root, identity["profile"])
     if size["budgeted_bytes"] + 2048 >= continuous.consolidation_threshold_bytes:
         raise ValueError("Initial protected context plus startup margin does not fit below threshold.")
-    save(root / "preflight.json", {**report, "initial_budget": size, "startup_margin_bytes": 2048,
-                                   "provider_checked": False, "campaign_executed": False})
-    command = [sys.executable, "-m", "research_agent", (root / "peticion.md").read_text(encoding="utf-8"),
-               "--experiment", str(root / "agente"), "--continue", "--run-name", "piloto",
-               "--simulation", str(root / "simulador"), "--mandate", str(root / "mandato.md"), "--continuous",
+    record.update(runtime=identity, limits=asdict(continuous), condition="deliberative",
+                  preflight={**report, "initial_budget": size, "startup_margin_bytes": 2048,
+                             "provider_checked": False, "campaign_executed": False})
+    command = [sys.executable, "-m", "research_agent", (root / "definicion/peticion.md").read_text(encoding="utf-8"),
+               "--experiment", str(root), "--continue", "--run-name", "piloto",
+               "--simulation", str(root / "simulador"), "--mandate", str(root / "definicion/mandato.md"), "--continuous",
                "--context-bytes", str(continuous.max_context_bytes),
                "--consolidation-bytes", str(continuous.consolidation_threshold_bytes),
                "--max-calls", str(continuous.max_llm_calls), "--max-tools", str(continuous.max_tool_calls),
                "--continuous-timeout-seconds", str(continuous.timeout_seconds)]
-    save(root / "command.json", command)
-    save(root / "preparacion.json", {"runtime": identity, "source_dataset_sha256": digest(source_data),
-                                     "byte_policy": ByteCounter().metadata, "continuous": asdict(continuous),
-                                     "files": freeze_files(root)})
+    record.update(command=command, byte_policy=ByteCounter().metadata,
+                  files={path.relative_to(root).as_posix(): digest(path)
+                         for name in ("definicion", "instrucciones", "estado", "simulador")
+                         for path in (root / name).rglob("*") if path.is_file()})
+    persist(root, record)
 
 
 def check(root: Path) -> None:
     """Refuse changed inputs/runtime or reuse of an already attempted pilot."""
     root = root.absolute()
     Workspace._check_links(root)
-    manifest = read(root / "preparacion.json")
+    manifest = load(root)
     actual = freeze_files(root)
-    actual.pop("preparacion.json", None)
+    actual.pop("campaign.json", None)
+    actual.pop("README.md", None)
+    actual.pop(".gitignore", None)
     if actual != manifest["files"]:
         raise ValueError("Prepared pilot changed or has already run; preserve it and prepare a fresh destination.")
     if installed_identity() != manifest["runtime"]:
         raise ValueError("Runtime changed after preparation; prepare a fresh destination.")
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    sub = parser.add_subparsers(dest="operation", required=True)
-    create = sub.add_parser("prepare")
-    create.add_argument("output", type=Path)
-    create.add_argument("--definition", type=Path, default=Path("benchmarks/contexto-continuo-v1"))
-    create.add_argument("--source-data", type=Path, required=True)
-    verify = sub.add_parser("check")
-    verify.add_argument("output", type=Path)
-    args = parser.parse_args(argv)
-    try:
-        if args.operation == "prepare":
-            prepare(args.output, args.definition, args.source_data)
-        check(args.output)
-    except (ValueError, OSError, KeyError) as exc:
-        parser.exit(2, f"continuous pilot: {exc}\n")
-    print(f"READY (offline; provider not checked): {args.output.absolute()}")
-    return 0
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+def run_campaign(root: Path, definition: Path, source_data: Path, *, launcher=launch) -> int:
+    root = root.absolute()
+    prepare(root, definition, source_data)
+    check(root)
+    record = load(root)
+    session = {"id": "piloto", "message": (root / "definicion/peticion.md").read_text(encoding="utf-8")}
+    record["sessions"].append(session)
+    execute(root, root, record, session, record.pop("command"), launcher=launcher)
+    return 0 if session["status"] == "completed" else 1

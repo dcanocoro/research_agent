@@ -1,7 +1,7 @@
 # Registro de experimentos y hallazgos
 
 La [metodología](../experiments.md) define cómo comparar y la
-[estrategia](../strategy.md) establece la prioridad. Las definiciones ejecutables de [benchmarks](../../benchmarks)
+[estrategia](../strategy.md) establece la prioridad. Las definiciones ejecutables de [benchmarks](../../campaigns)
 son estímulos y rúbricas, no campañas realizadas ni resultados semánticos.
 
 Crear una carpeta `E001-nombre-breve/` cuando exista un contraste concreto:
@@ -29,7 +29,7 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 | Contexto continuo v1 | ¿A conserva intención y avanza a través de reconstrucciones con ventana acotada? | [Protocolo](contexto-continuo-v1/protocol.md) y [hallazgos](contexto-continuo-v1/findings.md); original y repetición ejecutados, bloqueo técnico corregido; continuidad semántica parcial. [V3](contexto-continuo-v1/protocol.md#v3--autorregulación-mediante-instrucciones-y-renovación-menos-frecuente): instrucciones reforzadas y umbral mayor, sin campaña ejecutada. |
 | Análisis financiero v1 | ¿Metodología y conocimiento Markdown mejoran el análisis acumulativo? | [Protocolo](analisis-financiero-v1/protocol.md) y [rúbrica](analisis-financiero-v1/rubric.md); implementación local, contraste y aceptación semántica sin ejecutar. |
 | Intención persistente v1 | ¿Mandato y agenda ayudan a mantener intención y producir progreso? | [Protocolo](intencion-persistente-v1/protocol.md); condición ampliada de 60 llamadas: seis activaciones completadas por condición. [Hallazgos preliminares](intencion-persistente-v1/findings-amplio.md); condición de 18 llamadas sin ejecutar. |
-| Colaboración histórica v1 | ¿Cómo colabora A durante meses con iniciativa y cartera ficticia? | [Protocolo](colaboracion-historica-v1/protocol.md); 24 activaciones completadas. [Informe local](../../artifacts/campana-historica-completa-v1/informe-ejecucion.md), ignorado y no portable; web temporalmente contaminada, sin prueba de alfa. |
+| Colaboración histórica v1 | ¿Cómo colabora A durante meses con iniciativa y cartera ficticia? | [Protocolo](colaboracion-historica-v1/protocol.md); 24 activaciones completadas. Informe local (`../../artifacts/campana-historica-completa-v1/informe-ejecucion.md`; no disponible en este checkout), ignorado y no portable; web temporalmente contaminada, sin prueba de alfa. |
 | Longitudinal v1 | ¿Cómo combina A investigación, revisión y memoria en tres historias exigentes? | Tres escenarios de seis sesiones generados; [protocolo](longitudinal-v1/protocol.md). Corpus sintético y rúbricas previas; sin ejecutar. |
 | Benchmark piloto v1 | ¿Qué hace A ante contradicción, continuidad, ruido y fuentes fallidas? | Cuatro casos preparados; [protocolo](benchmark-pilot-v1/protocol.md). Verificación local con servicios simulados; sin campaña real ni aceptación semántica. |
 | Baseline NVIDIA 2026-10-18 | ¿Qué dejó la primera ejecución del estado de archivos? | Observación exploratoria concluida; [hallazgos retrospectivos](baseline-nvidia-2026-10-18/findings.md). Sin protocolo previo ni control. |

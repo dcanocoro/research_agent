@@ -28,7 +28,7 @@ No se portan SQL, expedientes estructurados, modos experimentales, callbacks de
 captura de conocimiento ni configuración de ejecución de feature/sql. Prompts,
 límites, schemas expuestos, corpus, rúbricas y estrategia permanecen intactos.
 La [arquitectura](../architecture.md#organización-del-código) y la
-[operación](../development.md#benchmark-piloto) describen el resultado.
+[operación](../development.md#campañas) describen el resultado.
 
 ## Verificación
 
