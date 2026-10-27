@@ -52,9 +52,10 @@ def register_simulation(registry: ToolRegistry, simulator: Simulator, search: An
     registry.register("read_metric_trend", "Historical derived trends are unavailable; use observations and calculate.",
                       {"symbol": string, "metric": string, "years": {"type": "integer", "enum": [3, 5]}},
                       read_metric_trend, execution="inline")
-    registry.register("search_web", "Search web up to simulated date; snippets only.",
-                      {"query": {"type": "string", "minLength": 1, "maxLength": 4000}},
-                      search_web, execution="async", material=True)
+    if simulator.config.get("allow_web", True):
+        registry.register("search_web", "Search web up to simulated date; snippets only.",
+                          {"query": {"type": "string", "minLength": 1, "maxLength": 4000}},
+                          search_web, execution="async", material=True)
     for name, description, properties, function in (
         ("portfolio_get", "Read simulated portfolio and reserved resources.", {}, simulator.get),
         ("portfolio_buy", "Reserve USD for purchase at next available close strictly after today.",

@@ -6,11 +6,22 @@
 ## Encargo vigente: bucle continuo con contexto acotado
 
 El 2026-10-26 el usuario aprobó implementar el [modo continuo](experiments/contexto-continuo-v1/protocol.md)
-de A con mandato persistente, presupuesto local en tokens y reconstrucción desde archivos.
+de A con mandato persistente, presupuesto local inicialmente en tokens y reconstrucción desde archivos.
 El primer contraste mantiene fija la fecha simulada y no cambia el calendario longitudinal.
 El alcance es implementación y verificación local con clientes simulados; no autoriza
 proveedores ni campañas reales. La conservación semántica y la selección de trabajo siguen
 pendientes de observar. No elige arquitectura definitiva para FinMate.
+
+El encargo posterior del 2026-10-26 sustituye el tokenizer por tamaño UTF-8 y prepara
+un piloto manual con mandato, dataset local congelado, rúbrica y límites. Autoriza
+implementación y preparación local. El piloto se ejecutó posteriormente de forma manual.
+Tras revisar sus resultados, el usuario autorizó el 2026-10-26 corregir la entrega de
+resultados al cruzar el umbral y repetir la campaña con las mismas entradas y estado
+nuevo. El [protocolo](experiments/contexto-continuo-v1/protocol.md) conserva el contraste;
+ambos intentos alcanzaron 60 llamadas y seis renovaciones. Los
+[hallazgos](experiments/contexto-continuo-v1/findings.md) confirman la desaparición de la
+redirección adicional de lecturas, con continuidad parcial y problemas de revisión entre
+documentos. No se autoriza por ello una ejecución indefinida ni aceptación semántica.
 
 ## Antecedente: metodología financiera longitudinal
 

@@ -5,6 +5,10 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-26 — Entrega de resultados al cruzar el umbral](2026-10-26-context-delivery.md):
+  corrección mínima, pruebas de paginación y repetición real autorizada del piloto.
+- [2026-10-26 — Presupuesto en bytes y piloto manual](2026-10-26-continuous-pilot.md):
+  retirada del tokenizer, escenario congelado y preparación offline; proveedor sin ejecutar.
 - [2026-10-26 — Bucle continuo con contexto acotado](2026-10-26-continuous-context.md):
   modo opcional, conteo local en tokens, reconstrucción y pruebas sin proveedores.
 - [2026-10-25 — Metodología financiera longitudinal](2026-10-25-financial-methodology.md):

@@ -32,6 +32,7 @@ Reconoce qué preguntas pueden avanzar en paralelo y cuáles requieren un fundam
 previo. Distingue requisitos esenciales de datos que solo mejorarían la confianza.
 Valora continuar una investigación frente a explorar una alternativa material.
 
+
 ## 4. Dependencias y bloqueos
 
 Distingue falta de evidencia investigable, razonamiento desarrollable con lo disponible,

@@ -12,7 +12,7 @@ from observability_context import bind_interaction_context, interaction_context_
 from runtime_contracts.execution import RunContext, bind_run_context
 from runtime_contracts.llm import ConversationContext, ConversationMessage, ToolResult
 
-from .context_budget import TokenCounter, ContextConfigurationError
+from .context_budget import ByteCounter, ContextConfigurationError
 from .contracts import AgentRequest, AgentResult
 from .experiments import deliberative_context
 from .recording import encoded
@@ -35,6 +35,19 @@ CONSOLIDATE = (
     "attempts, blockers and next intentions in existing files and agenda.md. You have at most four calls. "
     "A text response ends consolidation and starts a fresh context, not a new mandate. Writing is optional."
 )
+
+
+def context_seed(agent: AgentA, request: AgentRequest, cause: str) -> list[Any]:
+    """Build the protected context, also available to offline campaign preparation."""
+    assert request.mandate is not None
+    current = deliberative_context(agent.workspace, request.mandate)
+    index = agent.workspace.path("indice.md")
+    memory = agent.workspace.read_file("indice.md", max_bytes=8192) if index.exists() else {"text": ""}
+    return [ConversationMessage("user", "Persistent authentic user mandate:\n\n" + current["mandate"]["text"]),
+            ConversationMessage("user", request.message),
+            ConversationContext({"memory_index": memory, "deliberative_agenda": current["agenda"],
+                                 "runtime": {"cause": cause, "metadata": request.metadata, "policy": POLICY,
+                                             "configuration": agent.configuration.get("simulated_date")}})]
 
 
 async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
@@ -60,8 +73,8 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
     captured: list[dict[str, Any]] = []
     stack = ExitStack()
     before_files: dict[str, str] = {}
-    before_tokens = 0
-    counter: TokenCounter
+    before_bytes = 0
+    counter: ByteCounter
     output_tokens = 0
     assert agent.recorder.current is not None
     transcript = agent.recorder.current / "conversacion-completa.jsonl"
@@ -73,15 +86,10 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
         agent.history.append(item)
 
     def seed(cause: str) -> None:
-        current = deliberative_context(agent.workspace, mandate)
+        items = context_seed(agent, request, cause)
         agent.history = []
-        index = agent.workspace.path("indice.md")
-        memory = agent.workspace.read_file("indice.md", max_bytes=8192) if index.exists() else {"text": ""}
-        append(ConversationMessage("user", "Persistent authentic user mandate:\n\n" + current["mandate"]["text"]))
-        append(ConversationMessage("user", request.message))
-        append(ConversationContext({"memory_index": memory, "deliberative_agenda": current["agenda"],
-                                    "runtime": {"cause": cause, "metadata": request.metadata,
-                                                "policy": POLICY, "configuration": agent.configuration.get("simulated_date")}}))
+        for item in items:
+            append(item)
 
     def budget() -> dict[str, Any]:
         return {"phase": phase, "llm_calls_used": calls, "tool_calls_used": tool_calls,
@@ -101,7 +109,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
         try:
             seed("context_reconstructed")
             after = measure()
-            if after["budgeted_tokens"] >= config.consolidation_threshold:
+            if after["budgeted_bytes"] >= config.consolidation_threshold_bytes:
                 raise ValueError("Reconstructed context exceeds consolidation threshold.")
         except BaseException:
             agent.history = previous
@@ -109,7 +117,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
         after_files = agent.workspace.snapshot()
         changed = [p for p in sorted(before_files.keys() | after_files.keys())
                    if before_files.get(p) != after_files.get(p)]
-        agent.recorder.event("lab.context.renewed", before_tokens=before_tokens, **after,
+        agent.recorder.event("lab.context.renewed", before_bytes=before_bytes, **after,
                              changed_files=changed, **budget())
         phase, consolidation_calls = "research", 0
 
@@ -121,13 +129,13 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
             agent.recorder.text("peticion.md", request.message)
             agent.recorder.save("estado-inicial.json", agent.recorder.snapshot(agent.workspace))
             agent.recorder.event("lab.run.started", continuous=asdict(config), **request.metadata)
-            counter = TokenCounter(str(agent.configuration.get("provider", "")), str(agent.configuration.get("model", "")))
+            counter = ByteCounter()
             output_tokens = agent.configuration.get("max_output_tokens", 0)
             if not isinstance(output_tokens, int) or output_tokens <= 0:
                 raise ContextConfigurationError("invalid_output_token_reserve")
             agent.recorder.event("lab.context.counter", **counter.metadata, policy=POLICY)
             seed("initial")
-            if measure()["budgeted_tokens"] >= config.consolidation_threshold:
+            if measure()["budgeted_bytes"] >= config.consolidation_threshold_bytes:
                 raise ContextConfigurationError("initial_context_too_large")
             while True:
                 if config.max_llm_calls is not None and calls >= config.max_llm_calls:
@@ -141,8 +149,8 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                     break
                 append(ConversationContext({"execution_budget": budget()}))
                 size = measure()
-                if phase == "research" and size["budgeted_tokens"] >= config.consolidation_threshold:
-                    before_tokens = size["budgeted_tokens"]
+                if phase == "research" and size["budgeted_bytes"] >= config.consolidation_threshold_bytes:
+                    before_bytes = size["budgeted_bytes"]
                     before_files = agent.workspace.snapshot()
                     phase = "consolidation"
                     append(ConversationContext({"runtime_notice": CONSOLIDATE}))
@@ -150,7 +158,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                     agent.recorder.event("lab.phase.changed", phase=phase, cause="context", **size)
                 allowed = agent.tools.consolidation_tools if phase == "consolidation" else None
                 size = measure(allowed=allowed)
-                if size["budgeted_tokens"] > config.max_context_tokens:
+                if size["budgeted_bytes"] > config.max_context_bytes:
                     reason = "context_exchange_too_large"
                     break
                 agent.recorder.event("lab.context.budget", **size, **budget())
@@ -176,8 +184,9 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                         reason = "consolidation_failed"
                         break
                     # Keep complete result on disk; a small reference can replace its delivery.
-                    delivery_limit = config.max_context_tokens if phase == "consolidation" else config.consolidation_threshold
-                    if measure([*agent.history, result], allowed)["budgeted_tokens"] > delivery_limit:
+                    # Crossing the renewal threshold must deliver the evidence first;
+                    # the next iteration enters consolidation. Only the hard cap redirects.
+                    if measure([*agent.history, result], allowed)["budgeted_bytes"] > config.max_context_bytes:
                         reference = agent.recorder.artifact(result.payload)
                         result = ToolResult(result.call_id, result.name, {"ok": result.payload.get("ok", False),
                             "artifact_ref": reference, "limited": True,

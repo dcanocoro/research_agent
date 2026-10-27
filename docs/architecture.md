@@ -281,23 +281,31 @@ Las respuestas son registros intermedios. El runtime añade una continuación t�
 mediante `ConversationContext`, separada de las peticiones humanas. El calendario no
 avanza: las órdenes simuladas permanecen pendientes. El modo no introduce espera autónoma.
 
-`context_budget.TokenCounter` identifica el encoding mediante `tiktoken==0.14.0`, sin
-fallback para proveedores/modelos no reconocidos. Tokeniza la representación JSON de
-las instrucciones, items tipados y herramientas, incluidas continuaciones opacas.
-El máximo configurable de 32.000 incluye entrada estimada con margen del 10 % y la
-salida máxima efectiva del perfil. El umbral inicial es 24.000. Es una estimación
-local auditable, no el conteo exacto del payload del proveedor ni una garantía del
-consumo remoto; el uso real disponible permanece en las trazas compartidas.
-La [documentación oficial de conteo](https://developers.openai.com/api/docs/guides/token-counting)
-distingue los tokenizers locales del conteo exacto del endpoint; este modo no llama a ese endpoint.
+`context_budget.ByteCounter` mide los bytes UTF-8 de la representación JSON tipada
+que contiene instrucciones, historial, herramientas y continuaciones opacas. No requiere
+mapping de modelo, tiktoken ni descarga de tablas. El presupuesto es
+`ceil(input_bytes * 1.10) + max_output_tokens * 8`: el factor de salida es una reserva
+heurística en bytes, no una conversión garantizada entre bytes y tokens. La salida
+máxima del proveedor sigue expresada en tokens. Los eventos distinguen `input_bytes`,
+`reserved_output_bytes` y `budgeted_bytes`; el consumo real disponible sigue en las
+trazas del proveedor, sin inventar valores ausentes.
+
+`ContinuousConfig.max_context_bytes` vale 524288 por defecto y
+`consolidation_threshold_bytes` 262144; ambos comparan el presupuesto con margen y
+reserva, no solo el texto. Son límites locales de tamaño, no una garantía de caber en
+la ventana remota. El piloto usa umbral 196608 y verifica que la semilla protegida
+quepa antes de preparar el comando. Las opciones antiguas en tokens se rechazan;
+las capturas históricas conservan sus unidades originales.
 
 Al llegar al umbral se ofrecen hasta cuatro llamadas de consolidación con herramientas
 de persistencia. Cada una descuenta recursos globales. Después se reconstruye con
 instrucciones, mandato, petición inicial, fecha/metadatos, índice, agenda y presupuesto
 actual. No se conserva cola ni se genera otro resumen. Escrituras opcionales; si falla
 la consolidación, se pausa sin retirar la historia activa. Se rechazan arranques o
-reconstrucciones cuyo contexto protegido no quepa. Un resultado excesivo se entrega
-por referencia paginable conservando el original; nunca se elimina una llamada aislada
+reconstrucciones cuyo contexto protegido no quepa. La entrega de un resultado se compara
+con el máximo de contexto, en ambas fases; superar solo el umbral conserva el contenido
+y activa consolidación en la siguiente iteración. Un resultado que exceda el máximo se
+entrega por referencia paginable conservando el original; nunca se elimina una llamada aislada
 ni se corta una continuación. Si el intercambio no cabe, se pausa sin enviarlo.
 
 `conversacion-completa.jsonl` conserva incrementalmente cada item por número de contexto;
@@ -313,3 +321,9 @@ arranca desde archivos y simulador actuales, con nuevo presupuesto por ejecució
 restaura chat ni repite operaciones. Un cierre abrupto no garantiza que lo no escrito
 en memoria se pueda recuperar. La ventana está acotada; el volumen del archivo y las
 listas de captura/eventos en memoria de proceso no tienen un límite total en esta versión.
+
+El piloto de [contexto continuo](experiments/contexto-continuo-v1/protocol.md) se prepara
+sin clientes ni bases con `research_benchmarks.continuous`. Congela mandato, instrucciones,
+perfil, fuentes instaladas, dataset y estado nuevo, y proporciona una comprobación previa
+al comando manual. No cambia el lanzador longitudinal. En simulación, `allow_web: false`
+omite `search_web`; su ausencia conserva el comportamiento anterior con web.

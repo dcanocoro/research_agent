@@ -289,10 +289,8 @@ repetida en el entorno actual. Registrar qué se comprobó y qué quedó fuera.
 ## Ejecutar el modo continuo experimental
 
 El [protocolo](experiments/contexto-continuo-v1/protocol.md) define alcance y aceptación.
-Instalar las dependencias locales actualizadas (incluido `tiktoken==0.14.0`) sin cambiar
-el wheel compartido. El tokenizer puede necesitar descargar su tabla verificada por hash
-al cargarlo por primera vez; después el conteo es local. No se consulta el endpoint de
-conteo ni se llama a un modelo para contar tokens.
+Actualizar la instalación editable desde el pyproject vigente. El presupuesto continuo
+usa bytes UTF-8 sin tokenizer ni dependencias nuevas; no cambia el wheel compartido.
 
 Ejemplo de operación para una ejecución futura autorizada, no un check documental:
 
@@ -301,7 +299,7 @@ Ejemplo de operación para una ejecución futura autorizada, no un check documen
 .\.venv\Scripts\python.exe -m research_agent "Retoma desde lo conservado" --experiment ./artifacts/continuo --continue --run-name reanudacion --continuous --mandate ./mandato.md --max-calls 60
 ```
 
-`--context-tokens` (32.000) y `--consolidation-tokens` (24.000) controlan la ventana;
+`--context-bytes` (524288) y `--consolidation-bytes` (262144) controlan la ventana;
 `--max-calls`, `--max-tools` y `--continuous-timeout-seconds` son límites globales
 opcionales por ejecución. Sin ellos continúa hasta interrupción o error. `--timeout-seconds`
 conserva un timeout finito por operación (300 segundos por defecto). No se admite
@@ -314,10 +312,17 @@ se conserva su fecha, no se ejecuta el calendario longitudinal y las órdenes no
 por renovar contexto. Sin simulador, siguen disponibles las herramientas habituales;
 eso no constituye un escenario histórico congelado.
 
-El modo requiere un mandato externo y un modelo reconocido por el tokenizer; no sustituye
-el modelo configurado. En el entorno revisado, `gpt-6-luna` no tiene mapping en tiktoken
-0.14.0: el modo continuo falla antes de la primera llamada. El modo acotado conserva su
-comportamiento. No asignar un encoding por conjetura para eludir esa validación.
+El modo requiere un mandato externo y una salida máxima positiva en el perfil. No
+sustituye el modelo configurado: `gpt-6-luna` ya no está bloqueado por un mapping de
+tokenizer. El presupuesto incluye entrada serializada, margen del 10 % y una reserva
+heurística de ocho bytes por token máximo de salida; no acredita tokens reales ni
+capacidad remota. No se aceptan las antiguas opciones `--context-tokens` y
+`--consolidation-tokens`, para evitar reinterpretar unidades silenciosamente.
+
+El [protocolo del piloto](experiments/contexto-continuo-v1/protocol.md#preparación-y-ejecución-manual)
+contiene el comando de preparación offline, comprobación y ejecución manual. La preparación
+crea un estado nuevo con las instrucciones vigentes; por eso el primer comando generado
+usa `--continue`. La comprobación rechaza entradas/runtime cambiados o un destino ya usado.
 
 La CLI indica `continuous=interrupted: call_limit|tool_limit|time_limit` en pausas
 controladas y retorna 0; otros fallos retornan 1, argumentos inválidos 2. Una pausa

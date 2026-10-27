@@ -8,7 +8,7 @@ from runtime_contracts.llm import (AssistantResponse, ConversationContext, Conve
     ProviderContinuation, ResponseFunctionCall, ResponseTurn, ToolResult)
 
 from research_agent.agent import AgentA
-from research_agent.context_budget import TokenCounter
+from research_agent.context_budget import ByteCounter
 from research_agent.contracts import AgentLimits, AgentRequest, ContinuousConfig
 from research_agent.integrations.file_tools import register_files
 from research_agent.recording import RunRecorder
@@ -85,7 +85,7 @@ def test_three_reconstructions_recover_saved_state_and_preserve_mandate(tmp_path
             assert any("Pregunta pendiente 3" in str(c.get("deliberative_agenda", "")) for c in contexts)
             return call("read_file", path="agenda.md", offset=0, max_bytes=1024)
 
-    config = ContinuousConfig(max_context_tokens=18000, consolidation_threshold=6500, max_llm_calls=10)
+    config = ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=10)
     agent, request = make(tmp_path, [], config=config)
     agent.client = client = Client()
     result = execute(agent, request)
@@ -98,27 +98,42 @@ def test_three_reconstructions_recover_saved_state_and_preserve_mandate(tmp_path
         messages = [i.content for i in entry["input_items"] if isinstance(i, ConversationMessage)]
         assert request.message in messages
         assert any(request.mandate in msg for msg in messages)
-    counter = TokenCounter("openai", "gpt-4o")
+    counter = ByteCounter()
     for entry in client.requests:
-        assert counter.measure(entry["system"], entry["input_items"], entry["tools"], entry["max_tokens"])["budgeted_tokens"] <= config.max_context_tokens
-    assert all(e["budgeted_tokens"] <= config.max_context_tokens for e in events(agent, "lab.context.budget"))
+        assert counter.measure(entry["system"], entry["input_items"], entry["tools"], entry["max_tokens"])["budgeted_bytes"] <= config.max_context_bytes
+    assert all(e["budgeted_bytes"] <= config.max_context_bytes for e in events(agent, "lab.context.budget"))
     assert "Pregunta pendiente 3" in agent.workspace.read_file("agenda.md")["text"]
 
 
-@pytest.mark.parametrize("profile", [
-    {"provider": "gemini", "model": "gemini-test", "max_output_tokens": 128},
-    {"provider": "openai", "model": "unknown-model", "max_output_tokens": 128},
-    {"provider": "openai", "model": "gpt-4o", "max_output_tokens": 0},
-])
-def test_incompatible_profile_fails_before_call_with_evidence(tmp_path, profile):
-    agent, request = make(tmp_path, [], profile=profile)
+@pytest.mark.parametrize("output", [0, -1, None, True])
+def test_invalid_output_reserve_fails_before_call_with_evidence(tmp_path, output):
+    agent, request = make(tmp_path, [], profile={"provider": "openai", "model": "gpt-6-luna", "max_output_tokens": output})
     result = execute(agent, request)
     assert result.status == "failed" and not agent.client.requests
     assert (agent.recorder.current / "resultado.json").exists()
 
 
+@pytest.mark.parametrize("provider,model", [("openai", "gpt-6-luna"), ("gemini", "unknown-model")])
+def test_byte_budget_needs_no_tokenizer_mapping(tmp_path, provider, model):
+    agent, request = make(tmp_path, [text()], profile={"provider": provider, "model": model, "max_output_tokens": 16000},
+                          config=ContinuousConfig(max_llm_calls=1))
+    result = execute(agent, request)
+    assert result.stop_reason == "call_limit" and result.llm_calls == 1
+    assert events(agent, "lab.context.counter")[0]["unit"] == "bytes"
+
+
+def test_counter_counts_serialized_utf8_and_reserves_output():
+    from research_agent.recording import encoded
+    counter = ByteCounter()
+    value = "á漢🙂"
+    assert counter.count(value) == len(encoded(value)) > len(value)
+    measured = counter.measure(value, [], [], 16000)
+    assert measured["reserved_output_bytes"] == 128000
+    assert measured["budgeted_bytes"] == (measured["input_bytes"] * 11 + 9) // 10 + 128000
+
+
 def test_large_initial_context_rejected_without_truncation(tmp_path):
-    agent, request = make(tmp_path, [], config=ContinuousConfig(max_context_tokens=2000, consolidation_threshold=100))
+    agent, request = make(tmp_path, [], config=ContinuousConfig(max_context_bytes=2000, consolidation_threshold_bytes=100))
     result = execute(agent, request)
     assert result.status == "failed" and not agent.client.requests
     assert request.message in str(agent.history)
@@ -137,17 +152,42 @@ def test_large_tool_result_is_archived_and_readable(tmp_path):
     assert original["text"] in (agent.recorder.current / "trazas" / reference.split("/")[-1]).read_text(encoding="utf-8")
 
 
-def test_token_specific_tool_delivery_under_byte_limit(tmp_path):
-    config = ContinuousConfig(max_context_tokens=18000, consolidation_threshold=6500, max_llm_calls=2)
+@pytest.mark.parametrize("maximum, limited", [(100000, False), (25000, True)])
+def test_result_crossing_threshold_is_delivered_unless_hard_cap_exceeded(tmp_path, maximum, limited):
+    config = ContinuousConfig(max_context_bytes=maximum, consolidation_threshold_bytes=20000, max_llm_calls=2)
     agent, request = make(tmp_path, [call("large"), text("guardado")], config=config)
-    original = {"text": "漢" * 9000}  # <32 KiB but many tokens
+    original = {"text": "漢" * 9000}  # Below the registry cap, above the renewal threshold.
     agent.tools.register("large", "Large result", {}, lambda: original, execution="inline")
     result = execute(agent, request)
     assert result.stop_reason == "call_limit"
     delivered = next(i for i in agent.client.requests[1]["input_items"] if isinstance(i, ToolResult))
-    assert delivered.payload["limited"]
-    raw = agent.recorder.read_artifact(delivered.payload["artifact_ref"], 0, 32768)["text"]
-    assert "漢" * 100 in raw
+    assert bool(delivered.payload.get("limited")) is limited
+    if limited:
+        raw = agent.recorder.read_artifact(delivered.payload["artifact_ref"], 0, 32768)["text"]
+        assert "漢" * 100 in raw
+    else:
+        assert delivered.payload["value"] == original
+        assert events(agent, "lab.phase.changed")[0]["cause"] == "context"
+        assert "calculate" not in {tool.name for tool in agent.client.requests[1]["tools"]}
+    assert all(e["budgeted_bytes"] <= maximum for e in events(agent, "lab.context.budget"))
+
+
+def test_paginated_document_is_read_completely_across_consolidation_threshold(tmp_path):
+    agent, request = make(tmp_path, [
+        call("read_file", path="source.md", offset=0, max_bytes=32768),
+        call("read_file", path="source.md", offset=32768, max_bytes=32768), text("Conservado")],
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=3))
+    original = "x" * 32843
+    agent.workspace.write_file("source.md", original)
+    result = execute(agent, request)
+    assert result.stop_reason == "call_limit"
+    delivered = [item for item in agent.client.requests[2]["input_items"] if isinstance(item, ToolResult)]
+    assert len(delivered) == 2
+    assert all(not item.payload.get("limited") for item in delivered)
+    assert "".join(item.payload["value"]["text"] for item in delivered) == original
+    assert delivered[0].payload["value"]["next_offset"] == 32768
+    assert delivered[1].payload["value"]["next_offset"] is None
+    assert len(events(agent, "lab.context.renewed")) == 1
 
 
 def test_provider_continuation_is_unchanged_and_counted(tmp_path):
@@ -158,7 +198,7 @@ def test_provider_continuation_is_unchanged_and_counted(tmp_path):
     assert result.llm_calls == 2
     replay = next(i for i in agent.client.requests[1]["input_items"] if isinstance(i, AssistantResponse))
     assert replay.continuation == continuation
-    counter = TokenCounter("openai", "gpt-4o")
+    counter = ByteCounter()
     assert counter.count(item) > counter.count(AssistantResponse("avance"))
 
 
@@ -190,7 +230,7 @@ def test_requires_mandate_and_valid_configuration(tmp_path):
     agent, request = make(tmp_path, [])
     with pytest.raises(ValueError, match="mandate"):
         execute(agent, replace(request, mandate=None))
-    for kwargs in ({"max_llm_calls": 0}, {"timeout_seconds": float("inf")}, {"consolidation_threshold": 32000}):
+    for kwargs in ({"max_llm_calls": 0}, {"timeout_seconds": float("inf")}, {"consolidation_threshold_bytes": 524288}):
         with pytest.raises(ValueError):
             ContinuousConfig(**kwargs)
 
@@ -206,7 +246,7 @@ def test_cli_rejects_missing_mandate_and_misplaced_options():
 def test_consolidation_failure_preserves_active_history(tmp_path):
     agent, request = make(tmp_path, [text("novedad " * 6000),
         call("read_file", path="missing.md", offset=0, max_bytes=100)],
-        config=ContinuousConfig(max_context_tokens=18000, consolidation_threshold=6500, max_llm_calls=8))
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=8))
     result = execute(agent, request)
     assert result.stop_reason == "consolidation_failed"
     assert not events(agent, "lab.context.renewed")
@@ -217,7 +257,7 @@ def test_oversized_exchange_pauses_without_sending_or_trimming_continuation(tmp_
     opaque = ProviderContinuation("openai", "gpt-4o", [{"encrypted_content": "漢" * 30000}])
     item = AssistantResponse("avance", opaque)
     agent, request = make(tmp_path, [ResponseTurn([item], "avance", None)],
-        config=ContinuousConfig(max_context_tokens=12000, consolidation_threshold=6500, max_llm_calls=4))
+        config=ContinuousConfig(max_context_bytes=40000, consolidation_threshold_bytes=20000, max_llm_calls=4))
     result = execute(agent, request)
     assert result.stop_reason == "context_exchange_too_large"
     assert len(agent.client.requests) == 1
@@ -227,7 +267,7 @@ def test_oversized_exchange_pauses_without_sending_or_trimming_continuation(tmp_
 def test_four_consolidation_calls_then_renew_without_required_writes(tmp_path):
     turns = [text("novedad " * 6000)] + [call("list_files", path="") for _ in range(4)] + [text()]
     agent, request = make(tmp_path, turns,
-        config=ContinuousConfig(max_context_tokens=18000, consolidation_threshold=6500, max_llm_calls=6))
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=6))
     result = execute(agent, request)
     assert result.stop_reason == "call_limit" and result.llm_calls == 6
     renewals = events(agent, "lab.context.renewed")

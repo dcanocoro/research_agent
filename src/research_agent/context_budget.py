@@ -1,6 +1,4 @@
-"""Local, explicitly estimated token accounting; never a provider-exact count."""
-from importlib.metadata import version
-from math import ceil
+"""Local UTF-8 size budget, independent of provider tokenizer mappings."""
 from typing import Any
 
 from .recording import encoded
@@ -12,24 +10,22 @@ class ContextConfigurationError(ValueError):
         super().__init__(code)
 
 
-class TokenCounter:
-    def __init__(self, provider: str, model: str) -> None:
-        import tiktoken
-        if provider != "openai":
-            raise ContextConfigurationError("unsupported_tokenizer_provider")
-        try:
-            self.encoding = tiktoken.encoding_for_model(model)
-        except KeyError as exc:
-            raise ContextConfigurationError("unsupported_tokenizer_model") from exc
-        self.metadata = {"method": "typed-json-tiktoken-estimate-v1", "package": "tiktoken",
-                         "version": version("tiktoken"), "encoding": self.encoding.name,
-                         "provider": provider, "model": model, "safety_margin": 0.10,
+class ByteCounter:
+    # Heuristic reserve, not a bound on provider output or a bytes/token conversion.
+    output_bytes_per_token = 8
+
+    def __init__(self) -> None:
+        self.metadata = {"method": "typed-json-utf8-bytes-v1", "unit": "bytes",
+                         "safety_margin": 0.10, "output_bytes_per_token": self.output_bytes_per_token,
                          "provider_exact": False}
 
     def count(self, value: Any) -> int:
-        return len(self.encoding.encode(encoded(value).decode("utf-8"), disallowed_special=()))
+        return len(encoded(value))
 
     def measure(self, system: str, history: list[Any], tools: list[Any], output_tokens: int) -> dict[str, int]:
-        tokens = self.count({"system": system, "input": history, "tools": tools})
-        return {"estimated_input_tokens": tokens, "reserved_output_tokens": output_tokens,
-                "budgeted_tokens": ceil(tokens * 1.10) + output_tokens}
+        if not isinstance(output_tokens, int) or isinstance(output_tokens, bool) or output_tokens <= 0:
+            raise ContextConfigurationError("invalid_output_token_reserve")
+        size = self.count({"system": system, "input": history, "tools": tools})
+        reserve = output_tokens * self.output_bytes_per_token
+        return {"input_bytes": size, "reserved_output_bytes": reserve,
+                "budgeted_bytes": (size * 11 + 9) // 10 + reserve}

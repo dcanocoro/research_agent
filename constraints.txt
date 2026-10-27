@@ -95,5 +95,3 @@ watchfiles==1.2.0
 websockets==16.0
 wheel==0.48.0
 wrapt==2.2.2
-tiktoken==0.14.0
-regex==2026.9.29

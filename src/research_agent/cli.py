@@ -29,13 +29,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
     parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON supplied by the controller")
     parser.add_argument("--continuous", action="store_true", help="Keep A running with bounded renewable context; requires --mandate")
-    parser.add_argument("--context-tokens", type=int, default=None, help="Continuous total token budget (default 32000)")
-    parser.add_argument("--consolidation-tokens", type=int, default=None, help="Continuous consolidation threshold (default 24000)")
+    parser.add_argument("--context-bytes", type=int, default=None, help="Continuous local byte budget including reserves (default 524288)")
+    parser.add_argument("--consolidation-bytes", type=int, default=None, help="Continuous byte consolidation threshold including reserves (default 262144)")
     parser.add_argument("--max-calls", type=int, default=None, help="Optional total model calls in continuous mode")
     parser.add_argument("--max-tools", type=int, default=None, help="Optional total tool calls in continuous mode")
     parser.add_argument("--continuous-timeout-seconds", type=float, default=None, help="Optional global continuous duration")
     args = parser.parse_args(raw)
-    continuous_options = (args.context_tokens, args.consolidation_tokens, args.max_calls, args.max_tools, args.continuous_timeout_seconds)
+    continuous_options = (args.context_bytes, args.consolidation_bytes, args.max_calls, args.max_tools, args.continuous_timeout_seconds)
     if args.continuous and (args.mandate is None or args.limits is not None):
         parser.error("--continuous requires --mandate and cannot use bounded --limits; use --max-calls/--max-tools instead.")
     if not args.continuous and any(value is not None for value in continuous_options):
@@ -61,8 +61,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         human_name(args.run_name)
         continuous = ContinuousConfig(
-            max_context_tokens=args.context_tokens if args.context_tokens is not None else 32000,
-            consolidation_threshold=args.consolidation_tokens if args.consolidation_tokens is not None else 24000,
+            max_context_bytes=args.context_bytes if args.context_bytes is not None else 524288,
+            consolidation_threshold_bytes=args.consolidation_bytes if args.consolidation_bytes is not None else 262144,
             max_llm_calls=args.max_calls, max_tool_calls=args.max_tools,
             timeout_seconds=args.continuous_timeout_seconds) if args.continuous else None
         limits = AgentLimits(**json.loads(args.limits.read_text(encoding="utf-8"))) if args.limits else AgentLimits(timeout_seconds=args.timeout_seconds)
