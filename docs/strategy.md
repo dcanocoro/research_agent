@@ -23,6 +23,13 @@ ambos intentos alcanzaron 60 llamadas y seis renovaciones. Los
 redirección adicional de lecturas, con continuidad parcial y problemas de revisión entre
 documentos. No se autoriza por ello una ejecución indefinida ni aceptación semántica.
 
+El encargo del 2026-10-27 incorpora la [intervención v3](experiments/contexto-continuo-v1/protocol.md#v3--autorregulación-mediante-instrucciones-y-renovación-menos-frecuente):
+reforzar los prompts en español sobre progreso, construcción de conocimiento,
+recuperación y coherencia, y elevar el umbral a 262144 bytes para reducir renovaciones.
+Es una intervención de instrucciones y configuración, sin reflexión obligatoria desde
+el harness. Su implementación y verificación local no establecen eficacia semántica;
+la campaña v3 sigue sin ejecutar.
+
 ## Antecedente: metodología financiera longitudinal
 
 El 2026-10-25 el usuario aprobó integrar una metodología financiera y una convención

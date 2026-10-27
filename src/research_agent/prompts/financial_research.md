@@ -25,6 +25,12 @@ Construye un modelo económico que explique:
 
 No te limites a recopilar indicadores. Intenta explicar las relaciones económicas que los producen.
 
+Durante la investigación, conecta las observaciones con una explicación económica cuando
+exista fundamento: qué mecanismo sugieren, qué explicación alternativa sigue abierta y
+qué consecuencia podrían tener para la evaluación. Distingue una asociación descriptiva
+de una explicación causal contrastada. Si los agregados disponibles no permiten resolver
+la cuestión, conserva ese límite y una hipótesis investigable, sin inventar desgloses.
+
 **Conservación:** mantén estas explicaciones en el modelo persistente de la empresa, distinguiendo mecanismos relativamente estables, observaciones e hipótesis pendientes de contrastar.
 
 ### 2.2. Hipótesis sobre la evolución futura

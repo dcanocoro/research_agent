@@ -140,3 +140,45 @@ Registrar errores, referencias sin contenido, lectura efectiva de las páginas, 
 y avance semántico, además de llamadas/uso. Una sola repetición con un modelo real no
 demuestra causalidad ni superioridad general. Los [hallazgos](findings.md) separan las
 observaciones de cada intento y la interpretación.
+
+## V3 — Autorregulación mediante instrucciones y renovación menos frecuente
+
+Encargo del 2026-10-27: incorporar en español las orientaciones sobre progreso,
+conocimiento, recuperación y coherencia, y reducir la frecuencia de recomposición.
+Implementado y verificado localmente; campaña v3 sin ejecutar. Las
+[definiciones v3](../../../benchmarks/contexto-continuo-v3/scenario.json) conservan
+mandato, petición, dataset, perfil, fecha, máximo de contexto y presupuestos del piloto.
+La [rúbrica ampliada](../../../benchmarks/contexto-continuo-v3/rubrica.md) añade criterios
+de autorregulación. Las definiciones v1 y las copias de los intentos anteriores se conservan.
+
+Los prompts vigentes de agente, deliberación y análisis financiero refuerzan revisión
+del progreso durante el trabajo, interpretación y conservación ordinarias, recuperación
+intencional y corrección de afirmaciones afectadas. La consolidación debe guardar solo
+lo pendiente y terminar en cuanto permita continuar. No se añade reflexión obligatoria
+desde el harness, herramienta ni planificador; esos mecanismos siguen fuera de v3.
+Los experimentos nuevos reciben estas plantillas; las instrucciones ya copiadas en
+experimentos existentes no se actualizan automáticamente.
+
+El umbral v3 sube de 196608 a **262144 bytes**, el valor general ya existente;
+el máximo permanece en 524288. La repetición v2 reconstruyó semillas de aproximadamente
+169–170 KB, incluida la reserva de salida de 128000 bytes. El umbral anterior dejaba
+unos 27 KB para crecer; el nuevo permite unos 92 KB antes de considerar el aumento por
+los prompts v3. Se pretende acercar la frecuencia a tres o cuatro renovaciones en 60
+llamadas, sin garantizarla: depende del contenido generado y recuperado. No se impone
+una cuota ni se suprime una renovación necesaria. Se conserva el máximo de cuatro
+llamadas por consolidación y todas las protecciones de tamaño.
+
+Este encargo cambia dos factores: instrucciones y umbral. Una futura comparación con v2
+evaluará el conjunto; no podrá atribuir por separado sus efectos. Registrar progreso,
+coherencia, repeticiones y coste, además del número efectivo de renovaciones. Menos
+renovaciones no acredita mejor investigación y puede aumentar el contexto reenviado.
+
+Preparación y comprobación **sin proveedores** en un destino nuevo:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_benchmarks.continuous prepare artifacts/contexto-continuo-v3/piloto --definition benchmarks/contexto-continuo-v3 --source-data artifacts/analisis-financiero-intervencion-v1/simulador/data.json
+.\.venv\Scripts\python.exe -m research_benchmarks.continuous check artifacts/contexto-continuo-v3/piloto
+```
+
+El lanzador existente admite ese destino mediante `-Pilot`; ejecutarlo llama al proveedor.
+Esta entrega no ejecuta la campaña ni modifica capturas históricas.

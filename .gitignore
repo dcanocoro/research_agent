@@ -12,4 +12,5 @@ dist/
 
 # Preparación y capturas locales del piloto continuo; definiciones en benchmarks/.
 /artifacts/contexto-continuo-v1/
+/artifacts/contexto-continuo-v3/
 

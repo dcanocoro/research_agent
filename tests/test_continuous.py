@@ -1,4 +1,7 @@
-"""Local continuous-loop checks: no provider or database calls."""
+"""Local continuous-loop checks: no provider or database calls.
+
+Small budgets leave room for the bundled prompts before testing threshold crossings.
+"""
 import asyncio
 import json
 from dataclasses import replace
@@ -85,7 +88,7 @@ def test_three_reconstructions_recover_saved_state_and_preserve_mandate(tmp_path
             assert any("Pregunta pendiente 3" in str(c.get("deliberative_agenda", "")) for c in contexts)
             return call("read_file", path="agenda.md", offset=0, max_bytes=1024)
 
-    config = ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=10)
+    config = ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=10)
     agent, request = make(tmp_path, [], config=config)
     agent.client = client = Client()
     result = execute(agent, request)
@@ -152,9 +155,9 @@ def test_large_tool_result_is_archived_and_readable(tmp_path):
     assert original["text"] in (agent.recorder.current / "trazas" / reference.split("/")[-1]).read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize("maximum, limited", [(100000, False), (25000, True)])
+@pytest.mark.parametrize("maximum, limited", [(100000, False), (35000, True)])
 def test_result_crossing_threshold_is_delivered_unless_hard_cap_exceeded(tmp_path, maximum, limited):
-    config = ContinuousConfig(max_context_bytes=maximum, consolidation_threshold_bytes=20000, max_llm_calls=2)
+    config = ContinuousConfig(max_context_bytes=maximum, consolidation_threshold_bytes=30000, max_llm_calls=2)
     agent, request = make(tmp_path, [call("large"), text("guardado")], config=config)
     original = {"text": "漢" * 9000}  # Below the registry cap, above the renewal threshold.
     agent.tools.register("large", "Large result", {}, lambda: original, execution="inline")
@@ -176,7 +179,7 @@ def test_paginated_document_is_read_completely_across_consolidation_threshold(tm
     agent, request = make(tmp_path, [
         call("read_file", path="source.md", offset=0, max_bytes=32768),
         call("read_file", path="source.md", offset=32768, max_bytes=32768), text("Conservado")],
-        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=3))
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=3))
     original = "x" * 32843
     agent.workspace.write_file("source.md", original)
     result = execute(agent, request)
@@ -246,7 +249,7 @@ def test_cli_rejects_missing_mandate_and_misplaced_options():
 def test_consolidation_failure_preserves_active_history(tmp_path):
     agent, request = make(tmp_path, [text("novedad " * 6000),
         call("read_file", path="missing.md", offset=0, max_bytes=100)],
-        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=8))
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=8))
     result = execute(agent, request)
     assert result.stop_reason == "consolidation_failed"
     assert not events(agent, "lab.context.renewed")
@@ -257,7 +260,7 @@ def test_oversized_exchange_pauses_without_sending_or_trimming_continuation(tmp_
     opaque = ProviderContinuation("openai", "gpt-4o", [{"encrypted_content": "漢" * 30000}])
     item = AssistantResponse("avance", opaque)
     agent, request = make(tmp_path, [ResponseTurn([item], "avance", None)],
-        config=ContinuousConfig(max_context_bytes=40000, consolidation_threshold_bytes=20000, max_llm_calls=4))
+        config=ContinuousConfig(max_context_bytes=40000, consolidation_threshold_bytes=30000, max_llm_calls=4))
     result = execute(agent, request)
     assert result.stop_reason == "context_exchange_too_large"
     assert len(agent.client.requests) == 1
@@ -267,7 +270,7 @@ def test_oversized_exchange_pauses_without_sending_or_trimming_continuation(tmp_
 def test_four_consolidation_calls_then_renew_without_required_writes(tmp_path):
     turns = [text("novedad " * 6000)] + [call("list_files", path="") for _ in range(4)] + [text()]
     agent, request = make(tmp_path, turns,
-        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=20000, max_llm_calls=6))
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=6))
     result = execute(agent, request)
     assert result.stop_reason == "call_limit" and result.llm_calls == 6
     renewals = events(agent, "lab.context.renewed")

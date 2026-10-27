@@ -18,8 +18,8 @@ from research_agent.agent import AgentA
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 
 
-@pytest.fixture
-def prepared_inputs(tmp_path, monkeypatch):
+@pytest.fixture(params=["contexto-continuo-v1", "contexto-continuo-v3"])
+def prepared_inputs(tmp_path, monkeypatch, request):
     original_connect = socket.socket.connect
 
     def forbidden(sock, address):
@@ -30,7 +30,7 @@ def prepared_inputs(tmp_path, monkeypatch):
 
     monkeypatch.setattr(socket.socket, "connect", forbidden)
     definition = tmp_path / "definition"
-    shutil.copytree(Path(__file__).parents[1] / "benchmarks/contexto-continuo-v1", definition)
+    shutil.copytree(Path(__file__).parents[1] / "benchmarks" / request.param, definition)
     config = read(definition / "scenario.json")
     config["universe"] = [{"symbol": "TEST", "name": "Synthetic fixture"}]
     config["price_review"] = {"status": "approved", "basis": "synthetic"}
@@ -62,7 +62,9 @@ def test_prepare_freezes_new_state_and_builds_luna_command_without_network(prepa
     assert command[command.index("--max-calls") + 1] == "60"
     report = read(root / "preflight.json")
     assert report["ready"] and not report["provider_checked"] and not report["campaign_executed"]
-    assert report["initial_budget"]["budgeted_bytes"] + report["startup_margin_bytes"] < 196608
+    threshold = read(root / "scenario.json")["continuous"]["consolidation_threshold_bytes"]
+    assert command[command.index("--consolidation-bytes") + 1] == str(threshold)
+    assert report["initial_budget"]["budgeted_bytes"] + report["startup_margin_bytes"] < threshold
     assert read(root / "preparacion.json")["runtime"]["profile"]["model"] == "gpt-6-luna"
 
 
@@ -156,7 +158,8 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
 
     monkeypatch.setattr("research_agent.cli.build_agent", build)
     command = read(root / "command.json")[3:]
-    command[command.index("--max-calls") + 1] = "10"
+    # V3 needs two research responses per window before crossing its higher threshold.
+    command[command.index("--max-calls") + 1] = "14"
     assert main(command) == 0
     run = next((root / "agente/ejecuciones").iterdir())
     events = [json.loads(line) for line in (run / "eventos.jsonl").read_text(encoding="utf-8").splitlines()]
