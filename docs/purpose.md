@@ -33,8 +33,12 @@ su aportación. La arquitectura resultante será una conclusión revisable.
 Hoy solo está implementado A: ciclo de modelo y herramientas, estado de archivos por
 experimento, Findata de solo lectura, Tavily, aritmética y captura experimental.
 El estado sustituye al candidato anterior de expedientes; Git se gestiona manualmente.
-No administra cartera ni ejecuta inversiones; no dispone de DCF o vigilancia
+No administra cartera ni ejecuta inversiones; no dispone de motor DCF preimplementado o vigilancia
 programada. El contrato vigente está en [arquitectura](architecture.md).
+
+La POC opcional de [operadores Python](experiments/python-operators-v1/protocol.md)
+permite implementar procedimientos y modelos acotados con datos explícitos; su utilidad
+para investigar sigue pendiente del contraste. No valida metodologías de valoración.
 
 ## Qué queremos contrastar
 

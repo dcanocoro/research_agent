@@ -10,7 +10,7 @@ La descripción del ciclo acotado siguiente conserva su contrato por defecto.
 A posee un único ciclo modelo → herramienta → modelo → respuesta. No importa
 `finmate`, `engine` ni `api`; Findata, Infra y los contratos comunes se consumen desde
 el wheel instalado. Findata abre transacciones PostgreSQL de solo lectura, sin ingestas
-ni migraciones. No hay DCF, grafo obligatorio ni variantes A0–A3. La cartera ficticia existe solo
+ni migraciones. No hay motor DCF preimplementado, grafo obligatorio ni variantes A0–A3. La cartera ficticia existe solo
 en el modo experimental de simulación, separado de Findata y del producto.
 
 | Componente | Responsabilidad |
@@ -30,6 +30,49 @@ en `_prepare` y `_finish`. Cada herramienta declara ejecución (`inline`, `threa
 `async`), conservación como material y disponibilidad durante consolidación; su
 validador se construye al registrarla. Las operaciones de archivos se ejecutan en
 línea para evitar escrituras en hilos después de cerrar un run.
+
+## Operadores Python opcionales
+
+Desde el 2026-10-27, `build_agent(..., python_enabled=True)` o `--python` registra
+`describe_python_operator` y `run_python` en el mismo registro, también con simulación.
+Por defecto no están disponibles. No cambian las fases: ambas se excluyen de
+consolidación y las revisiones permanecen sin herramientas.
+
+La [integración](../src/research_agent/integrations/python_tools.py) resuelve JSON/CSV
+del workspace, valida código y contratos, captura la petición exacta y ejecuta el
+[worker](../src/research_agent/python_worker.py) asíncrono. Hay cuatro familias:
+calculate, transform, evaluate y model; estas dos últimas exigen respectivamente
+criterios y supuestos como objetos no vacíos. Los contratos detallados se empaquetan
+como recursos recuperables bajo demanda; no existe otro registro de herramientas.
+
+La interfaz de herramienta transmite `inputs_json`, `input_refs_json` y
+`parameters_json` como textos de objetos JSON, que el runtime valida y decodifica.
+Así admite claves libres sin schemas de objetos abiertos incompatibles con el
+`strict=True` del adaptador OpenAI instalado. `run(inputs, parameters)` recibe
+diccionarios normales; el wheel compartido no se cambia.
+
+Cada ejecución usa un proceso local desechable, entorno mínimo y directorio temporal.
+En Windows se lanza directamente el intérprete base con las bibliotecas del entorno
+actual para evitar un launcher intermedio; no se procesan sus archivos `.pth`.
+El worker no importa A, Infra, Findata, Audit ni campañas. Solo recibe datos resueltos.
+NumPy, pandas, SciPy y numpy-financial son dependencias opcionales. La política y
+versiones efectivas quedan en `configuration.python_operators` del manifiesto y en
+la captura de cada cálculo.
+
+Los filtros AST/builtins/APIs previenen usos accidentales; **no constituyen aislamiento
+de seguridad**. No hay límite duro de memoria. Límites: código 32 KiB UTF-8, entradas
+y parámetros resueltos 1 MiB, salida 1 MiB, stderr 16 KiB y 30 segundos incluyendo
+arranque. Las tuberías se consumen con límites; ante error, timeout o cancelación se
+termina y espera el proceso antes de cerrar el run. El código generado no tiene APIs
+admitidas para archivos, red, procesos, paquetes o acceso a servicios.
+
+`execution_ref` permite recuperar código, entradas exactas, parámetros y entorno
+mediante `read_artifact`. Eventos `lab.python.prepared/completed/failed` enlazan los
+intentos; las salidas exitosas son materiales originales y usan la paginación habitual.
+No se añaden archivos `.py` al estado ni un registro de funciones reutilizables.
+Un DCF generado puede ejecutarse, sin que ello valide su metodología o supuestos.
+El [protocolo](experiments/python-operators-v1/protocol.md) separa comprobación local
+y evaluación semántica pendiente.
 
 [research_campaigns](../src/research_campaigns/cli.py) posee definiciones, campañas
 y revisión en la misma distribución. Depende de A; A no importa campañas ni Audit.
@@ -270,7 +313,7 @@ Son instrucciones al LLM, sin enforcement nuevo del runtime ni validación semá
 `AgentRequest.continuous: ContinuousConfig | None` activa el mismo A con un ciclo
 renovable implementado en `research_agent.continuous`. Requiere mandato explícito.
 `None` mantiene el ciclo y los límites anteriores. No añade agentes ni planificador.
-El presupuesto global opcional de llamadas, herramientas y duración se define en
+El presupuesto opcional de llamadas ordinarias, herramientas y duración se define en
 `ContinuousConfig`; `AgentLimits.timeout_seconds` conserva el timeout finito por operación,
 sin imponer sus otros máximos al modo continuo.
 
@@ -323,3 +366,40 @@ El piloto de [contexto continuo](experiments/contexto-continuo-v1/protocol.md) s
 sin clientes ni bases durante las comprobaciones de `research_campaigns`. Congela mandato, instrucciones,
 perfil, fuentes instaladas, dataset y estado nuevo, y comprueba las condiciones antes del lanzamiento integrado. En simulación, `allow_web: false`
 omite `search_web`; su ausencia conserva el comportamiento anterior con web.
+
+## Revisión periódica permanente — 2026-10-27
+
+Toda ejecución continua realiza una llamada de revisión sin herramientas después de
+cada diez llamadas de investigación, si queda presupuesto ordinario para actuar.
+La frecuencia y la instrucción viven en `continuous.py`, sin interruptor ni opciones
+nuevas. El mismo modelo recibe el contexto activo y el aviso técnico en español;
+su elección breve se incorpora al historial. El harness no elige la investigación,
+no escribe una reflexión en el estado ni sustituye `answer` o `respuesta.md` con ella.
+La siguiente llamada ordinaria puede actuar o conservar lo que el modelo considere útil.
+
+`ContinuousConfig.max_llm_calls` y `--max-calls` limitan investigación más
+consolidación; las revisiones son adicionales. `AgentResult.llm_calls` sigue siendo
+el total real intentado. `llm_calls_by_phase` distingue `research`, `consolidation`
+y `review`; su valor vacío por defecto conserva la construcción anterior del contrato.
+El contexto técnico distingue total consumido, desglose, límite ordinario y restante.
+El tiempo global, el timeout por operación y los límites de bytes también cubren
+la revisión. No hay llamadas adicionales después de alcanzar un límite de parada.
+
+La consolidación técnica tiene prioridad sobre una revisión pendiente; esta se realiza
+tras reconstruir, antes de retomar la investigación. El contador sobrevive a las
+reconstrucciones y se reinicia en cada run. Un fallo o timeout conserva las capturas
+y detiene el ciclo. Una herramienta inesperada durante revisión no se ejecuta y pausa
+con `review_tools_disabled`; un timeout usa `review_timeout`. Una respuesta vacía permite
+continuar sin inventar una decisión. La revisión usa la reserva de salida habitual.
+
+El manifiesto registra `review_policy`, incluidos texto, frecuencia y presupuesto.
+Los eventos `lab.model.started`/`lab.model.finished` asocian fase, índice correlativo
+y duración de cada llamada al cliente. `trazas/events.jsonl` incorpora esa fase e
+índice también a los intentos del proveedor dentro de la llamada, conservando sus
+IDs, duración, consumo y referencias a payloads originales. Consumo ausente no es cero.
+La lectura y el informe de campañas muestran total y desglose; resultados históricos
+sin desglose se presentan como desconocidos. El ciclo acotado no cambia.
+
+La [decisión](decisions/0004-revision-periodica.md) conserva la elección permanente;
+el [protocolo](experiments/contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente)
+separa la verificación mecánica de la futura observación semántica.

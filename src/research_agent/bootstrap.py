@@ -14,11 +14,15 @@ from .workspace import Workspace
 @asynccontextmanager
 async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits(), *,
                       experiment: Path | None = None, run_name: str = "intervencion",
-                      simulation: Path | None = None) -> AsyncIterator[AgentA]:
+                      simulation: Path | None = None, python_enabled: bool = False) -> AsyncIterator[AgentA]:
     # Validate experiment paths before constructing clients or database engines.
     disjoint(workspace, runs)
     disjoint(workspace, Path(__file__).parent)
     disjoint(runs, Path(__file__).parent)
+    python_config: dict = {"enabled": False}
+    if python_enabled:
+        from .integrations.python_tools import python_configuration
+        python_config = python_configuration()
     recorder = RunRecorder(runs, experiment=experiment, run_name=run_name)
     registry = ToolRegistry(recorder)
     from findata.settings import settings
@@ -40,6 +44,9 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     profile = replace(configured_profile(settings, "planner"), name="lab")
     space = Workspace(workspace)
     register_files(registry, space)
+    if python_enabled:
+        from .integrations.python_tools import register_python
+        register_python(registry, space, python_config)
     database = None
     historical = {}
     search = TavilyWebSearchTool(api_key=settings.TAVILY_API_KEY, max_results=5)
@@ -65,7 +72,8 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
                       for p in sorted(package.rglob("*")) if p.suffix in {".py", ".md"}]
             fingerprints[module.__name__] = hashlib.sha256(repr(hashes).encode()).hexdigest()
         yield AgentA(factory.conversation(profile), registry, space, recorder, limits,
-                     configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files", **historical})
+                     configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files",
+                                    "python_operators": python_config, **historical})
     finally:
         await factory.aclose()
         if database is not None:

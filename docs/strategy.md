@@ -3,7 +3,28 @@
 > Agenda revisada el 2026-10-25 con el encargo de metodología financiera aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Encargo vigente: bucle continuo con contexto acotado
+## Encargo vigente: operadores Python opcionales
+
+El 2026-10-27 el usuario aprobó implementar la [POC de operadores Python](experiments/python-operators-v1/protocol.md):
+cuatro contratos, documentación recuperable, ejecución local opcional, prompts y pruebas.
+Se prioriza sencillez con procesos locales y filtros preventivos; se acepta expresamente
+que no sea un sandbox ni tenga límite estricto de memoria. El alcance incluye verificación
+local y preparación del contraste; no autoriza campañas con proveedores ni aceptación
+financiera. Las capacidades y revisiones del ciclo continuo se conservan.
+
+Posteriormente el usuario autorizó ejecutar V4 con esta versión y comprobar el uso
+de Python. La [observación](experiments/python-operators-v1/findings-v4.md) registra
+dos ejecuciones autónomas correctas e incorporación de los resultados al conocimiento;
+no sustituye el contraste controlado ni acredita mejora financiera causal.
+
+## Antecedente: bucle continuo con contexto acotado
+
+El encargo aceptado del 2026-10-27 añade la
+[revisión periódica permanente](decisions/0004-revision-periodica.md) solo al ciclo
+continuo: una llamada aparte sin herramientas cada diez llamadas de investigación,
+con presupuesto adicional y captura por fase. La consolidación técnica mantiene
+prioridad. El alcance es implementación y verificación local; la futura v4 no se
+ejecuta en este encargo. Los antecedentes siguientes conservan su estado histórico.
 
 El 2026-10-26 el usuario aprobó implementar el [modo continuo](experiments/contexto-continuo-v1/protocol.md)
 de A con mandato persistente, presupuesto local inicialmente en tokens y reconstrucción desde archivos.

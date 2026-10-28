@@ -185,3 +185,45 @@ Preparación y comprobación **sin proveedores** en un destino nuevo:
 
 El lanzador existente admite ese destino mediante `-Pilot`; ejecutarlo llama al proveedor.
 Esta entrega no ejecuta la campaña ni modifica capturas históricas.
+
+## V4 — Revisión periódica permanente
+
+Encargo aceptado el 2026-10-27: introducir una revisión intelectual explícita,
+independiente de la consolidación técnica, en toda ejecución continua. La
+[decisión](../../decisions/0004-revision-periodica.md) registra el alcance permanente;
+la [arquitectura](../../architecture.md#revisión-periódica-permanente--2026-10-27), su contrato.
+La implementación y los clientes controlados no prueban beneficio semántico. Esta
+entrega no crea ni ejecuta una campaña v4 y no altera definiciones o capturas v3.
+
+La revisión ocurre tras diez llamadas de investigación, sin contar consolidaciones
+ni revisiones, si queda presupuesto para continuar. Usa el mismo contexto y modelo,
+sin herramientas. El LLM elige brevemente si continuar, cambiar de enfoque,
+repriorizar o cerrar una línea; la siguiente llamada ordinaria puede actuar.
+La respuesta se conserva en la traza e historial, sin escritura automática ni sustitución
+de la entrega. La consolidación tiene prioridad y no reinicia la cadencia dentro del run.
+
+Desde esta intervención, `max_llm_calls`/`--max-calls` cubren investigación más
+consolidación, con revisiones adicionales. `llm_calls` sigue contando todas las llamadas;
+`llm_calls_by_phase` distingue las tres fases. En 60 llamadas ordinarias, todas de
+investigación, se intercalan cinco revisiones: total 65. Las consolidaciones pueden
+reducir el número de revisiones porque no son investigación. Tiempo global, herramientas
+y bytes conservan sus límites. Un fallo, cancelación o timeout preserva la evidencia;
+las revisiones no obtienen reintentos nuevos del harness.
+
+Para una futura comparación, conservar entradas, estado inicial, perfil, instrucciones,
+dataset y umbral v3; identificar ambas revisiones de código y la nueva política de
+presupuesto. Comparar acciones posteriores a la revisión, incertidumbres resueltas,
+redundancia, conservación ordinaria y correcciones entre documentos. Registrar por
+separado llamadas, duración y tokens disponibles por fase, además de coste total,
+renovaciones, fallos y trabajo sin terminar. Una elección verbal no demuestra que
+la siguiente acción la ejecute ni que mejore el conocimiento. Una única ejecución
+seguiría siendo exploratoria y no demostraría superioridad ni resultados de inversión.
+
+### Repetición V4 con Python
+
+El usuario autorizó posteriormente repetir V4 con código y prompts actuales, activando
+la POC Python. La ejecución nueva conserva el intento anterior, las entradas y los
+presupuestos, con estado y cartera nuevos. Los [hallazgos](../python-operators-v1/findings-v4.md)
+registran dos usos autónomos correctos del operador calculate, con integración de
+resultados al conocimiento. La diferencia incluye instrucciones y capacidad; no es
+un contraste que aísle el efecto de Python ni una validación de inversión.

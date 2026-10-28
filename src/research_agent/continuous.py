@@ -35,6 +35,16 @@ CONSOLIDATE = (
     "attempts, blockers and next intentions in existing files and agenda.md. You have at most four calls. "
     "A text response ends consolidation and starts a fresh context, not a new mandate. Writing is optional."
 )
+REVIEW_INTERVAL = 10
+REVIEW = (
+    "Revisa el progreso de la investigación: qué ha cambiado materialmente en tu comprensión, "
+    "qué incertidumbres siguen siendo decisivas y si tus acciones recientes han contribuido a resolverlas. "
+    "Decide justificadamente si continuar, cambiar de enfoque, repriorizar o cerrar esta línea. "
+    "Expresa brevemente la decisión que orientará tu siguiente acción. No redactes un informe. "
+    "En la continuación, conserva información en archivos solo si esta revisión identifica algo que merezca guardarse."
+)
+REVIEW_POLICY = {"interval_research_calls": REVIEW_INTERVAL, "instruction": REVIEW,
+                 "budget": "additional_to_research_and_consolidation", "tools_enabled": False}
 
 
 def context_seed(agent: AgentA, request: AgentRequest, cause: str) -> list[Any]:
@@ -66,6 +76,9 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
     deadline = started + config.timeout_seconds if config.timeout_seconds is not None else None
     system = agent._prepare(request, run_id, interaction_id, persistent) + "\n\n" + POLICY
     calls = tool_calls = renewals = consolidation_calls = 0
+    calls_by_phase = {"research": 0, "consolidation": 0, "review": 0}
+    research_since_review = 0
+    active_call: dict[str, Any] = {}
     phase = "research"
     reason = "paused"
     status: Literal["completed", "interrupted", "failed", "cancelled"] = "interrupted"
@@ -92,8 +105,12 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
             append(item)
 
     def budget() -> dict[str, Any]:
+        ordinary = calls_by_phase["research"] + calls_by_phase["consolidation"]
         return {"phase": phase, "llm_calls_used": calls, "tool_calls_used": tool_calls,
-                "llm_calls_limit": config.max_llm_calls, "tool_calls_limit": config.max_tool_calls,
+                "llm_calls_by_phase": dict(calls_by_phase),
+                "ordinary_llm_calls_used": ordinary, "ordinary_llm_calls_limit": config.max_llm_calls,
+                "ordinary_llm_calls_remaining": max(0, config.max_llm_calls - ordinary) if config.max_llm_calls is not None else None,
+                "research_calls_since_review": research_since_review, "tool_calls_limit": config.max_tool_calls,
                 "seconds_remaining": max(0, deadline - monotonic()) if deadline is not None else None,
                 "context_number": renewals}
 
@@ -125,7 +142,8 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
     interaction = interaction_context_for(interaction_id=interaction_id, conversation_id=request.conversation_id)
     with bind_run_context(context), bind_interaction_context(interaction):
         try:
-            captured = stack.enter_context(capture_traces(agent.recorder.current / "trazas", flat=True))
+            captured = stack.enter_context(capture_traces(agent.recorder.current / "trazas", flat=True,
+                                                         call_metadata=lambda: dict(active_call)))
             agent.recorder.text("peticion.md", request.message)
             agent.recorder.save("estado-inicial.json", agent.recorder.snapshot(agent.workspace))
             agent.recorder.event("lab.run.started", continuous=asdict(config), **request.metadata)
@@ -138,7 +156,8 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
             if measure()["budgeted_bytes"] >= config.consolidation_threshold_bytes:
                 raise ContextConfigurationError("initial_context_too_large")
             while True:
-                if config.max_llm_calls is not None and calls >= config.max_llm_calls:
+                ordinary_calls = calls_by_phase["research"] + calls_by_phase["consolidation"]
+                if config.max_llm_calls is not None and ordinary_calls >= config.max_llm_calls:
                     reason = "call_limit"
                     break
                 if config.max_tool_calls is not None and tool_calls >= config.max_tool_calls:
@@ -149,6 +168,11 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                     break
                 append(ConversationContext({"execution_budget": budget()}))
                 size = measure()
+                review_due = phase == "research" and research_since_review >= REVIEW_INTERVAL
+                review_notice = ConversationContext({"runtime_notice": REVIEW})
+                if review_due:
+                    # Include the notice when deciding whether technical consolidation takes priority.
+                    size = measure([*agent.history, review_notice])
                 if phase == "research" and size["budgeted_bytes"] >= config.consolidation_threshold_bytes:
                     before_bytes = size["budgeted_bytes"]
                     before_files = agent.workspace.snapshot()
@@ -156,7 +180,13 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                     append(ConversationContext({"runtime_notice": CONSOLIDATE}))
                     append(ConversationContext({"execution_budget": budget()}))
                     agent.recorder.event("lab.phase.changed", phase=phase, cause="context", **size)
-                allowed = agent.tools.consolidation_tools if phase == "consolidation" else None
+                elif review_due:
+                    phase = "review"
+                    append(review_notice)
+                    append(ConversationContext({"execution_budget": budget()}))
+                    agent.recorder.event("lab.phase.changed", phase=phase, cause="periodic_review")
+                allowed = (frozenset() if phase == "review" else
+                           agent.tools.consolidation_tools if phase == "consolidation" else None)
                 size = measure(allowed=allowed)
                 if size["budgeted_bytes"] > config.max_context_bytes:
                     reason = "context_exchange_too_large"
@@ -167,13 +197,34 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                     reason = "time_limit"
                     break
                 calls += 1
+                calls_by_phase[phase] += 1
+                if phase == "research":
+                    research_since_review += 1
                 if phase == "consolidation":
                     consolidation_calls += 1
-                async with asyncio.timeout(timeout):
-                    turn = await agent.client.respond(system=system, input_items=list(agent.history),
-                        tools=agent.tools.specs(allowed), allow_tools=True, max_tokens=output_tokens, timeout=timeout)
+                active_call.update(phase=phase, llm_call_index=calls)
+                call_started = monotonic()
+                agent.recorder.event("lab.model.started", **active_call)
+                try:
+                    async with asyncio.timeout(timeout):
+                        turn = await agent.client.respond(system=system, input_items=list(agent.history),
+                            tools=agent.tools.specs(allowed), allow_tools=phase != "review",
+                            max_tokens=output_tokens, timeout=timeout)
+                finally:
+                    agent.recorder.event("lab.model.finished", **active_call, duration_seconds=max(0, monotonic() - call_started))
+                    active_call.clear()
                 for item in turn.output_items:
                     append(item)
+                if phase == "review":
+                    if turn.function_call is not None:
+                        reason = "review_tools_disabled"
+                        break
+                    agent.recorder.event("lab.review.completed", text=turn.text, **budget())
+                    research_since_review = 0
+                    phase = "research"
+                    append(ConversationContext({"runtime_notice": CONTINUE}))
+                    agent.recorder.event("lab.phase.changed", phase=phase, cause="review_completed")
+                    continue
                 if turn.function_call is not None:
                     tool_calls += 1
                     timeout = min(agent.limits.timeout_seconds, deadline - monotonic()) if deadline is not None else agent.limits.timeout_seconds
@@ -203,7 +254,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
             status, reason = "cancelled", "cancelled"
             raise
         except TimeoutError:
-            reason = "consolidation_timeout" if phase == "consolidation" else "operation_timeout"
+            reason = {"consolidation": "consolidation_timeout", "review": "review_timeout"}.get(phase, "operation_timeout")
         except ContextConfigurationError as exc:
             status, reason, error = "failed", exc.code, type(exc).__name__
             agent.recorder.event("lab.continuous.error", error_type=error, cause=reason, phase=phase)
@@ -216,7 +267,8 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
             except Exception as exc:
                 agent.recorder.capture_errors.append({"operation": "provider_capture", "error_type": type(exc).__name__})
             agent.recorder.event("lab.continuous.paused", cause=reason, **budget())
-            result = AgentResult(run_id, status, answer, reason, (), calls, tool_calls, error, agent.tools.summary())
+            result = AgentResult(run_id, status, answer, reason, (), calls, tool_calls, error, agent.tools.summary(),
+                                 dict(calls_by_phase))
             outcome = agent._finish(result, captured)
             if transcript.exists():
                 outcome = replace(outcome, artifact_refs=(*outcome.artifact_refs, transcript.name))

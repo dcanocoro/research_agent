@@ -14,6 +14,9 @@ o garantías. La
   2026-10-24 como condición experimental; mandato protegido y agenda automática,
   sin aceptación semántica ni campaña real.
 
+- [ADR-0004 — Revisión periódica permanente](0004-revision-periodica.md): aceptada
+  el 2026-10-27 para el ciclo continuo, con llamadas adicionales y utilidad semántica pendiente.
+
 Usar `0001-nombre-breve.md`, con número consecutivo y este contenido mínimo:
 
 ```markdown

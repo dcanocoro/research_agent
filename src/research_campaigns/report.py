@@ -39,6 +39,9 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
              f"Configuración técnica: `campaign.json → runtime`. Comprobación de datos: {cell(record.get('preflight', {}).get('ready'))}.", ""]
     profile = record.get("runtime", {}).get("profile", {})
     lines += [f"Modelo: {cell(profile.get('model'))}. Proveedor: {cell(profile.get('provider'))}.", ""]
+    if record.get("review_policy"):
+        lines += ["El límite de llamadas cubre investigación y consolidación; las revisiones periódicas son adicionales. "
+                  "Comparten los límites de tiempo y contexto. Política efectiva: `campaign.json → review_policy`.", ""]
     if (root / "definicion/peticion.md").is_file():
         lines += ["### Petición inicial", "", (root / "definicion/peticion.md").read_text(encoding="utf-8"), ""]
     for day, message in record.get("config", {}).get("messages", {}).items():
@@ -47,8 +50,8 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
         if path.is_file():
             lines.append(f"- {link(path.relative_to(root).as_posix())}")
     lines += ["", "## Sesiones e intentos", "",
-              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM / herramientas | Segundos | Evidencia |",
-              "|---|---|---|---|---|---|---|"]
+              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM total / herramientas | LLM investigación / consolidación / revisión | Segundos | Evidencia |",
+              "|---|---|---|---|---|---|---|---|"]
     diagnostics = []
     for session in record["sessions"]:
         activation = session.get("activation", {})
@@ -72,10 +75,12 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
             diagnostics.append(f"- {cell(session['id'])}: {cell(error)}")
         if session.get("error") or session.get("input_modifications"):
             diagnostics.append(f"- {cell(session['id'])}: {cell(session.get('error') or session['input_modifications'])}")
+        phases = details.get("llm_calls_by_phase") or {}
         lines.append("| " + " | ".join([cell(session['id']), cell(activation.get("date")),
             cell(session.get("message", activation.get("message"))),
             cell(session["status"]) + " / " + cell(details.get("stop_reason", session.get("reason"))),
             f"{cell(details.get('llm_calls'))} / {cell(details.get('tool_calls'))}",
+            " / ".join(cell(phases.get(p)) for p in ("research", "consolidation", "review")),
             cell(session.get("elapsed_seconds", details.get("duration_seconds"))), " · ".join(refs)]) + " |")
     lines += ["", "## Diagnósticos", "", *(diagnostics or ["Sin errores de captura observados."]),
               "", "## Instrucciones y conocimiento vigente", ""]

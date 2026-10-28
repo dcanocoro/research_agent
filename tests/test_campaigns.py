@@ -205,6 +205,28 @@ def test_regeneration_reports_missing_capture_without_changing_sessions(tmp_path
     assert session_file.read_bytes() == before
 
 
+@pytest.mark.parametrize("breakdown", [None, {"research": 1, "consolidation": 0, "review": 0}])
+def test_phase_breakdown_and_legacy_results_are_readable_in_report(tmp_path, breakdown):
+    def worker(command, out, err):
+        result = fake_cli(command, out, err)
+        experiment = Path(command[command.index("--experiment") + 1])
+        run_name = command[command.index("--run-name") + 1]
+        path = experiment / "ejecuciones" / run_name / "resultado.json"
+        value = json.loads(path.read_bytes())
+        if breakdown is not None:
+            value["llm_calls_by_phase"] = breakdown
+            save(path, value)
+        return result
+
+    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)), tmp_path / "out", launcher=worker)
+    assert code == 0
+    session = json.loads((campaign / "campaign.json").read_bytes())["sessions"][0]
+    assert session["llm_calls_by_phase"] == (breakdown or {})
+    view = (campaign / "README.md").read_text(encoding="utf-8")
+    assert "LLM total / herramientas" in view
+    assert ("1 / 0 / 0" if breakdown else "desconocido / desconocido / desconocido") in view
+
+
 def test_real_subprocess_sessions_use_agent_cli_and_native_recorder(tmp_path):
     # The worker substitutes only the composition of external services in this test.
     # The runner, CLI, AgentA, file tools, recorder and scoped provider capture are real.

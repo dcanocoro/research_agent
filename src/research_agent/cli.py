@@ -26,12 +26,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mandate", type=Path, help="Trusted persistent user mandate outside state and recordings; enables deliberative condition")
     parser.add_argument("--timeout-seconds", type=float, default=300)
     parser.add_argument("--simulation", type=Path, help="Private simulator directory supplied by the longitudinal controller")
+    parser.add_argument("--python", dest="python_enabled", action="store_true", help="Enable optional local Python operators (POC, not a security sandbox)")
     parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
     parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON or campaign record containing limits")
     parser.add_argument("--continuous", action="store_true", help="Keep A running with bounded renewable context; requires --mandate")
     parser.add_argument("--context-bytes", type=int, default=None, help="Continuous local byte budget including reserves (default 524288)")
     parser.add_argument("--consolidation-bytes", type=int, default=None, help="Continuous byte consolidation threshold including reserves (default 262144)")
-    parser.add_argument("--max-calls", type=int, default=None, help="Optional total model calls in continuous mode")
+    parser.add_argument("--max-calls", type=int, default=None, help="Optional research + consolidation call limit in continuous mode; periodic reviews are additional")
     parser.add_argument("--max-tools", type=int, default=None, help="Optional total tool calls in continuous mode")
     parser.add_argument("--continuous-timeout-seconds", type=float, default=None, help="Optional global continuous duration")
     args = parser.parse_args(raw)
@@ -45,6 +46,8 @@ def main(argv: list[str] | None = None) -> int:
     async def execute(root: Path, prompts: tuple[Path, ...], limits: AgentLimits) -> AgentResult:
         nonlocal run_directory
         options = {"simulation": args.simulation} if args.simulation is not None else {}
+        if args.python_enabled:
+            options["python_enabled"] = True
         async with build_agent(root / "estado", root / "ejecuciones", limits,
                                experiment=root, run_name=args.run_name, **options) as agent:
             message = args.message
@@ -60,6 +63,9 @@ def main(argv: list[str] | None = None) -> int:
             return result
     try:
         human_name(args.run_name)
+        if args.python_enabled:
+            from .integrations.python_tools import python_configuration
+            python_configuration()
         continuous = ContinuousConfig(
             max_context_bytes=args.context_bytes if args.context_bytes is not None else 524288,
             consolidation_threshold_bytes=args.consolidation_bytes if args.consolidation_bytes is not None else 262144,

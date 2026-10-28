@@ -5,6 +5,11 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-27 — Operadores Python programables](2026-10-27-python-operators.md):
+  cuatro contratos y worker opcional, prompts y pruebas locales; sin campaña con LLM.
+- [2026-10-27 — Revisión deliberativa permanente](2026-10-27-periodic-review.md):
+  revisión sin herramientas cada diez llamadas de investigación en continuo,
+  presupuesto adicional y captura por fase; v4 sin ejecutar.
 - [2026-10-27 — Campañas y revisión](2026-10-27-campaigns.md): registro único,
   `README.md`, captura nativa y simplificación de código y resultados.
 - [2026-10-27 — Autorregulación v3](2026-10-27-self-regulation-v3.md): prompts en

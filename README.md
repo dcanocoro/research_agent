@@ -12,7 +12,10 @@ El [baseline](docs/baseline.md) fija la referencia actual y sus límites; la
 Hoy implementa A: modelo → herramienta → modelo → respuesta, con estado Markdown,
 JSON, TXT y CSV, materiales automáticos e instrucciones y ejecuciones separadas.
 Permite empezar una prueba vacía o continuar su estado; Git es manual.
-No incorpora DCF, cartera o grafo obligatorio. E001/E002 son antecedentes históricos.
+No incorpora un motor DCF preimplementado, cartera o grafo obligatorio. E001/E002 son antecedentes históricos.
+La [capacidad Python opcional](docs/experiments/python-operators-v1/protocol.md)
+permite construir cálculos y modelos acotados mediante `--python`, con contratos
+recuperables y procesos locales; es una POC sin sandbox de seguridad.
 
 El proyecto vive fuera de FinMate. Reutiliza bibliotecas compartidas instaladas desde
 un wheel local; sus fuentes permanecen en FinMate. No importa `finmate`, `engine` o `api`.

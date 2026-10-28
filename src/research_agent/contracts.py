@@ -24,7 +24,7 @@ class AgentLimits:
 class ContinuousConfig:
     max_context_bytes: int = 512 * 1024
     consolidation_threshold_bytes: int = 256 * 1024
-    max_llm_calls: int | None = None
+    max_llm_calls: int | None = None  # Research + consolidation; periodic reviews are additional.
     max_tool_calls: int | None = None
     timeout_seconds: float | None = None
 
@@ -66,6 +66,7 @@ class AgentResult:
     tool_calls: int
     error: str | None = None
     state: StateSummary = field(default_factory=StateSummary)
+    llm_calls_by_phase: dict[str, int] = field(default_factory=dict)
 
 
 def serializable(value: Any) -> Any:

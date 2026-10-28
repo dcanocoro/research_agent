@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any
 """Scoped local capture using the existing LLM payload writer."""
 import json
@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 
 
 @contextmanager
-def capture_traces(root: Path, *, flat: bool = False) -> Iterator[list[dict[str, Any]]]:
+def capture_traces(root: Path, *, flat: bool = False,
+                   call_metadata: Callable[[], dict[str, Any]] | None = None) -> Iterator[list[dict[str, Any]]]:
     from findata.settings import settings
     from infra.adapters import llm_trace
     root.mkdir(parents=True, exist_ok=True)
@@ -23,6 +24,8 @@ def capture_traces(root: Path, *, flat: bool = False) -> Iterator[list[dict[str,
             if isinstance(fields, dict):
                 # Snapshot before callers can mutate a logging payload.
                 value = json.loads(json.dumps(fields, default=str))
+                if call_metadata is not None:
+                    value.update(call_metadata())
                 if flat and value.get("archive_file"):
                     original = value["archive_file"]
                     if original not in payload_names:

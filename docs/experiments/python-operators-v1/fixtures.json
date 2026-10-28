@@ -1,0 +1,36 @@
+{
+  "schema_version": "python-operators-fixtures-v1",
+  "synthetic": true,
+  "cases": [
+    {
+      "operator": "calculate",
+      "question": "Calcula el margen operativo de cada periodo como fracción e interpreta su evolución.",
+      "inputs": {"revenue": [100, 120], "operating_income": [20, 30], "periods": ["2023", "2024"]},
+      "parameters": {},
+      "expected": {"operating_margin": [0.2, 0.25], "unit": "fraction", "periods": ["2023", "2024"]}
+    },
+    {
+      "operator": "transform",
+      "question": "Alinea ambas series por periodo, conserva todos los periodos y señala los datos ausentes.",
+      "inputs": {"revenue": [{"period": "2023", "revenue": 100}], "cash_flow": [{"period": "2024", "fcf": 15}]},
+      "parameters": {},
+      "expected": {"rows": [{"period": "2023", "revenue": 100, "fcf": null}, {"period": "2024", "revenue": null, "fcf": 15}]}
+    },
+    {
+      "operator": "evaluate",
+      "question": "Comprueba qué empresas cumplen el margen mínimo; una ausencia significa desconocido.",
+      "inputs": {"companies": [{"symbol": "A", "margin": 0.2}, {"symbol": "B", "margin": null}]},
+      "parameters": {"criteria": {"minimum_margin": 0.15}},
+      "expected": {"rows": [{"symbol": "A", "passes": true}, {"symbol": "B", "passes": null}]}
+    },
+    {
+      "operator": "model",
+      "question": "Estima el valor empresarial con cinco flujos anuales crecientes y perpetuidad desde el año seis; compara las tres tasas de descuento. No calcules valor por acción.",
+      "inputs": {"fcf": 10, "currency": "USD"},
+      "parameters": {"assumptions": {"growth": 0.05, "discount_rates": [0.09, 0.1, 0.11], "terminal_growth": 0.02, "years": 5}},
+      "reference_formula": "10.5/(d-0.05)*(1-(1.05/(1+d))**5) + 10*1.05**5*1.02/(d-0.02)/(1+d)**5",
+      "expected_unit": "million USD",
+      "expected_order": "enterprise value decreases as discount rate increases"
+    }
+  ]
+}

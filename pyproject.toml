@@ -8,6 +8,9 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = ["findata==0.1.0", "PyYAML>=6,<7", "tzdata>=2024.1; sys_platform == 'win32'"]
 
+[project.optional-dependencies]
+python = ["numpy>=2,<3", "pandas>=2,<4", "scipy>=1.14,<2", "numpy-financial>=1,<2"]
+
 [project.scripts]
 research-agent = "research_agent.cli:main"
 
@@ -15,7 +18,7 @@ research-agent = "research_agent.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-research_agent = ["prompts/*.md", "py.typed"]
+research_agent = ["prompts/*.md", "python_contracts/*.md", "py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

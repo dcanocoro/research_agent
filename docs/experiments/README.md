@@ -26,6 +26,7 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 
 | ID | Pregunta | Registro |
 |---|---|---|
+| Operadores Python v1 | ¿Los procedimientos programables mejoran exactitud y utilidad con coste proporcionado? | [Protocolo](python-operators-v1/protocol.md), [corpus sintético](python-operators-v1/fixtures.json) y [rúbrica](python-operators-v1/rubric.md); [observación V4 real](python-operators-v1/findings-v4.md): dos usos autónomos correctos. Contraste controlado pendiente. |
 | Contexto continuo v1 | ¿A conserva intención y avanza a través de reconstrucciones con ventana acotada? | [Protocolo](contexto-continuo-v1/protocol.md) y [hallazgos](contexto-continuo-v1/findings.md); original y repetición ejecutados, bloqueo técnico corregido; continuidad semántica parcial. [V3](contexto-continuo-v1/protocol.md#v3--autorregulación-mediante-instrucciones-y-renovación-menos-frecuente): instrucciones reforzadas y umbral mayor, sin campaña ejecutada. |
 | Análisis financiero v1 | ¿Metodología y conocimiento Markdown mejoran el análisis acumulativo? | [Protocolo](analisis-financiero-v1/protocol.md) y [rúbrica](analisis-financiero-v1/rubric.md); implementación local, contraste y aceptación semántica sin ejecutar. |
 | Intención persistente v1 | ¿Mandato y agenda ayudan a mantener intención y producir progreso? | [Protocolo](intencion-persistente-v1/protocol.md); condición ampliada de 60 llamadas: seis activaciones completadas por condición. [Hallazgos preliminares](intencion-persistente-v1/findings-amplio.md); condición de 18 llamadas sin ejecutar. |
@@ -35,6 +36,11 @@ un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos
 | Baseline NVIDIA 2026-10-18 | ¿Qué dejó la primera ejecución del estado de archivos? | Observación exploratoria concluida; [hallazgos retrospectivos](baseline-nvidia-2026-10-18/findings.md). Sin protocolo previo ni control. |
 | E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Histórico: sin expediente; recuperación desde Git indicada abajo. |
 | E002 | ¿Presupuesto visible y cierre con escritura permiten conservar y continuar? | Histórico: dos revisiones y recuperación observada, consolidación parcial; recuperación desde Git indicada abajo. |
+
+El ciclo continuo incorpora desde el 2026-10-27 la
+[revisión periódica permanente](contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente).
+Su verificación local es mecánica; la observación v4 queda sin ejecutar. Las filas
+anteriores conservan los estados de los cortes históricos.
 
 ## Antecedentes E001 y E002
 

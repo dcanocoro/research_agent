@@ -11,7 +11,7 @@ from typing import Any, cast
 
 from research_agent.agent import AgentA
 from research_agent.context_budget import ByteCounter
-from research_agent.continuous import POLICY, context_seed
+from research_agent.continuous import POLICY, REVIEW_POLICY, context_seed
 from research_agent.contracts import AgentRequest, ContinuousConfig
 from research_agent.experiments import disjoint, validate_mandate
 from research_agent.integrations.file_tools import register_files
@@ -93,7 +93,7 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
     size = initial_budget(root, identity["profile"])
     if size["budgeted_bytes"] + 2048 >= continuous.consolidation_threshold_bytes:
         raise ValueError("Initial protected context plus startup margin does not fit below threshold.")
-    record.update(runtime=identity, limits=asdict(continuous), condition="deliberative",
+    record.update(runtime=identity, limits=asdict(continuous), condition="deliberative", review_policy=REVIEW_POLICY,
                   preflight={**report, "initial_budget": size, "startup_margin_bytes": 2048,
                              "provider_checked": False, "campaign_executed": False})
     command = [sys.executable, "-m", "research_agent", (root / "definicion/peticion.md").read_text(encoding="utf-8"),

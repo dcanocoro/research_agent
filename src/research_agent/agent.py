@@ -216,12 +216,17 @@ class AgentA:
         elif persistent is not None and not any(p.name == "deliberacion.md" for p in instructions):
             raise ValueError("Deliberative experiment requires instrucciones/deliberacion.md.")
         system = "\n\n".join(prompts.values())
+        review_policy = None
+        if request.continuous is not None:
+            from .continuous import REVIEW_POLICY
+            review_policy = REVIEW_POLICY
         self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id,
             "conversation_id": request.conversation_id, "workspace_id": request.workspace_id,
             "workspace_fingerprint": hashlib.sha256(str(self.workspace.root.resolve()).encode()).hexdigest(),
             "limits": asdict(self.limits), "configuration": self.configuration, "metadata": request.metadata,
             "condition": "deliberative" if persistent is not None else "baseline",
             "continuous": asdict(request.continuous) if request.continuous is not None else None,
+            "review_policy": review_policy,
             "persistent_context": persistent,
             "closing_policy": {"consolidation_calls": 2, "response_calls": 1,
                                "consolidation_seconds_at_time_threshold": self.limits.finalization_seconds / 3,

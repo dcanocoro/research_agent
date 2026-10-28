@@ -50,6 +50,40 @@ web, modelos remotos o configuración; verificar el entorno antes de comparar.
 
 ## Instalación
 
+### Python programable opcional
+
+Instalar desde la raíz, conservando el wheel compartido ya instalado:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -c constraints.txt -e ".[python]"
+```
+
+La POC verificada usa Python 3.12.6, NumPy 2.5.0, pandas 3.0.3, SciPy 1.18.1 y
+numpy-financial 1.0.0 en Windows. El extra no es necesario para el agente por defecto.
+Añadir `--python` a la CLI, también con `--continuous` o `--simulation`, activa las
+herramientas durante investigación. Repetirlo explícitamente en las continuaciones;
+la configuración efectiva queda registrada por run. Las dependencias se comprueban
+antes de crear clientes externos o preparar un experimento nuevo. No se instalan
+automáticamente y no hay sustitución silenciosa de entorno.
+
+Es ejecución local con controles preventivos, no un sandbox; no usar código no
+confiable como si estuviera aislado. La [arquitectura](architecture.md#operadores-python-opcionales)
+detalla los límites y la captura. Las instrucciones nuevas explican la capacidad
+solo cuando está disponible; las copias de experimentos anteriores no se actualizan.
+La CLI conserva sus fuentes habituales: activar Python no congela web ni datos.
+
+Verificación específica sin proveedores:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/test_python_operators.py
+```
+
+Sin el extra, los casos científicos se omiten; los checks de ausencia de dependencias,
+restricciones estáticas y ciclo de procesos siguen disponibles. El contraste real se
+describe en el [protocolo](experiments/python-operators-v1/protocol.md), sin ejecutarlo.
+
+### Instalación base
+
 Desde la raíz del proyecto, con Python >=3.11; el corte anterior se verificó con 3.12:
 
 ```powershell
@@ -241,8 +275,13 @@ Ejemplo de operación para una ejecución futura autorizada, no un check documen
 ```
 
 `--context-bytes` (524288) y `--consolidation-bytes` (262144) controlan la ventana;
-`--max-calls`, `--max-tools` y `--continuous-timeout-seconds` son límites globales
-opcionales por ejecución. Sin ellos continúa hasta interrupción o error. `--timeout-seconds`
+`--max-calls` limita investigación más consolidación. Desde el 2026-10-27, las
+revisiones permanentes cada diez llamadas de investigación son adicionales y no
+tienen un interruptor. Por ejemplo, 60 llamadas ordinarias, todas de investigación,
+permiten cinco revisiones intercaladas: 65 llamadas totales, sin revisión al terminar.
+`--max-tools` y `--continuous-timeout-seconds` son límites globales que también
+se aplican durante la revisión. Estos límites son opcionales por ejecución.
+Sin ellos continúa hasta interrupción o error. `--timeout-seconds`
 conserva un timeout finito por operación (300 segundos por defecto). No se admite
 `--limits` junto con `--continuous`, ni opciones continuas en modo acotado.
 La API directa recibe `AgentRequest(..., continuous=ContinuousConfig(...))` y necesita
@@ -271,6 +310,14 @@ no es `completed`. Para reanudar, usar `--continue`: conserva archivos y estado 
 abre otro archivo de ejecución y no repite herramientas previas. No hay reinicio automático.
 `conversacion-completa.jsonl` es el historial entre ventanas; el JSON habitual contiene
 la última ventana. Consultar también eventos, resultados originales y trazas de consumo.
+
+`resultado.json` conserva `llm_calls` como total real y `llm_calls_by_phase` como
+desglose de investigación, consolidación y revisión. Las capturas antiguas sin el
+desglose siguen siendo legibles. `manifiesto.json → review_policy` fija la política
+efectiva; fase e índice de llamada en eventos y trazas permiten atribuir duración y
+consumo reportado por el proveedor, incluidos sus reintentos. La reflexión no se guarda
+como entrega ni modifica archivos automáticamente. Véase la
+[arquitectura](architecture.md#revisión-periódica-permanente--2026-10-27).
 
 ## Baseline y comparabilidad
 

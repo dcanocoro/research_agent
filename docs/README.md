@@ -1,11 +1,23 @@
 # Documentación de Research Agent
 
+La [POC opcional de operadores Python](experiments/python-operators-v1/protocol.md)
+permite cálculos, transformaciones, reglas y modelos mediante procesos locales.
+Incluye contratos recuperables y pruebas deterministas; no es un sandbox ni acredita
+mejora financiera. El contraste controlado con LLM queda pendiente.
+
+La [observación real V4](experiments/python-operators-v1/findings-v4.md), autorizada
+posteriormente, registra dos usos autónomos correctos y resultados incorporados al
+conocimiento. El contraste controlado sigue pendiente.
+
 Research Agent estudia mecanismos de conocimiento, investigación y revisión para el
 futuro FinMate. El [baseline vigente](baseline.md) identifica el estado que se toma
 como referencia para próximos experimentos, su configuración y evidencias disponibles.
 El [modo continuo experimental](experiments/contexto-continuo-v1/protocol.md) añade
 continuación tras respuestas y contexto renovable con presupuesto local en bytes;
 no cambia por defecto el ciclo acotado ni el calendario longitudinal.
+Toda ejecución continua incorpora la
+[revisión periódica permanente](architecture.md#revisión-periódica-permanente--2026-10-27),
+con llamadas adicionales contabilizadas por fase; su utilidad semántica queda pendiente.
 La [estrategia](strategy.md) fija la agenda; la arqueología caracteriza un corte
 histórico de FinMate y E001/E002 son antecedentes recuperables desde Git.
 
@@ -50,7 +62,7 @@ Hoy existe solo A, con herramientas y estado de archivos por experimento; instru
 materiales y ejecuciones están separados. CLI permite crear o continuar una prueba.
 Las campañas se ejecutan desde `research_campaigns`, separado del núcleo.
 La CLI carga guía financiera básica. El [entorno longitudinal](experiments/colaboracion-historica-v1/protocol.md)
-añade cartera ficticia y activaciones históricas opcionales; A0–A3 y DCF no están implementados. Los documentos de E001/E002 no están en el árbol
+añade cartera ficticia y activaciones históricas opcionales; A0–A3 y un motor DCF preimplementado no existen. Los documentos de E001/E002 no están en el árbol
 actual; el registro experimental explica cómo recuperarlos desde Git.
 Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
 La documentación de sus fuentes puede diferir del wheel instalado: verificar antes

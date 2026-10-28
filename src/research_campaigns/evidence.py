@@ -174,6 +174,7 @@ def inspect_run(campaign: Path, run: Path, runtime: dict[str, Any] | None = None
         pass
     return {"run_id": run_id, "run_directory": ref(run), "agent_status": result.get("status"),
             "stop_reason": result.get("stop_reason"), "llm_calls": llm_calls, "tool_calls": tool_calls,
+            "llm_calls_by_phase": result.get("llm_calls_by_phase", {}),
             "duration_seconds": duration, "capture_errors": errors, "capture_complete": not errors,
             "document_tool_failure_observed": failed_document}
 

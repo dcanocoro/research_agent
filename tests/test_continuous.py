@@ -356,3 +356,134 @@ def test_cli_creates_and_resumes_with_controlled_client(tmp_path, monkeypatch, c
     runs = list((experiment / "ejecuciones").iterdir())
     assert len(runs) == 2
     assert all((r / "conversacion-completa.jsonl").exists() for r in runs)
+
+
+@pytest.mark.parametrize("limit,reviews", [(10, 0), (11, 1), (60, 5)])
+def test_periodic_reviews_are_additional_and_resume_with_the_decision(tmp_path, limit, reviews):
+    turns = []
+    for n in range(limit):
+        if n and n % 10 == 0:
+            turns.append(text("Cambiar de enfoque: contrastar la hipótesis pendiente."))
+        turns.append(text(f"Investigación {n + 1}"))
+    agent, request = make(tmp_path, turns, config=ContinuousConfig(max_llm_calls=limit))
+    result = execute(agent, request)
+    assert result.llm_calls == limit + reviews
+    assert result.llm_calls_by_phase == {"research": limit, "consolidation": 0, "review": reviews}
+    assert result.answer == f"Investigación {limit}"
+    assert not result.state.files_written and result.tool_calls == 0
+    requests = agent.client.requests
+    for index, entry in enumerate(requests):
+        assert ByteCounter().measure(entry["system"], entry["input_items"], entry["tools"],
+                                     entry["max_tokens"])["budgeted_bytes"] <= request.continuous.max_context_bytes
+        if not entry["allow_tools"]:
+            assert entry["tools"] == []
+            assert "Cambiar de enfoque" in str(requests[index + 1]["input_items"])
+            assert requests[index + 1]["allow_tools"]
+    assert len(events(agent, "lab.review.completed")) == reviews
+    assert [e["llm_call_index"] for e in events(agent, "lab.model.started")] == list(range(1, limit + reviews + 1))
+    manifest = json.loads((agent.recorder.current / "manifiesto.json").read_bytes())
+    assert manifest["review_policy"]["interval_research_calls"] == 10
+    assert (agent.recorder.current / "respuesta.md").read_text(encoding="utf-8") == result.answer
+
+
+@pytest.mark.parametrize("crossing", [5, 10])
+def test_review_cadence_survives_renewal_and_consolidation_has_priority(tmp_path, crossing):
+    turns = [text("avance") for _ in range(crossing - 1)] + [text("novedad " * 6000), text("Conservado")]
+    turns += [text("avance") for _ in range(10 - crossing)]
+    turns += [text("Revisar incertidumbre decisiva"), text("Investigación retomada")]
+    agent, request = make(tmp_path, turns, config=ContinuousConfig(
+        max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=12))
+    result = execute(agent, request)
+    assert result.llm_calls_by_phase == {"research": 11, "consolidation": 1, "review": 1}
+    assert result.llm_calls == 13
+    phases = [e["phase"] for e in events(agent, "lab.model.started")]
+    assert phases.index("consolidation") < phases.index("review")
+    assert len(events(agent, "lab.context.renewed")) == 1
+    review = next(e for e in events(agent, "lab.review.completed"))
+    assert review["context_number"] == 1 and review["llm_calls_by_phase"]["research"] == 10
+    assert result.answer == "Investigación retomada"
+
+
+@pytest.mark.parametrize("review_turn,reason", [
+    (text(""), "call_limit"), (TimeoutError(), "review_timeout"),
+    (RuntimeError("failure"), "operational_failure"), (asyncio.CancelledError(), "cancelled"),
+    (call("write_file", path="unwanted.md", content="unexpected"), "review_tools_disabled"),
+])
+def test_review_failures_and_empty_response_preserve_evidence(tmp_path, review_turn, reason):
+    agent, request = make(tmp_path, [text("ordinario")] * 10 + [review_turn, text("continuación")],
+                          config=ContinuousConfig(max_llm_calls=11))
+    if reason == "cancelled":
+        with pytest.raises(asyncio.CancelledError):
+            execute(agent, request)
+    else:
+        execute(agent, request)
+    result = json.loads((agent.recorder.current / "resultado.json").read_bytes())
+    assert result["stop_reason"] == reason
+    assert result["llm_calls_by_phase"]["review"] == 1
+    assert result["llm_calls"] == sum(result["llm_calls_by_phase"].values())
+    assert result["answer"] == ("continuación" if reason == "call_limit" else "ordinario")
+    assert result["tool_calls"] == 0 and not agent.workspace.path("unwanted.md").exists()
+    assert len(events(agent, "lab.model.started")) == len(events(agent, "lab.model.finished"))
+    assert (agent.recorder.current / "conversacion-completa.jsonl").exists()
+
+
+def test_review_uses_remaining_time_and_stops_at_global_deadline(tmp_path, monkeypatch):
+    class Clock:
+        now = 0
+
+        def __call__(self):
+            return self.now
+
+    clock = Clock()
+    monkeypatch.setattr("research_agent.continuous.monotonic", clock)
+    agent, request = make(tmp_path, [], config=ContinuousConfig(max_llm_calls=11, timeout_seconds=5))
+
+    class Client:
+        async def respond(self, **kwargs):
+            if not kwargs["allow_tools"]:
+                assert kwargs["timeout"] == 1
+                clock.now = 6
+                return text("decisión técnica")
+            clock.now = 4
+            return text("avance")
+
+    agent.client = Client()
+    result = execute(agent, request)
+    assert result.stop_reason == "time_limit"
+    assert result.llm_calls_by_phase == {"research": 10, "consolidation": 0, "review": 1}
+    assert result.answer == "avance"
+
+
+def test_provider_captures_include_phase_and_index_for_each_attempt(tmp_path):
+    from infra.adapters.llm_trace import LLMCallTrace
+
+    agent, request = make(tmp_path, [], config=ContinuousConfig(max_llm_calls=11))
+
+    class Client:
+        async def respond(self, **kwargs):
+            # Simulate an adapter retry inside a single respond invocation.
+            for status in ("error", "success"):
+                trace = LLMCallTrace(operation="conversation", model="test", provider_request={"input": [], "tools": []})
+                trace.emit(context=None, response=None, result=None, operational_output=None,
+                           status=status, error_type=None, duration_ms=1)
+            return text("decisión" if not kwargs["allow_tools"] else "avance")
+
+    agent.client = Client()
+    result = execute(agent, request)
+    provider = [json.loads(line) for line in (agent.recorder.current / "trazas/events.jsonl").read_text(encoding="utf-8").splitlines()]
+    calls = [e for e in provider if e["event"] == "engine.llm_call"]
+    assert len(calls) == 2 * result.llm_calls
+    reviews = [e for e in calls if e["phase"] == "review"]
+    assert len(reviews) == 2 and {e["llm_call_index"] for e in reviews} == {11}
+    assert all(e["usage_known"] is False for e in calls)
+    assert all((agent.recorder.current / "trazas" / e["archive_file"]).exists() for e in calls)
+
+
+def test_tool_limit_prevents_due_review_and_new_run_resets_cadence(tmp_path):
+    agent, request = make(tmp_path, [call("list_files", path="")] * 10,
+                          config=ContinuousConfig(max_llm_calls=20, max_tool_calls=10))
+    result = execute(agent, request)
+    assert result.stop_reason == "tool_limit" and result.llm_calls_by_phase["review"] == 0
+    agent.client = ScriptedClient([text()] * 10)
+    resumed = execute(agent, replace(request, continuous=ContinuousConfig(max_llm_calls=10)))
+    assert resumed.llm_calls_by_phase == {"research": 10, "consolidation": 0, "review": 0}
