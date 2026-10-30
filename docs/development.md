@@ -231,6 +231,86 @@ La integración local, sus escenarios y sus pruebas se retiraron el 2026-10-24.
 El wheel compartido no se modifica. Las campañas actuales usan la CLI propia y
 `python -m research_campaigns`; los archivos históricos no se reescriben.
 
+## Herramientas de estado V5
+
+Los experimentos nuevos usan V5 por defecto. Para crear un control sin las operaciones
+nuevas, indicar `--state-tools legacy` junto con `--new`. Los experimentos existentes
+sin `herramientas.json` mantienen legacy; sus instrucciones no se actualizan solas.
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent "Investiga la pregunta" --experiment artifacts/prueba-v5 --new --run-name inicial
+.\.venv\Scripts\python.exe -m research_agent "Continúa" --experiment artifacts/prueba-anterior --continue --run-name adopcion --adopt-state-tools-v5
+```
+
+Estos comandos ejecutan proveedores: son ejemplos de uso autorizado posterior, no
+checks locales. Añadir `--mandate` cuando el experimento sea deliberativo. La adopción
+conserva instrucciones previas, añade `herramientas-estado-v5.md` y registra transición
+con fecha real en la configuración externa al estado. No adopta automáticamente
+campañas congeladas; su reanudación mantiene los bloqueos de cambios.
+
+`research_campaigns run ... --state-tools legacy` permite preparar controles nuevos
+con el perfil anterior; omitirlo selecciona V5. La configuración queda congelada y
+`resume` no admite sustituirla.
+
+La API `prepare_experiment(..., state_tools="legacy"|"v5")` selecciona perfil solo
+al crear; `adopt_state_tools_v5=True` permite adopción explícita al continuar.
+`build_agent(..., state_tools="v5")` y `register_files(..., state_tools="v5")` activan
+la composición directa, que mantiene legacy por defecto para consumidores anteriores.
+
+Las consultas nuevas usan `purpose`, selectores explícitos, versión y cursor opaco.
+Para editar se requiere el hash recién leído. Ante `applied=true` y fallo de captura,
+inspeccionar el documento antes de reintentar. La escritura por empresa exige motivo
+y lista explícita de referencias; conservarlas no certifica su validez. Los contratos
+y ejemplos de [estado](../src/research_agent/state_contracts/state.md) y
+[empresa](../src/research_agent/state_contracts/company.md) están empaquetados y son
+recuperables con `describe_state_tools`, sin ampliar el acceso de `read_file`.
+
+Verificación local: `.\.venv\Scripts\python.exe -m pytest -q tests/test_state_tools.py`.
+El caso H1/V1 usa cliente controlado y renovación real del contexto; no demuestra
+selección autónoma de herramientas ni mejora del razonamiento financiero.
+
+## Continuidad V6 y evaluación offline
+
+La [V6](experiments/continuidad-v6/protocol.md) usa la misma familia de herramientas
+`v5`; no existe `--state-tools v6`. Nuevos experimentos deliberativos crean una agenda
+con foco activo y copian los prompts actuales. Las continuaciones mantienen sus copias;
+adoptar instrucciones nuevas exige editarlas explícitamente y conservar la versión
+anterior. Los contratos efectivos `state-tools-v6.1` se congelan por run; una campaña
+preparada con otro runtime no puede reanudarse silenciosamente.
+
+La definición `campaigns/contexto-continuo-v6` está preparada sin ejecución. Validación
+offline, sin proveedores ni datos remotos:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_campaigns validate campaigns/contexto-continuo-v6
+.\.venv\Scripts\python.exe -m pytest -q tests/test_v6.py
+```
+
+Tras una ejecución autorizada, generar observaciones sin llamar al modelo:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_campaigns progress RUTA_DEL_RUN
+.\.venv\Scripts\python.exe -m research_campaigns progress RUTA_DEL_RUN --checks COMPROBACIONES.json --output RUTA_DEL_RUN/progreso-con-cifras.json
+```
+
+`RUTA_DEL_RUN` contiene manifiesto, eventos y snapshots. El informe JSON debe ser
+un archivo nuevo directamente dentro del run; no sobrescribe evidencia. Los estados
+intermedios están en `continuidad/indice.json`, separados del workspace editable.
+Campañas anteriores sin checkpoints siguen siendo observables en sus trazas, pero el
+informe no inventa estados intermedios. Regenerar el README de campaña con `report`
+enlaza el índice y el informe por defecto cuando existan.
+
+El [contrato numérico ilustrativo](experiments/continuidad-v6/numerical-checks-example.json)
+requiere adaptar cita exacta, operandos por JSON pointer en materiales del snapshot
+final, unidades, escala y tolerancia. Las comprobaciones no descubren todas las cifras
+ni certifican unidades declaradas. Usar la rúbrica para progreso/calidad/utilidad y
+recuperación: el informe no atribuye éxito semántico a recuentos mecánicos.
+
+Las nuevas protecciones de expediente también se aplican a los aliases de escritura
+en composición V5; no vaciar IDs poblados para mover argumentos bajo otro encabezado.
+Las vistas parciales devuelven cómo recuperar contenido; una escritura válida no
+garantiza coherencia económica. No hay nuevos agentes, grafo o dependencia externa.
+
 ## Verificación proporcionada al cambio
 
 | Cambio | Verificación esperada |
@@ -357,7 +437,7 @@ sin ejecutar. Usar `validate --data` para comprobar un dataset local sin consult
 En CLI manual, `--mandate PATH` activa la condición y debe suministrarse en cada
 continuación. El archivo UTF-8 auténtico lo mantiene la persona fuera de `estado/` y
 `ejecuciones/`; no se resume ni se copia automáticamente desde una petición breve.
-Con `--new` se copian instrucciones deliberativas y se crea una agenda vacía. Con
+Con `--new` se copian instrucciones deliberativas y se crea la agenda compacta V6. Con
 `--continue` se exigen esos archivos, sin actualizar instrucciones anteriores.
 
 ```powershell

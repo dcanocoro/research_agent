@@ -12,6 +12,10 @@ from .recording import RunRecorder, encoded
 from .workspace import Workspace
 
 
+def mutation_receipt(value: Any) -> dict[str, Any]:
+    return {key: value[key] for key in ("path", "bytes", "sha256", "previous_sha256", "applied", "operation", "operations_applied") if key in value}
+
+
 @dataclass(frozen=True)
 class RegisteredTool:
     spec: ToolSpec
@@ -20,6 +24,8 @@ class RegisteredTool:
     execution: Literal["inline", "thread", "async"]
     material: bool
     consolidation: bool
+    mutation: bool
+    bounded: bool
 
 
 class ToolRegistry:
@@ -29,6 +35,8 @@ class ToolRegistry:
         self.workspace: Workspace | None = None
         self.files_written: list[str] = []
         self.materials: list[str] = []
+        self.contracts: dict[str, Any] = {}
+        self.active_names: frozenset[str] | None = None
 
     def reset(self) -> None:
         self.files_written, self.materials = [], []
@@ -38,14 +46,15 @@ class ToolRegistry:
 
     def register(self, name: str, description: str, properties: dict[str, Any], function: Callable[..., Any], *,
                  execution: Literal["inline", "thread", "async"] = "thread",
-                 material: bool = False, consolidation: bool = False) -> None:
+                 material: bool = False, consolidation: bool = False,
+                 mutation: bool = False, bounded: bool = False) -> None:
         if name in self._tools:
             raise ValueError("Duplicate tool.")
         schema = {"type": "object", "properties": properties,
                   "required": list(properties), "additionalProperties": False}
         Draft202012Validator.check_schema(schema)
         self._tools[name] = RegisteredTool(ToolSpec(name, description, schema), function,
-                                          Draft202012Validator(schema), execution, material, consolidation)
+                                          Draft202012Validator(schema), execution, material, consolidation, mutation, bounded)
 
     @property
     def consolidation_tools(self) -> frozenset[str]:
@@ -69,6 +78,8 @@ class ToolRegistry:
     async def execute(self, call: ResponseFunctionCall, *, allowed_names: frozenset[str] | None = None) -> ToolResult:
         self.recorder.event("lab.tool.started", call_id=call.call_id, tool_name=call.name, arguments=call.arguments)
         capturing = False
+        mutation_result = None
+        previous_names, self.active_names = self.active_names, allowed_names
         try:
             if allowed_names is not None and call.name not in allowed_names:
                 raise ValueError("Tool is unavailable in this execution phase.")
@@ -84,13 +95,22 @@ class ToolRegistry:
             else:
                 value = await asyncio.to_thread(tool.function, **call.arguments)
             value = serializable(value)
+            if tool.mutation:
+                mutation_result = mutation_receipt(value)
+                self.files_written.append(value["path"])
             capturing = True
+            if tool.mutation:
+                assert mutation_result is not None
+                self.recorder.event("lab.file.written", call_id=call.call_id, tool_name=call.name, **mutation_result)
             artifact = self.recorder.artifact(value)
             material = self._material(call.name, value)
             reference = material or artifact
-            if len(encoded(value)) > 32768 and call.name not in {"read_artifact", "read_file"}:
+            if len(encoded(value)) > 32768 and not tool.bounded and call.name not in {"read_artifact", "read_file"}:
                 value = {"artifact_ref": reference, "limited": True,
                          "message": "Result stored in full. Use read_artifact or read_file with byte pagination."}
+            if tool.bounded and isinstance(value, dict) and isinstance(value.get("diff"), str) and len(value["diff"]) > 3000:
+                value = {**value, "diff": value["diff"][:3000], "diff_partial": True,
+                         "diff_recovery": "read_artifact for the complete diff"}
             payload = {"ok": True, "value": value, "artifact_ref": reference}
             if material:
                 assert self.workspace is not None
@@ -98,18 +118,32 @@ class ToolRegistry:
                 self.recorder.event("lab.material.saved", path=material, tool_name=call.name,
                                     arguments=call.arguments, sha256=hashlib.sha256(self.workspace.path(material).read_bytes()).hexdigest())
             self.recorder.event("lab.tool.completed", call_id=call.call_id, tool_name=call.name, artifact_ref=reference)
-            if call.name in {"write_file", "write_markdown"}:
-                self.files_written.append(value["path"])
-                self.recorder.event("lab.file.written", **value)
+            if tool.bounded and len(encoded(payload)) > 32768:
+                payload = {"ok": True, "value": {"limited": True, "recovery": "read_artifact with byte pagination",
+                           "mutation": mutation_result}, "artifact_ref": reference}
         except asyncio.CancelledError:
             self.recorder.event("lab.tool.failed", call_id=call.call_id, tool_name=call.name, error_type="cancelled")
             raise
         except Exception as exc:
             payload = {"ok": False, "error_type": type(exc).__name__}
+            if mutation_result is not None:
+                payload.update(applied=True, mutation=mutation_result,
+                               message="Change applied; capture failed. Inspect current version before retrying.")
             if isinstance(exc, ValueError) and type(exc) is ValueError:
                 payload["message"] = str(exc)[:500]
-            if isinstance(exc, OSError) and capturing:
+            if capturing:
                 self.recorder.capture_errors.append({"operation": "tool_capture", "error_type": type(exc).__name__})
-            self.recorder.event("lab.tool.failed", call_id=call.call_id, tool_name=call.name, **payload)
-        self.recorder.save(f"trazas/herramienta-{len(self.recorder.events):04d}.json", {"call": call, "result": payload})
+            try:
+                self.recorder.event("lab.tool.failed", call_id=call.call_id, tool_name=call.name, **payload)
+            except OSError:
+                self.recorder.capture_errors.append({"operation": "tool_event", "error_type": "OSError"})
+        finally:
+            self.active_names = previous_names
+        try:
+            self.recorder.save(f"trazas/herramienta-{len(self.recorder.events):04d}.json", {"call": call, "result": payload})
+        except Exception as exc:
+            self.recorder.capture_errors.append({"operation": "tool_trace", "error_type": type(exc).__name__})
+            payload["capture_failed"] = True
+            if mutation_result is not None:
+                payload.update(applied=True, mutation=mutation_result)
         return ToolResult(call.call_id, call.name, payload)

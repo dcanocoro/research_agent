@@ -16,9 +16,10 @@ CONTROL = Path(__file__).resolve().parents[1] / "campaigns/analisis-financiero-v
 
 def test_frozen_control_and_default_replacement(tmp_path):
     provenance = json.loads((CONTROL.parent / "control-provenance.json").read_text(encoding="utf-8"))
-    frozen = prepare_experiment(tmp_path / "control", new=True, deliberative=True, instructions_dir=CONTROL)
+    frozen = prepare_experiment(tmp_path / "control", new=True, deliberative=True, instructions_dir=CONTROL, state_tools="legacy")
     current = prepare_experiment(tmp_path / "new", new=True, deliberative=True)
-    assert len(frozen) == len(current) == 3
+    assert len(frozen) == 3 and len(current) == 4
+    current = tuple(p for p in current if p.name != "herramientas-estado-v5.md")
     for path in frozen:
         assert hashlib.sha256(path.read_bytes()).hexdigest() == provenance["sha256"][path.name]
     assert all(a.read_text(encoding="utf-8") != b.read_text(encoding="utf-8") for a, b in zip(frozen, current))

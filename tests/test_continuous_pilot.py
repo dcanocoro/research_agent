@@ -18,7 +18,7 @@ from research_agent.agent import AgentA
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 
 
-@pytest.fixture(params=["contexto-continuo-v1", "contexto-continuo-v3"])
+@pytest.fixture(params=["compact", "current"])
 def prepared_inputs(tmp_path, monkeypatch, request):
     original_connect = socket.socket.connect
 
@@ -30,8 +30,12 @@ def prepared_inputs(tmp_path, monkeypatch, request):
 
     monkeypatch.setattr(socket.socket, "connect", forbidden)
     definition = tmp_path / "definition"
-    shutil.copytree(Path(__file__).parents[1] / "campaigns" / request.param, definition)
+    # The retired v1 definition is absent from the current checkout. Exercise two
+    # synthetic budgets over the maintained definition without restoring a campaign.
+    shutil.copytree(Path(__file__).parents[1] / "campaigns/contexto-continuo-v3", definition)
     config = read(definition / "scenario.json")
+    if request.param == "compact":
+        config["continuous"]["consolidation_threshold_bytes"] = 220000
     config["universe"] = [{"symbol": "TEST", "name": "Synthetic fixture"}]
     config["price_review"] = {"status": "approved", "basis": "synthetic"}
     source = tmp_path / "data.json"
@@ -56,7 +60,8 @@ def test_prepare_freezes_new_state_and_builds_luna_command_without_network(prepa
     assert sim.state == {"date": "2023-01-01", "cash": "100000", "positions": {}, "orders": [], "notifications": []}
     assert source.read_bytes() == before == (root / "simulador/data.json").read_bytes()
     assert list((root / "ejecuciones").iterdir()) == []
-    assert Workspace(root / "estado").snapshot() == {"agenda.md": ""}
+    from research_agent.continuity import AGENDA_TEMPLATE
+    assert Workspace(root / "estado").snapshot() == {"agenda.md": AGENDA_TEMPLATE}
     command = read(root / "campaign.json")["command"]
     assert "--continuous" in command and "--context-bytes" in command and "--limits" not in command
     assert command[command.index("--max-calls") + 1] == "60"
@@ -167,11 +172,11 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
             return ResponseTurn([AssistantResponse("Recuperado")], "Recuperado", None)
 
     @asynccontextmanager
-    async def build(workspace, runs, limits, *, experiment, run_name, simulation):
+    async def build(workspace, runs, limits, *, experiment, run_name, simulation, state_tools="legacy"):
         space = Workspace(workspace)
         recorder = RunRecorder(runs, experiment=experiment, run_name=run_name)
         registry = ToolRegistry(recorder)
-        register_files(registry, space)
+        register_files(registry, space, state_tools=state_tools)
         simulator = Simulator(simulation)
         register_simulation(registry, simulator, None)
         yield AgentA(Client(), registry, space, recorder, limits,

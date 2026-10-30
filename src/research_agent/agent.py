@@ -3,6 +3,7 @@ from typing import Any, Literal
 """Conventional bounded agent loop, preserving provider replay verbatim."""
 import asyncio
 import hashlib
+import json
 from pathlib import Path
 from dataclasses import asdict, replace
 from importlib.resources import files
@@ -217,9 +218,17 @@ class AgentA:
             raise ValueError("Deliberative experiment requires instrucciones/deliberacion.md.")
         system = "\n\n".join(prompts.values())
         review_policy = None
+        checkpoint_policy = None
+        experiment_state_profile = None
+        if self.recorder.experiment is not None:
+            profile_path = self.recorder.experiment / "herramientas.json"
+            Workspace._check_links(profile_path)
+            if profile_path.exists():
+                experiment_state_profile = json.loads(profile_path.read_bytes())
         if request.continuous is not None:
-            from .continuous import REVIEW_POLICY
+            from .continuous import CHECKPOINT_POLICY, REVIEW_POLICY
             review_policy = REVIEW_POLICY
+            checkpoint_policy = CHECKPOINT_POLICY
         self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id,
             "conversation_id": request.conversation_id, "workspace_id": request.workspace_id,
             "workspace_fingerprint": hashlib.sha256(str(self.workspace.root.resolve()).encode()).hexdigest(),
@@ -227,6 +236,7 @@ class AgentA:
             "condition": "deliberative" if persistent is not None else "baseline",
             "continuous": asdict(request.continuous) if request.continuous is not None else None,
             "review_policy": review_policy,
+            "knowledge_checkpoint_policy": checkpoint_policy,
             "persistent_context": persistent,
             "closing_policy": {"consolidation_calls": 2, "response_calls": 1,
                                "consolidation_seconds_at_time_threshold": self.limits.finalization_seconds / 3,
@@ -235,7 +245,13 @@ class AgentA:
                                "consolidation_tools": sorted(self.tools.consolidation_tools or ())}
                               if request.continuous is None and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
             "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
+            "state_contracts": self.tools.contracts,
+            "experiment_state_profile": experiment_state_profile,
             "tools": self.tools.specs()})
+        if self.recorder.contract_changes:
+            notice = "State tool contracts changed since the previous run: " + ", ".join(self.recorder.contract_changes)
+            system += "\n\n" + notice + ". Consult current contracts before relying on prior instrumental knowledge."
+            self.recorder.event("lab.state_contracts.changed", tools=self.recorder.contract_changes)
         return system
 
     def _finish(self, result: AgentResult, captured: list[dict[str, Any]]) -> AgentResult:

@@ -163,6 +163,7 @@ def runtime_identity() -> dict[str, Any]:
 def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str, Any] | None = None,
                  condition: str | None = None,
                  instructions_dir: Path | None = None,
+                 state_tools: str | None = None,
                  launcher: Callable[[list[str], Path, Path], int] = launch,
                  identity: Callable[[], dict[str, Any]] = runtime_identity) -> int:
     campaign = campaign.absolute()
@@ -172,6 +173,8 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
     disjoint(campaign, Path(__file__).parent)
     if condition not in {None, "baseline", "deliberative"}:
         raise ValueError("Unknown experimental condition.")
+    if state_tools not in {None, "legacy", "v5"} or (scenario is None and state_tools is not None):
+        raise ValueError("State tools profile applies only when creating a campaign.")
     if scenario is None and condition is not None:
         raise ValueError("Resume uses its frozen condition; do not supply condition.")
     if instructions_dir is not None:
@@ -188,7 +191,8 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
         disjoint(campaign, scenario)
         record = create(campaign, scenario.parent, "historical", config["id"],
                         [scenario, *scenario.parent.glob("*.md")],
-                        deliberative=condition == "deliberative", instructions_dir=instructions_dir)
+                        deliberative=condition == "deliberative", instructions_dir=instructions_dir,
+                        state_tools=state_tools or "v5")
         record.update(config=config, condition=condition, limits=config["limits"], runtime=identity(),
                       instructions_sha256=freeze_files(campaign / "instrucciones"),
                       progress={"next": 0, "active": None, "finished": False})
@@ -224,7 +228,8 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             staging.rename(simulator_root)
         actual = {"definition": freeze_files(campaign / "definicion"), "data": digest(simulator_root / "data.json"),
                   "simulator_config": digest(simulator_root / "config.json"), "condition": condition,
-                  "config": hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()}
+                  "config": hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest(),
+                  "state_tools_config": digest(campaign / "herramientas.json") if (campaign / "herramientas.json").exists() else None}
         if "frozen_inputs" not in record:
             if record["progress"]["next"] != 0 or record["sessions"]:
                 raise ValueError("Missing frozen inputs for a previously started campaign.")

@@ -282,7 +282,8 @@ def test_cli_condition_commands_use_explicit_data(tmp_path, monkeypatch, conditi
     source = tmp_path / "data.json"
     save(source, {"fixture": "no remote export"})
     from research_campaigns.cli import main
-    assert main(["run", "campaigns/intencion-persistente-v1", "--condition", condition,
+    definition = scenario(tmp_path, config(1)).parent
+    assert main(["run", str(definition), "--condition", condition,
                         "--data", str(source), "--output", str(tmp_path / "campaign")]) == 0
     assert calls[0][1]["condition"] == condition and calls[0][1]["data"] == {"fixture": "no remote export"}
     from research_campaigns.cli import main
@@ -439,11 +440,12 @@ from infra.adapters.llm_trace import LLMCallTrace
 from research_agent.recording import serializable
 @asynccontextmanager
 async def builder(workspace, runs, limits, **kwargs):
+    state_tools = kwargs.pop('state_tools', 'legacy')
     simulator = Simulator(kwargs.pop('simulation'))
     recorder = RunRecorder(runs, **kwargs)
     space = Workspace(workspace)
     tools = ToolRegistry(recorder)
-    register_files(tools, space)
+    register_files(tools, space, state_tools=state_tools)
     class Search:
         async def search_documents(self, *args, **kwargs):
             return []
@@ -460,7 +462,7 @@ async def builder(workspace, runs, limits, **kwargs):
                 agenda = next(x.payload['deliberative_agenda']['text'] for x in request['input_items']
                               if hasattr(x, 'payload') and 'deliberative_agenda' in x.payload)
                 if self.n == 1:
-                    assert agenda == (space.root/'agenda.md').read_text()
+                    assert agenda == (space.root/'agenda.md').read_text(encoding='utf-8')
                 if str(simulator.today) != '2023-01-01':
                     assert agenda.startswith('Continue intention from process ')
             if self.n == 1:
@@ -494,7 +496,7 @@ raise SystemExit(cli.main())
     instructions_dir = Path("campaigns/analisis-financiero-v1/control") if bundle else None
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
                         launcher=launcher, identity=lambda: {}, condition=condition,
-                        instructions_dir=instructions_dir) == 0
+                        instructions_dir=instructions_dir, state_tools="legacy" if bundle else "v5") == 0
     pids = (campaign / "estado/memory.md").read_text().splitlines()
     assert len(pids) == 3 and len(set(pids)) == 3
     assert len(Simulator(campaign / "simulador").state["orders"]) == 1

@@ -8,6 +8,7 @@ from .bootstrap import build_agent
 from .contracts import AgentRequest, AgentLimits, AgentResult, ContinuousConfig
 from .experiments import prepare_experiment, experiment_lock, human_name, disjoint, validate_mandate, deliberative_context
 from .workspace import Workspace
+from .state_profiles import state_profile
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -23,6 +24,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-name", required=True)
     parser.add_argument("--conversation", default="cli")
     parser.add_argument("--instructions", type=Path, action="append", default=[])
+    parser.add_argument("--state-tools", choices=["legacy", "v5"], help="Creation-only profile; new experiments default to v5")
+    parser.add_argument("--adopt-state-tools-v5", action="store_true", help="Explicitly adopt V5 in an existing experiment")
     parser.add_argument("--mandate", type=Path, help="Trusted persistent user mandate outside state and recordings; enables deliberative condition")
     parser.add_argument("--timeout-seconds", type=float, default=300)
     parser.add_argument("--simulation", type=Path, help="Private simulator directory supplied by the longitudinal controller")
@@ -36,6 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-tools", type=int, default=None, help="Optional total tool calls in continuous mode")
     parser.add_argument("--continuous-timeout-seconds", type=float, default=None, help="Optional global continuous duration")
     args = parser.parse_args(raw)
+    if (args.state_tools is not None and not args.new) or (args.adopt_state_tools_v5 and args.new):
+        parser.error("--state-tools requires --new; --adopt-state-tools-v5 requires --continue.")
     continuous_options = (args.context_bytes, args.consolidation_bytes, args.max_calls, args.max_tools, args.continuous_timeout_seconds)
     if args.continuous and (args.mandate is None or args.limits is not None):
         parser.error("--continuous requires --mandate and cannot use bounded --limits; use --max-calls/--max-tools instead.")
@@ -48,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         options = {"simulation": args.simulation} if args.simulation is not None else {}
         if args.python_enabled:
             options["python_enabled"] = True
+        options["state_tools"] = state_profile(root)
         async with build_agent(root / "estado", root / "ejecuciones", limits,
                                experiment=root, run_name=args.run_name, **options) as agent:
             message = args.message
@@ -81,9 +87,12 @@ def main(argv: list[str] | None = None) -> int:
                 disjoint(args.mandate, protected)
             mandate = args.mandate.read_text(encoding="utf-8")
             validate_mandate(mandate)
+        # Adoption and validation belong under the same cooperative experiment lock.
         prompts = prepare_experiment(root, new=args.new, instructions=tuple(args.instructions),
-                                     deliberative=mandate is not None)
+                                     deliberative=mandate is not None, state_tools=args.state_tools)
         with experiment_lock(root):
+            if args.adopt_state_tools_v5:
+                prompts = prepare_experiment(root, new=False, deliberative=mandate is not None, adopt_state_tools_v5=True)
             if mandate is not None:
                 deliberative_context(Workspace(root / "estado", create=False), mandate)
             result = asyncio.run(execute(root, prompts, limits))

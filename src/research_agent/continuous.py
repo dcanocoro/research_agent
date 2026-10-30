@@ -14,6 +14,7 @@ from runtime_contracts.llm import ConversationContext, ConversationMessage, Tool
 
 from .context_budget import ByteCounter, ContextConfigurationError
 from .contracts import AgentRequest, AgentResult
+from .continuity import focus_context
 from .experiments import deliberative_context
 from .recording import encoded
 from .tracing import capture_traces
@@ -31,20 +32,29 @@ POLICY = (
 )
 CONTINUE = "Runtime continuation: no new human request. Continue the existing mandate; choose the next useful work."
 CONSOLIDATE = (
-    "Runtime context consolidation: use only the available persistence tools. Preserve material advances, "
-    "attempts, blockers and next intentions in existing files and agenda.md. You have at most four calls. "
+    "Runtime context consolidation: use only the available persistence tools. Preserve only material advances, "
+    "attempts, blockers and next intentions not already adequately saved. Check affected coherence and the active "
+    "question in agenda.md; do not rebuild or summarize unchanged company documents. Finish as soon as continuity "
+    "is sufficient; you have at most four calls, not a quota. "
+    "Tool errors are returned for correction within the remaining calls; they do not end consolidation. "
     "A text response ends consolidation and starts a fresh context, not a new mandate. Writing is optional."
 )
 REVIEW_INTERVAL = 10
 REVIEW = (
-    "Revisa el progreso de la investigación: qué ha cambiado materialmente en tu comprensión, "
+    "Revisa la pregunta activa y el progreso desde la revisión anterior o el último avance guardado en agenda: "
+    "qué has aprendido, qué hipótesis han cambiado y con qué fundamento, "
     "qué incertidumbres siguen siendo decisivas y si tus acciones recientes han contribuido a resolverlas. "
     "Decide justificadamente si continuar, cambiar de enfoque, repriorizar o cerrar esta línea. "
     "Expresa brevemente la decisión que orientará tu siguiente acción. No redactes un informe. "
-    "En la continuación, conserva información en archivos solo si esta revisión identifica algo que merezca guardarse."
+    "La falta de datos o descartar una vía pueden ser avances; no fabriques hallazgos. "
+    "No tienes herramientas en esta revisión. En la continuación, actualiza el conocimiento y la agenda si hay "
+    "cambios materiales; retira pendientes resueltos y conserva lo necesario para comparar el próximo avance."
 )
 REVIEW_POLICY = {"interval_research_calls": REVIEW_INTERVAL, "instruction": REVIEW,
                  "budget": "additional_to_research_and_consolidation", "tools_enabled": False}
+CHECKPOINT_POLICY = {"version": "knowledge-checkpoints-v1", "events": ["initial", "review", "renewal", "final"],
+                     "scope": "editable knowledge; original materials remain in native captures",
+                     "feedback_to_agent": False}
 
 
 def context_seed(agent: AgentA, request: AgentRequest, cause: str) -> list[Any]:
@@ -55,7 +65,10 @@ def context_seed(agent: AgentA, request: AgentRequest, cause: str) -> list[Any]:
     memory = agent.workspace.read_file("indice.md", max_bytes=8192) if index.exists() else {"text": ""}
     return [ConversationMessage("user", "Persistent authentic user mandate:\n\n" + current["mandate"]["text"]),
             ConversationMessage("user", request.message),
-            ConversationContext({"memory_index": memory, "deliberative_agenda": current["agenda"],
+            ConversationContext({"memory_index": {**memory, "exists": index.exists(),
+                                 "note": "Index already included if present; if absent use inspect_state/inspect_company, not repeated reads of indice.md."},
+                                 "deliberative_agenda": current["agenda"],
+                                 "work_focus": focus_context(current["agenda"]["text"]),
                                  "runtime": {"cause": cause, "metadata": request.metadata, "policy": POLICY,
                                              "configuration": agent.configuration.get("simulated_date")}})]
 
@@ -136,6 +149,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                    if before_files.get(p) != after_files.get(p)]
         agent.recorder.event("lab.context.renewed", before_bytes=before_bytes, **after,
                              changed_files=changed, **budget())
+        agent.recorder.checkpoint(agent.workspace, "renewal", **budget())
         phase, consolidation_calls = "research", 0
 
     context = RunContext(run_id, turn_id=interaction_id, regime="lab", component="agent_a", deadline=deadline)
@@ -146,6 +160,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                                                          call_metadata=lambda: dict(active_call)))
             agent.recorder.text("peticion.md", request.message)
             agent.recorder.save("estado-inicial.json", agent.recorder.snapshot(agent.workspace))
+            agent.recorder.checkpoint(agent.workspace, "initial", **budget())
             agent.recorder.event("lab.run.started", continuous=asdict(config), **request.metadata)
             counter = ByteCounter()
             output_tokens = agent.configuration.get("max_output_tokens", 0)
@@ -220,6 +235,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                         reason = "review_tools_disabled"
                         break
                     agent.recorder.event("lab.review.completed", text=turn.text, **budget())
+                    agent.recorder.checkpoint(agent.workspace, "review", **budget())
                     research_since_review = 0
                     phase = "research"
                     append(ConversationContext({"runtime_notice": CONTINUE}))
@@ -230,10 +246,6 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                     timeout = min(agent.limits.timeout_seconds, deadline - monotonic()) if deadline is not None else agent.limits.timeout_seconds
                     async with asyncio.timeout(max(0.001, timeout)):
                         result = await agent.tools.execute(turn.function_call, allowed_names=allowed)
-                    if phase == "consolidation" and not result.payload.get("ok"):
-                        append(result)
-                        reason = "consolidation_failed"
-                        break
                     # Keep complete result on disk; a small reference can replace its delivery.
                     # Crossing the renewal threshold must deliver the evidence first;
                     # the next iteration enters consolidation. Only the hard cap redirects.
@@ -269,8 +281,10 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
             agent.recorder.event("lab.continuous.paused", cause=reason, **budget())
             result = AgentResult(run_id, status, answer, reason, (), calls, tool_calls, error, agent.tools.summary(),
                                  dict(calls_by_phase))
+            agent.recorder.checkpoint(agent.workspace, "final", **budget())
             outcome = agent._finish(result, captured)
             if transcript.exists():
-                outcome = replace(outcome, artifact_refs=(*outcome.artifact_refs, transcript.name))
+                extra = ("continuidad/indice.json",) if (agent.recorder.current / "continuidad/indice.json").exists() else ()
+                outcome = replace(outcome, artifact_refs=(*outcome.artifact_refs, transcript.name, *extra))
                 agent.recorder.save("resultado.json", outcome)
     return outcome

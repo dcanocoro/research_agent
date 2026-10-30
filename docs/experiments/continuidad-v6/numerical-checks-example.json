@@ -1,0 +1,16 @@
+{
+  "schema_version": "numerical-checks-v1",
+  "checks": [
+    {
+      "document": "empresas/AON/modelo.md",
+      "quote": "caída de 8,99 puntos",
+      "reported": "8.99",
+      "operation": "subtract",
+      "left": {"path": "materiales/calculo-sintetico.json", "pointer": "/margin/0", "unit": "fraction"},
+      "right": {"path": "materiales/calculo-sintetico.json", "pointer": "/margin/1", "unit": "fraction"},
+      "scale": "100",
+      "unit": "percentage_points",
+      "tolerance": "0.005"
+    }
+  ]
+}

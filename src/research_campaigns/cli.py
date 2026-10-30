@@ -32,10 +32,19 @@ def main(argv: list[str] | None = None) -> int:
             command.add_argument("--case")
             command.add_argument("--condition", choices=["baseline", "deliberative"])
             command.add_argument("--instructions-dir", type=Path)
+            command.add_argument("--state-tools", choices=["legacy", "v5"], default="v5")
     for name in ("resume", "report"):
         sub.add_parser(name).add_argument("campaign", type=Path)
+    progress = sub.add_parser("progress", help="Observe a native run offline; no semantic score or provider calls.")
+    progress.add_argument("run", type=Path)
+    progress.add_argument("--checks", type=Path)
+    progress.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.operation == "progress":
+            from .progress import save_report
+            save_report(args.run, args.output or args.run / "progreso-v6.json", args.checks)
+            return 0
         if args.operation in {"resume", "report"}:
             record = load(args.campaign)
             if args.operation == "report":
@@ -74,15 +83,15 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("--case applies only to document suites.")
         if mode == "suite":
             from .suite import run_suite
-            return run_suite(suite, args.output, args.case)[1]
+            return run_suite(suite, args.output, args.case, state_tools=args.state_tools)[1]
         if mode == "historical":
             from .longitudinal import run_campaign
             return run_campaign(args.output, scenario=path, data=read(args.data) if args.data else None,
-                                condition=args.condition, instructions_dir=args.instructions_dir)
+                                condition=args.condition, instructions_dir=args.instructions_dir, state_tools=args.state_tools)
         if args.data is None:
             raise ValueError("Continuous campaigns require a local --data dataset.")
         from .continuous import run_campaign as run_continuous
-        return run_continuous(args.output, args.definition, args.data)
+        return run_continuous(args.output, args.definition, args.data, state_tools=args.state_tools)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         parser.error(str(exc))
     except KeyboardInterrupt:

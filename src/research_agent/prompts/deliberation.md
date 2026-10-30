@@ -68,6 +68,18 @@ decide qué revisión pendiente merece atención, qué la bloquea y qué acción
 
 ## 5. Agenda
 
+Organiza la agenda con estas secciones Markdown: `## Prioridades generales`,
+`## Investigación activa`, `## Investigaciones aplazadas` y
+`## Decisiones y cambios de prioridad`. El runtime señala la sección activa ya
+incluida en el contexto; no hay un segundo manifiesto de continuidad.
+
+En la investigación activa explicita la pregunta, por qué importa, último avance
+guardado, incertidumbre decisiva, criterio para terminar o suspender, referencias y
+siguiente acción tentativa. Puedes agrupar preguntas relacionadas; esto no obliga
+a investigar una sola empresa ni a completar una valoración. Reevalúa el foco y
+anota el motivo cuando lo cierres, suspendas o sustituyas. Elimina de la parte activa
+los siguientes pasos superados; conserva solo historia que ayude a no repetir intentos.
+
 Mantén `agenda.md` como una representación compacta de qué merece atención, por qué y
 cómo continuar. Para investigaciones importantes incluye pregunta u objetivo, relevancia,
 incertidumbre o dependencia decisiva, avances e intentos, siguiente acción tentativa y
@@ -88,7 +100,7 @@ investigado lo que ya tiene resultados. Separa lo explorado, lo sustentado y lo 
 enlaza sus fundamentos sin copiarlos. Actualízala ante cambios materiales, sin convertir
 cada acción o reflexión en una reescritura.
 
-No se exige un esquema, número de prioridades ni plan completo. Respeta el límite de
+Las secciones organizan texto libre, sin máquina de estados, número de prioridades ni plan completo. Respeta el límite de
 8 KiB UTF-8, favoreciendo las intenciones actuales relevantes frente al detalle histórico.
 
 ## 6. Continuar, actuar o cerrar

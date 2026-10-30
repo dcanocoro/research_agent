@@ -1,9 +1,25 @@
 # Estrategia de investigación
 
-> Agenda revisada el 2026-10-25 con el encargo de metodología financiera aceptado por el usuario.
+> Agenda revisada el 2026-10-29 con el encargo V6 aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Encargo vigente: operadores Python opcionales
+## Encargo vigente: continuidad V6
+
+El usuario solicita implementar en un único corte la primera propuesta V6:
+dirección mediante agenda, persistencia incremental, contenido recuperable y evaluación
+longitudinal externa. El [protocolo](experiments/continuidad-v6/protocol.md) delimita
+el contraste. Mantener un investigador; queda excluida la propuesta posterior de
+verificadores y evaluadores LLM dentro del bucle. Alcance: implementación, pruebas
+locales y preparación del experimento; sin campaña real ni cambios en FinMate.
+La hipótesis de mejora semántica sigue pendiente de contraste autorizado.
+
+Posteriormente el mismo día el usuario autorizó una campaña con las condiciones V5.
+Los [hallazgos V6](experiments/continuidad-v6/findings.md) registran 100 llamadas
+ordinarias y captura completa, menos errores instrumentales, pero ninguna escritura
+durante investigación, mayor consolidación y coherencia parcial. No constituyen
+aceptación semántica ni autorizan por sí solos otra intervención arquitectónica.
+
+## Antecedente: operadores Python opcionales
 
 El 2026-10-27 el usuario aprobó implementar la [POC de operadores Python](experiments/python-operators-v1/protocol.md):
 cuatro contratos, documentación recuperable, ejecución local opcional, prompts y pruebas.

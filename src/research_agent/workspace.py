@@ -1,10 +1,12 @@
 from __future__ import annotations
 from typing import Any
+from collections.abc import Callable
 """Bounded UTF-8 state; original materials are owned by tools."""
 import hashlib
 import os
 import json
 import tempfile
+import threading
 from pathlib import Path
 
 
@@ -14,9 +16,15 @@ def reject_constant(value: str) -> None:
 
 class Workspace:
     extensions = frozenset({".md", ".json", ".txt", ".csv"})
+    _locks: dict[str, Any] = {}
+    _locks_guard = threading.Lock()
 
     def __init__(self, root: Path, *, create: bool = True) -> None:
         self.root = root.absolute()
+        # Optional domain policy supplied by the tool composition, not owned by the core.
+        self.write_validator: Callable[[str, bytes], dict[str, Any]] | None = None
+        with self._locks_guard:
+            self.mutation_lock = self._locks.setdefault(os.path.normcase(str(self.root.resolve())), threading.RLock())
         self._check_links(self.root)
         if create:
             self.root.mkdir(parents=True, exist_ok=True)
@@ -87,30 +95,55 @@ class Workspace:
         return self.write_file(path, content)
 
     def write_file(self, path: str, content: str) -> dict[str, Any]:
+        with self.mutation_lock:
+            return self.publish(path, content.encode("utf-8"))
+
+    def read_version(self, path: str) -> tuple[bytes, str]:
+        source = self.path(path)
+        if source.suffix.lower() not in self.extensions:
+            raise ValueError("Unsupported text format.")
+        raw = source.read_bytes()
+        raw.decode("utf-8")
+        return raw, hashlib.sha256(raw).hexdigest()
+
+    def publish(self, path: str, raw: bytes, *, create: bool = False,
+                expected_sha256: str | None = None) -> dict[str, Any]:
+        """Caller holds mutation_lock; external editors are not isolated."""
+        content = raw.decode("utf-8")
         target = self.path(path)
         if target.suffix.lower() not in self.extensions:
             raise ValueError("Allowed formats: Markdown, JSON, TXT and CSV.")
         if Path(path).parts[0].casefold() == "materiales":
             raise ValueError("Original materials are read-only for the agent.")
-        if len(content.encode("utf-8")) > 128 * 1024:
+        if len(raw) > 128 * 1024:
             raise ValueError("File exceeds the write limit.")
+        if create and target.exists():
+            raise FileExistsError("State file already exists; read its version and edit instead.")
         if target.suffix.lower() == ".json":
             try:
                 json.loads(content, parse_constant=reject_constant)
             except ValueError:
                 raise ValueError("Invalid JSON content.") from None
+        details = self.write_validator(path, raw) if self.write_validator is not None else {}
         target.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as stream:
             temporary = Path(stream.name)
-            stream.write(content.encode("utf-8"))
+            stream.write(raw)
             stream.flush()
             os.fsync(stream.fileno())
         try:
-            temporary.replace(target)
+            # Recheck immediately before publishing; this is not an external CAS.
+            self.path(path)
+            if expected_sha256 is not None and self.read_version(path)[1] != expected_sha256:
+                raise ValueError("version_conflict: reread the current file before editing.")
+            if create:
+                # Same-filesystem atomic publication with no replacement, also on Windows.
+                os.link(temporary, target)
+            else:
+                temporary.replace(target)
         finally:
             temporary.unlink(missing_ok=True)
-        return {"path": path, "bytes": target.stat().st_size,
-                "sha256": hashlib.sha256(target.read_bytes()).hexdigest()}
+        return {"path": path, "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(), **details}
 
     def search_files(self, query: str, path: str = ".") -> dict[str, Any]:
         matches = []

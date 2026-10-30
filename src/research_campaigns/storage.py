@@ -32,7 +32,8 @@ def dependencies() -> dict[str, Any]:
 
 
 def create(root: Path, definition: Path, mode: str, identifier: str, files: list[Path], *,
-           deliberative: bool = False, instructions_dir: Path | None = None) -> dict[str, Any]:
+           deliberative: bool = False, instructions_dir: Path | None = None,
+           state_tools: str = "v5") -> dict[str, Any]:
     import research_agent
     Workspace._check_links(root)
     for source in (definition, Path(__file__).parent, Path(str(research_agent.__file__)).parent):
@@ -40,7 +41,7 @@ def create(root: Path, definition: Path, mode: str, identifier: str, files: list
     if mode == "suite":
         root.mkdir(parents=True, exist_ok=False)
     else:
-        prepare_experiment(root, new=True, deliberative=deliberative, instructions_dir=instructions_dir)
+        prepare_experiment(root, new=True, deliberative=deliberative, instructions_dir=instructions_dir, state_tools=state_tools)
     for source in files:
         Workspace._check_links(source)
         target = root / "definicion" / source.relative_to(definition)

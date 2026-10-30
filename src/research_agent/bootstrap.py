@@ -14,7 +14,10 @@ from .workspace import Workspace
 @asynccontextmanager
 async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits(), *,
                       experiment: Path | None = None, run_name: str = "intervencion",
-                      simulation: Path | None = None, python_enabled: bool = False) -> AsyncIterator[AgentA]:
+                      simulation: Path | None = None, python_enabled: bool = False,
+                      state_tools: str = "legacy") -> AsyncIterator[AgentA]:
+    if state_tools not in {"legacy", "v5"}:
+        raise ValueError("Unknown state tools profile.")
     # Validate experiment paths before constructing clients or database engines.
     disjoint(workspace, runs)
     disjoint(workspace, Path(__file__).parent)
@@ -43,7 +46,7 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     factory = LLMFactory(settings)
     profile = replace(configured_profile(settings, "planner"), name="lab")
     space = Workspace(workspace)
-    register_files(registry, space)
+    register_files(registry, space, state_tools=state_tools)
     if python_enabled:
         from .integrations.python_tools import register_python
         register_python(registry, space, python_config)
@@ -73,7 +76,7 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
             fingerprints[module.__name__] = hashlib.sha256(repr(hashes).encode()).hexdigest()
         yield AgentA(factory.conversation(profile), registry, space, recorder, limits,
                      configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files",
-                                    "python_operators": python_config, **historical})
+                                    "python_operators": python_config, "state_tools": state_tools, **historical})
     finally:
         await factory.aclose()
         if database is not None:

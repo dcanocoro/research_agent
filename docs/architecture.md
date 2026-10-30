@@ -82,6 +82,86 @@ el registro único, las modalidades y la recuperación.
 
 ## Estado, instrucciones y ejecuciones
 
+### Continuidad V6 — 2026-10-29
+
+La [intervención V6](experiments/continuidad-v6/protocol.md) mantiene un investigador,
+ReAct y el perfil de herramientas `v5`, con contratos `state-tools-v6.1`. No añade
+supervisores LLM. Nuevos experimentos deliberativos reciben una agenda con prioridades,
+investigación activa, aplazadas y decisiones. Sus copias de instrucciones definen el
+mantenimiento; continuaciones no reescriben agendas o instrucciones existentes.
+
+`context_seed` incorpora la agenda una sola vez y un localizador de su sección activa,
+derivado por ATX. Agenda antigua o ambigua: foco no disponible, sin inventarlo ni migrarlo.
+La ausencia de índice es explícita. No se cargan automáticamente expedientes. La
+consolidación guarda lo aún pendiente; la revisión sin herramientas reevalúa progreso
+y puede orientar actualizaciones en la continuación ordinaria, sin llamadas nuevas.
+
+`StateOperations` instala en Workspace una política de escritura de expedientes:
+todos los escritores de esa composición pasan los mismos checks antes de publicar.
+Rechaza IDs eliminados o duplicados y vaciado de cuerpos antes poblados, usando los
+mismos límites de sección que la lectura. Devuelve secciones afectadas acotadas y
+advertencias sobre IDs vacíos y referencias locales literales. Permite referencias
+futuras; no comprueba semántica, unidades en prosa ni validez de `source_refs`.
+Workspace sin la composición V5 y editores externos no tienen esa política de dominio.
+
+El continuo guarda `continuidad/estado-NNNN.json` e índice al inicio, revisión,
+renovación y cierre. Texto exacto/CRLF y hashes del conocimiento, fase y contadores;
+los materiales permanecen en sus capturas originales. La política efectiva está en
+manifiesto y campaña; errores se incorporan a `capture_errors`. No son versiones de
+cada edición ni transacciones multiarchivo. No se reinyectan como memoria.
+
+`research_campaigns progress` compara estos estados offline y conserva observaciones,
+escrituras por fase, lecturas y comprobaciones numéricas explícitas con Decimal sobre
+materiales capturados. Progreso, calidad, utilidad y recuperación requieren rúbrica:
+el informe los deja `not_assessed`, sin puntuación única ni feedback al agente.
+La [guía](development.md#continuidad-v6-y-evaluación-offline) explica uso y límites.
+
+### Herramientas de estado V5 — 2026-10-28
+
+Los experimentos nuevos incorporan el perfil `v5` en `herramientas.json`, fuera de
+`estado/`, y una guía congelada en sus instrucciones. Los existentes sin configuración
+conservan `legacy`. La API directa mantiene `legacy` por defecto; la CLI resuelve el
+perfil del experimento. La [guía de desarrollo](development.md#herramientas-de-estado-v5)
+explica creación y adopción explícita.
+
+[StateOperations](../src/research_agent/state_tools.py) implementa vistas deterministas
+sobre Workspace: inventario/mapa, lectura por bytes/líneas/sección, búsqueda contextual,
+creación exclusiva y edición exacta. Cada consulta usa bytes y hash de la misma lectura;
+las continuaciones vinculan argumentos y versiones. Las secciones reconocen encabezados
+ATX fuera de código cercado; los mapas no certifican cobertura semántica. Las lecturas
+pueden continuar dentro de una línea larga. Las búsquedas se ordenan por ruta/línea,
+con hasta 50 coincidencias y contextos largos explícitamente parciales.
+
+Las nuevas mutaciones y las escrituras anteriores comparten un bloqueo por raíz dentro
+del proceso. Crear publica un temporal mediante enlace duro sin reemplazo; editar valida
+todas las sustituciones/inserciones en memoria y comprueba de nuevo el hash antes de
+reemplazar. Sigue sin haber CAS frente a editores externos ni transacciones multiarchivo.
+Las herramientas antiguas conservan sus schemas y permiten reemplazo sin versión.
+
+La capa de empresa resuelve exclusivamente `empresas/<simbolo>/<dimension>.md` para
+modelo, valoracion y evaluacion. Orienta, recupera y crea/revisa una dimensión; no crea
+las otras automáticamente. Los IDs iniciales de encabezados son localizadores y los
+duplicados se informan. La edición específica preserva los IDs reconocidos, pero no
+puede comprobar su significado. No hay motor de dependencias ni validación financiera.
+
+[El registro V5](../src/research_agent/integrations/state_tools.py) declara schemas
+cerrados, campos condicionales nullables y propósito obligatorio. Las operaciones se
+admiten en consolidación; la revisión periódica continúa sin herramientas. Cada resultado
+nuevo, incluido el envoltorio, se limita a 32 KiB; vistas paginadas reservan espacio para
+metadatos y escapado. El original de la respuesta se conserva como artefacto recuperable.
+
+El registro identifica mutaciones mediante metadata, incluyendo los escritores previos.
+Actualiza `files_written` antes de capturar; si falla la captura posterior informa
+`applied=true` con el recibo de versión. Reintentar exige inspeccionar el estado real.
+Los contratos empaquetados se consultan opcionalmente con `describe_state_tools` y sus
+textos/versiones/hashes se conservan en el manifiesto. Las continuaciones registran y
+anuncian cambios respecto al run anterior del mismo workspace. No hay almacén nuevo
+de versiones ni restauración automática de cada edición.
+
+El cálculo inicial de presupuesto de `research_campaigns` registra el mismo perfil
+efectivo y las campañas congelan su configuración. La aceptación local y los límites
+se conservan en la [entrega](deliveries/2026-10-28-state-tools-v5.md).
+
 Cada experimento CLI tiene su propio estado y puede recibir varios runs:
 
 ```text
@@ -249,7 +329,7 @@ estimada, límites de cartera y recuperación; el [baseline previo](baseline.md)
 `AgentRequest.mandate`, opcional y añadido al final del contrato, activa la condición
 deliberativa. La CLI lo recibe mediante `--mandate PATH`, fuera de estado y ejecuciones.
 `prepare_experiment(deliberative=True)` copia `deliberacion.md` y crea `estado/agenda.md`
-vacío. Las continuaciones exigen ambos y el mandato; no migran instrucciones antiguas.
+con la plantilla compacta V6. Las continuaciones exigen ambos y el mandato; no migran instrucciones antiguas.
 
 El mandato auténtico se entrega como mensaje de usuario separado; la agenda se entrega
 como `ConversationContext.deliberative_agenda`, memoria revisable sin autoridad.
@@ -340,8 +420,13 @@ las capturas históricas conservan sus unidades originales.
 Al llegar al umbral se ofrecen hasta cuatro llamadas de consolidación con herramientas
 de persistencia. Cada una descuenta recursos globales. Después se reconstruye con
 instrucciones, mandato, petición inicial, fecha/metadatos, índice, agenda y presupuesto
-actual. No se conserva cola ni se genera otro resumen. Escrituras opcionales; si falla
-la consolidación, se pausa sin retirar la historia activa. Se rechazan arranques o
+actual. No se conserva cola ni se genera otro resumen. Escrituras opcionales. Los
+errores devueltos por herramientas se entregan al modelo igual que en investigación:
+no terminan la ejecución ni reinician el presupuesto. A puede corregir argumentos o
+elegir otra operación con las llamadas restantes. Al responder o agotar las cuatro
+llamadas se reconstruye, también si hubo errores o no se escribió; esto no acredita
+que el conocimiento haya quedado conservado. Los límites globales, cancelación,
+timeouts y fallos operativos siguen teniendo sus motivos de cierre. Se rechazan arranques o
 reconstrucciones cuyo contexto protegido no quepa. La entrega de un resultado se compara
 con el máximo de contexto, en ambas fases; superar solo el umbral conserva el contenido
 y activa consolidación en la siguiente iteración. Un resultado que exceda el máximo se

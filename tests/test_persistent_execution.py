@@ -152,7 +152,7 @@ def test_deliberative_budget_or_failure_preserves_agenda(tmp_path, failure):
 def test_new_continue_isolation_and_collision(tmp_path):
     root = tmp_path / "first"
     prompts = prepare_experiment(root, new=True)
-    assert len(prompts) == 2
+    assert len(prompts) == 3  # Agent, financial methodology, and frozen V5 guide.
     assert not list((root / "estado").iterdir())
     with pytest.raises(FileExistsError):
         prepare_experiment(root, new=True)
@@ -362,11 +362,12 @@ def test_cli_validates_before_building_and_freezes_instructions(tmp_path, monkey
     root = tmp_path / "experiment"
     @asynccontextmanager
     async def builder(workspace, runs, limits, **kwargs):
+        state_tools = kwargs.pop("state_tools", "legacy")
         agent = make_agent(tmp_path / "fake", [text("OK")])
         agent.workspace = Workspace(workspace)
         agent.recorder = RunRecorder(runs, **kwargs)
         agent.tools = ToolRegistry(agent.recorder)
-        register_files(agent.tools, agent.workspace)
+        register_files(agent.tools, agent.workspace, state_tools=state_tools)
         yield agent
     monkeypatch.setattr(cli, "build_agent", builder)
     assert cli.main(["Question", "--experiment", str(root), "--new", "--run-name", "Inicial"]) == 0

@@ -20,12 +20,26 @@ wheel, entradas y artefactos con hashes o referencias recuperables. Una ruta loc
 `artifacts/` no constituye evidencia portable: declarar disponibilidad y restricciones
 si las capturas no pueden compartirse. No incorporar secretos o payloads privados.
 
+[V5 — herramientas de estado y expedientes de empresa](herramientas-estado-v5/design-brief.md)
+conserva el diseño y enlaza la [implementación local](../deliveries/2026-10-28-state-tools-v5.md).
+Incluye operaciones intencionales, contratos bajo demanda y selección de resultados
+para el contexto; el contraste semántico sigue pendiente.
+
+La [campaña V5 de 100 llamadas](herramientas-estado-v5/protocol.md), autorizada el
+2026-10-28, repite el escenario V4 con Python, estado nuevo y herramientas V5.
+Los [hallazgos](herramientas-estado-v5/findings.md) registran detención temprana tras
+11 llamadas por una edición rechazada en consolidación; no es un contraste causal.
+La [repetición tras corregir el cierre](herramientas-estado-v5/findings-repeticion.md)
+alcanzó las 100 llamadas ordinarias, con diez renovaciones y captura completa;
+adopción instrumental observada y calidad semántica parcial.
+
 Mantener aquí una fila por experimento cuando exista: ID, pregunta, estado, enlaces
 a protocolo/hallazgos y decisión asociada. Un experimento puede concluir sin recomendar
 un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos.
 
 | ID | Pregunta | Registro |
 |---|---|---|
+| Continuidad V6 | ¿Agenda explícita y operaciones recuperables mejoran progreso y fidelidad con coste conocido? | [Protocolo](continuidad-v6/protocol.md), [rúbrica](../../campaigns/contexto-continuo-v6/rubrica.md) y [hallazgos](continuidad-v6/findings.md): 100 llamadas ordinarias, captura completa, menos errores, sin persistencia ordinaria y coherencia parcial; sin supervisores LLM. |
 | Operadores Python v1 | ¿Los procedimientos programables mejoran exactitud y utilidad con coste proporcionado? | [Protocolo](python-operators-v1/protocol.md), [corpus sintético](python-operators-v1/fixtures.json) y [rúbrica](python-operators-v1/rubric.md); [observación V4 real](python-operators-v1/findings-v4.md): dos usos autónomos correctos. Contraste controlado pendiente. |
 | Contexto continuo v1 | ¿A conserva intención y avanza a través de reconstrucciones con ventana acotada? | [Protocolo](contexto-continuo-v1/protocol.md) y [hallazgos](contexto-continuo-v1/findings.md); original y repetición ejecutados, bloqueo técnico corregido; continuidad semántica parcial. [V3](contexto-continuo-v1/protocol.md#v3--autorregulación-mediante-instrucciones-y-renovación-menos-frecuente): instrucciones reforzadas y umbral mayor, sin campaña ejecutada. |
 | Análisis financiero v1 | ¿Metodología y conocimiento Markdown mejoran el análisis acumulativo? | [Protocolo](analisis-financiero-v1/protocol.md) y [rúbrica](analisis-financiero-v1/rubric.md); implementación local, contraste y aceptación semántica sin ejecutar. |

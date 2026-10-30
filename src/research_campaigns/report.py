@@ -66,6 +66,9 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
             refs = [link(f"{name}/{file}", label) for file, label in
                     (("respuesta.md", "Respuesta"), ("manifiesto.json", "Configuración"), ("estado-inicial.json", "Estado inicial"),
                      ("estado-final.json", "Estado final"), ("eventos.jsonl", "Eventos"), ("trazas", "Trazas"))]
+            for file, label in (("continuidad/indice.json", "Continuidad"), ("progreso-v6.json", "Observación V6")):
+                if (root / name / file).exists():
+                    refs.append(link(f"{name}/{file}", label))
         else:
             details.setdefault("capture_errors", [{"error": "Sin captura de ejecución"}])
         for key in ("stdout", "stderr"):

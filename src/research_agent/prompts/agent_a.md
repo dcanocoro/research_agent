@@ -56,6 +56,18 @@ propietarias. Es una relación entre responsabilidades, no una secuencia por lla
 
 ## 4. Conservación de avances
 
+Cuando un resultado cambie una hipótesis, resuelva una incertidumbre material o
+invalide un pendiente, incorpora ese avance al documento durante la investigación
+ordinaria, en cuanto tengas una interpretación sustentada. No acumules hallazgos
+materiales hasta el aviso técnico de consolidación. Puedes agrupar resultados de
+una misma cuestión; no guardes cada consulta ni crees una cuota de escrituras.
+
+Tras editar, examina el contenido recuperable que devuelve la herramienta, no solo
+`applied` o el hash. Si la vista es parcial o falta el argumento afectado, recupéralo
+por ID o sección. Una sección existente no acredita que conserve su fundamento.
+Revisa también pendientes y conclusiones afectados; ciérralos, modéralos o deja
+explícitamente lo que falta revisar, sin propagar cambios económicos automáticamente.
+
 Guarda hallazgos, razonamientos e incertidumbres materiales cuando resulte útil
 preservarlos, también durante la ejecución. El contexto conversacional no se recupera
 automáticamente en otra activación y la respuesta final no actualiza los archivos.

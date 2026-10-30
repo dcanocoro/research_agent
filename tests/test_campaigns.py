@@ -25,7 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 from support import catalog, fake_cli
 
 
-def test_validate_catalog_without_service_imports():
+def test_validate_catalog_without_service_imports(tmp_path):
+    fixture = catalog(tmp_path, cases=3, sessions=6)
     code = """
 import sys
 class Block:
@@ -34,9 +35,9 @@ class Block:
             raise AssertionError(fullname)
 sys.meta_path.insert(0, Block())
 from research_campaigns.cli import main
-raise SystemExit(main(['validate', 'campaigns/longitudinal-v1']))
+raise SystemExit(main(['validate', sys.argv[1]]))
 """
-    result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "-c", code, str(fixture)], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert "cases=3; sessions=18" in result.stdout
 
@@ -172,7 +173,7 @@ def test_modified_stimulus_is_reported(tmp_path):
 
 
 def test_longitudinal_suite_with_simulated_agent_and_no_providers(tmp_path):
-    suite = load_suite(ROOT / "campaigns/longitudinal-v1")
+    suite = load_suite(catalog(tmp_path, cases=3, sessions=6))
     attempted = []
     def worker(command, out, err):
         exp = Path(command[command.index("--experiment") + 1])
@@ -247,10 +248,11 @@ from infra.adapters.llm_trace import LLMCallTrace
 
 @asynccontextmanager
 async def builder(workspace, runs, limits=AgentLimits(), **kwargs):
+    state_tools = kwargs.pop('state_tools', 'legacy')
     space = Workspace(workspace)
     recorder = RunRecorder(runs, **kwargs)
     tools = ToolRegistry(recorder)
-    register_files(tools, space)
+    register_files(tools, space, state_tools=state_tools)
     class Client:
         n = 0
         async def respond(self, **request):

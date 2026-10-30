@@ -1,6 +1,7 @@
 from __future__ import annotations
 """Per-run evidence; editable knowledge and original materials live in Workspace."""
 import json
+import hashlib
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -25,9 +26,24 @@ class RunRecorder:
         self.workspace_fingerprint: str | None = None
         self.sequence = 0
         self.capture_errors: list[dict[str, str]] = []
+        self.contract_changes: list[str] = []
+        self.checkpoints: list[dict[str, Any]] = []
 
     def start(self, run_id: str, metadata: dict[str, Any]) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
+        contracts = metadata.get("state_contracts", {})
+        for contract in contracts.values():
+            contract["sha256"] = hashlib.sha256(contract["text"].encode("utf-8")).hexdigest()
+        previous = None
+        for candidate in sorted(self.root.glob("*/manifiesto.json"), key=lambda p: p.stat().st_mtime_ns, reverse=True):
+            Workspace._check_links(candidate)
+            value = json.loads(candidate.read_bytes())
+            if value.get("workspace_fingerprint") == metadata.get("workspace_fingerprint"):
+                previous = value.get("state_contracts", {})
+                break
+        self.contract_changes = ([] if previous is None else sorted(
+            name for name in contracts.keys() | previous.keys()
+            if contracts.get(name, {}).get("sha256") != previous.get(name, {}).get("sha256")))
         stem = f"{datetime.now(ZoneInfo('Europe/Madrid')):%Y-%m-%d}-{self.run_name}"
         for i in range(1, 100000):
             current = self.root / (stem if i == 1 else f"{stem}-{i:02d}")
@@ -40,8 +56,10 @@ class RunRecorder:
             raise ValueError("Run name exhausted.")
         self.current = current
         self.events, self.capture_errors, self.sequence = [], [], 0
+        self.checkpoints = []
         self.workspace_fingerprint = metadata.get("workspace_fingerprint")
         self.save("manifiesto.json", {**metadata, "run_directory": current.name,
+                                    "state_contract_changes": self.contract_changes,
                                     "git_initial": git_state(self.experiment)})
 
     def save(self, name: str, value: Any) -> str:
@@ -90,6 +108,35 @@ class RunRecorder:
             issue = {"operation": "state_snapshot", "error_type": type(exc).__name__}
             self.capture_errors.append(issue)
             return {"capture_error": issue}
+
+    def checkpoint(self, workspace: Workspace, label: str, **metadata: Any) -> None:
+        """Offline evidence only; never injected as memory or used to control research."""
+        start_errors = len(self.capture_errors)
+        try:
+            paths = self.snapshot(workspace)
+            contents = {}
+            for path in sorted(paths):
+                if path == "capture_error" or Path(path).parts[0].casefold() == "materiales":
+                    continue
+                try:
+                    raw, version = workspace.read_version(path)
+                    contents[path] = {"text": raw.decode("utf-8"), "sha256": version}
+                except (OSError, ValueError) as exc:
+                    self.capture_errors.append({"operation": "knowledge_checkpoint", "path": path,
+                                                "error_type": type(exc).__name__})
+            reference = f"continuidad/estado-{len(self.checkpoints):04d}.json"
+            item = {"schema_version": "knowledge-checkpoint-v1", "label": label, **metadata,
+                    "capture_complete": len(self.capture_errors) == start_errors,
+                    "files": contents, "capture_errors": self.capture_errors[start_errors:]}
+            self.save(reference, item)
+            entry = {"reference": reference, "label": label, **metadata,
+                     "capture_complete": item["capture_complete"]}
+            self.checkpoints.append(entry)
+            self.save("continuidad/indice.json", {"schema_version": "knowledge-checkpoints-v1",
+                                                  "checkpoints": self.checkpoints})
+            self.event("lab.knowledge.checkpoint", **entry)
+        except Exception as exc:
+            self.capture_errors.append({"operation": "knowledge_checkpoint", "error_type": type(exc).__name__})
 
     def event(self, name: str, **fields: Any) -> None:
         from observability_context import current_interaction_context

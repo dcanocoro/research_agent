@@ -11,7 +11,7 @@ from typing import Any, cast
 
 from research_agent.agent import AgentA
 from research_agent.context_budget import ByteCounter
-from research_agent.continuous import POLICY, REVIEW_POLICY, context_seed
+from research_agent.continuous import CHECKPOINT_POLICY, POLICY, REVIEW_POLICY, context_seed
 from research_agent.contracts import AgentRequest, ContinuousConfig
 from research_agent.experiments import disjoint, validate_mandate
 from research_agent.integrations.file_tools import register_files
@@ -20,6 +20,7 @@ from research_agent.simulation.state import Simulator, read
 from research_agent.simulation.tools import activation_message, register_simulation
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
+from research_agent.state_profiles import state_profile
 from .longitudinal import preflight, runtime_identity
 from .storage import create, load, digest, freeze_files
 from .report import persist
@@ -38,7 +39,7 @@ def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
     """Use the runtime seed and schemas without constructing a client or DB engine."""
     space = Workspace(root / "estado", create=False)
     registry = ToolRegistry(RunRecorder(root / "ejecuciones"))
-    register_files(registry, space)
+    register_files(registry, space, state_tools=state_profile(root))
     simulator = Simulator(root / "simulador")
     register_simulation(registry, simulator, None)  # Web is disabled in this pilot.
     agent = AgentA(cast(Any, None), registry, space, registry.recorder,
@@ -65,7 +66,7 @@ def validate(definition: Path) -> dict[str, Any]:
             raise ValueError(f"Nonempty {name} required.")
     return config
 
-def prepare(root: Path, definition: Path, source_data: Path) -> None:
+def prepare(root: Path, definition: Path, source_data: Path, *, state_tools: str = "v5") -> None:
     root, definition, source_data = root.absolute(), definition.absolute(), source_data.absolute()
     for path in (root, definition, source_data):
         Workspace._check_links(path)
@@ -85,7 +86,7 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
     validate_mandate((definition / "mandato.md").read_text(encoding="utf-8"))
     record = create(root, definition, "continuous", config["id"],
                     [definition / name for name in ("scenario.json", "mandato.md", "peticion.md", "rubrica.md")],
-                    deliberative=True)
+                    deliberative=True, state_tools=state_tools)
     persist(root, record)
     Simulator.create(root / "simulador", config, data)
     # Preserve the original bytes as well as their semantic content and provenance.
@@ -94,6 +95,7 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
     if size["budgeted_bytes"] + 2048 >= continuous.consolidation_threshold_bytes:
         raise ValueError("Initial protected context plus startup margin does not fit below threshold.")
     record.update(runtime=identity, limits=asdict(continuous), condition="deliberative", review_policy=REVIEW_POLICY,
+                  knowledge_checkpoint_policy=CHECKPOINT_POLICY,
                   preflight={**report, "initial_budget": size, "startup_margin_bytes": 2048,
                              "provider_checked": False, "campaign_executed": False})
     command = [sys.executable, "-m", "research_agent", (root / "definicion/peticion.md").read_text(encoding="utf-8"),
@@ -103,10 +105,11 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
                "--consolidation-bytes", str(continuous.consolidation_threshold_bytes),
                "--max-calls", str(continuous.max_llm_calls), "--max-tools", str(continuous.max_tool_calls),
                "--continuous-timeout-seconds", str(continuous.timeout_seconds)]
-    record.update(command=command, byte_policy=ByteCounter().metadata,
-                  files={path.relative_to(root).as_posix(): digest(path)
+    frozen_files = {path.relative_to(root).as_posix(): digest(path)
                          for name in ("definicion", "instrucciones", "estado", "simulador")
-                         for path in (root / name).rglob("*") if path.is_file()})
+                         for path in (root / name).rglob("*") if path.is_file()}
+    frozen_files["herramientas.json"] = digest(root / "herramientas.json")
+    record.update(command=command, byte_policy=ByteCounter().metadata, files=frozen_files)
     persist(root, record)
 
 
@@ -126,9 +129,9 @@ def check(root: Path) -> None:
 
 
 
-def run_campaign(root: Path, definition: Path, source_data: Path, *, launcher=launch) -> int:
+def run_campaign(root: Path, definition: Path, source_data: Path, *, launcher=launch, state_tools: str = "v5") -> int:
     root = root.absolute()
-    prepare(root, definition, source_data)
+    prepare(root, definition, source_data, state_tools=state_tools)
     check(root)
     record = load(root)
     session = {"id": "piloto", "message": (root / "definicion/peticion.md").read_text(encoding="utf-8")}

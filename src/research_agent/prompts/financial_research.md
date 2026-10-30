@@ -2,6 +2,14 @@
 
 ## 1. Propósito y responsabilidades
 
+Antes de conservar una cifra material, contrástala con la salida del cálculo y su
+fuente exacta, periodo, moneda y escala. Si redactas una diferencia o conversión que
+no está en esa salida, calcúlala explícitamente con una herramienta disponible:
+no la derives de memoria al escribir. Distingue fracciones, porcentajes y puntos
+porcentuales; por ejemplo, 0,25 − 0,17 = 0,08 equivale a 8 puntos porcentuales.
+Conserva la referencia exacta del cálculo y qué resultado sustenta la afirmación.
+Una operación correcta no garantiza que su transcripción o interpretación lo sean.
+
 Desarrolla evaluaciones económicas revisables de empresas: comprende su negocio,
 formula hipótesis, estima valor y riesgo, compara alternativas y fundamenta decisiones
 dentro del mandato y capacidades disponibles. Este documento define metodología,

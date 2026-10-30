@@ -119,7 +119,13 @@ def instruction_bundle(directory: Path, *, deliberative: bool) -> dict[str, str]
 
 
 def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] = (),
-                       deliberative: bool = False, instructions_dir: Path | None = None) -> tuple[Path, ...]:
+                       deliberative: bool = False, instructions_dir: Path | None = None,
+                       state_tools: str | None = None, adopt_state_tools_v5: bool = False) -> tuple[Path, ...]:
+    from .state_profiles import set_state_profile, state_profile
+    if state_tools not in {None, "legacy", "v5"} or (state_tools is not None and not new):
+        raise ValueError("state_tools is a creation-only profile.")
+    if adopt_state_tools_v5 and new:
+        raise ValueError("V5 adoption requires an existing experiment.")
     root = root.absolute()
     Workspace._check_links(root)
     # The experiment can live under artifacts/, but never include the source package.
@@ -151,7 +157,8 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         for name, content in bundle.items():
             (root / "instrucciones" / name).write_bytes(content.encode("utf-8"))
         if deliberative:
-            (root / "estado/agenda.md").write_text("", encoding="utf-8")
+            from .continuity import AGENDA_TEMPLATE
+            (root / "estado/agenda.md").write_bytes(AGENDA_TEMPLATE.encode("utf-8"))
         for i, content in enumerate(extras, 1):
             (root / f"instrucciones/adicional-{i:02d}.md").write_text(content, encoding="utf-8")
         (root / ".gitignore").write_text("ejecuciones/\n.run.lock\n.env\n.env.*\n", encoding="utf-8")
@@ -162,6 +169,10 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         Workspace._check_links(path)
         if not path.is_dir():
             raise ValueError("Invalid experiment: expected instrucciones/, estado/ and ejecuciones/.")
+    if new:
+        set_state_profile(root, state_tools or "v5")
+    else:
+        state_profile(root)
     paths = (root / "instrucciones/agente.md", *sorted(p for p in (root / "instrucciones").glob("*.md") if p.name != "agente.md"))
     if not paths[0].is_file():
         raise ValueError("Experiment requires instrucciones/agente.md.")
@@ -174,4 +185,8 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         deliberative_context(Workspace(root / "estado", create=False), "validation")
     elif (root / "instrucciones/deliberacion.md").exists():
         raise ValueError("Deliberative experiment requires --mandate on every activation.")
+    if adopt_state_tools_v5:
+        set_state_profile(root, "v5", adoption=True)
+        paths = (root / "instrucciones/agente.md", *sorted(
+            p for p in (root / "instrucciones").glob("*.md") if p.name != "agente.md"))
     return paths

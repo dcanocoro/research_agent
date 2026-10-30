@@ -5,6 +5,14 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-29 — Continuidad V6](2026-10-29-continuity-v6.md): agenda activa,
+  integridad y vista recuperable de expedientes, checkpoints y evaluación offline;
+  sin supervisores LLM ni campaña real.
+- [2026-10-28 — Errores de herramienta durante consolidación](2026-10-28-consolidation-tool-errors.md):
+  se devuelven al modelo para corrección dentro del presupuesto, sin cierre automático.
+- [2026-10-28 — Estado y expedientes V5](2026-10-28-state-tools-v5.md): lecturas
+  versionadas, edición exacta, capa mínima de empresa y contratos recuperables;
+  verificación local, sin campaña ni aceptación semántica.
 - [2026-10-27 — Operadores Python programables](2026-10-27-python-operators.md):
   cuatro contratos y worker opcional, prompts y pruebas locales; sin campaña con LLM.
 - [2026-10-27 — Revisión deliberativa permanente](2026-10-27-periodic-review.md):

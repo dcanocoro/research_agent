@@ -246,14 +246,91 @@ def test_cli_rejects_missing_mandate_and_misplaced_options():
         assert caught.value.code == 2
 
 
-def test_consolidation_failure_preserves_active_history(tmp_path):
+def test_consolidation_tool_error_is_delivered_and_model_can_correct(tmp_path):
+    agent, request = make(tmp_path, [text("novedad " * 6000),
+        call("read_file", path="missing.md", offset=0, max_bytes=100),
+        call("write_file", path="agenda.md", content="Fundamentos conservados"),
+        text("Consolidado"), text("Continuación")],
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=5))
+    result = execute(agent, request)
+    assert result.stop_reason == "call_limit" and result.llm_calls == 5
+    correction_input = agent.client.requests[2]["input_items"]
+    error = next(i for i in correction_input if isinstance(i, ToolResult))
+    assert not error.payload["ok"] and error.payload["error_type"] == "FileNotFoundError"
+    assert any(isinstance(i, AssistantResponse) and "novedad" in i.text for i in correction_input)
+    assert len(events(agent, "lab.context.renewed")) == 1
+    assert agent.workspace.read_file("agenda.md")["text"] == "Fundamentos conservados"
+    assert result.llm_calls_by_phase == {"research": 2, "consolidation": 3, "review": 0}
+    assert not result.state.capture_errors
+
+
+def test_v5_empty_agenda_rejection_can_be_corrected_in_consolidation(tmp_path):
+    import hashlib
+    agent, request = make(tmp_path, [text("novedad " * 13000),
+        call("edit_state", path="agenda.md", purpose="Conservar fundamentos", expected_sha256=hashlib.sha256(b"").hexdigest(),
+             operations=[{"kind": "replace", "target": "\u0000", "content": "Fundamentos conservados"}]),
+        call("write_file", path="agenda.md", content="Fundamentos conservados"),
+        text("Consolidado"), text("Continuación")],
+        config=ContinuousConfig(max_context_bytes=240000, consolidation_threshold_bytes=90000, max_llm_calls=5))
+    agent.workspace.write_file("agenda.md", "")
+    agent.tools = ToolRegistry(agent.recorder)
+    register_files(agent.tools, agent.workspace, state_tools="v5")
+    result = execute(agent, request)
+    assert result.stop_reason == "call_limit" and result.llm_calls == 5
+    error = next(i for i in agent.client.requests[2]["input_items"] if isinstance(i, ToolResult))
+    assert not error.payload["ok"] and "ambiguous_target" in error.payload["message"]
+    assert agent.workspace.read_file("agenda.md")["text"] == "Fundamentos conservados"
+    assert len(events(agent, "lab.context.renewed")) == 1
+    assert len(events(agent, "lab.tool.failed")) == 1
+    assert result.tool_calls == 2 and not result.state.capture_errors
+
+
+def test_four_failed_tools_still_exhaust_consolidation_and_renew(tmp_path):
+    turns = [text("novedad " * 6000)] + [
+        call("read_file", path=f"missing-{i}.md", offset=0, max_bytes=100) for i in range(4)] + [text("Continuación")]
+    agent, request = make(tmp_path, turns,
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=6))
+    result = execute(agent, request)
+    assert result.stop_reason == "call_limit" and result.llm_calls == 6
+    assert result.llm_calls_by_phase == {"research": 2, "consolidation": 4, "review": 0}
+    assert len(events(agent, "lab.context.renewed")) == 1
+    assert len(events(agent, "lab.tool.failed")) == 4
+    assert result.tool_calls == 4 and not result.state.capture_errors
+
+
+def test_applied_write_with_capture_error_is_delivered_without_automatic_replay(tmp_path, monkeypatch):
+    agent, request = make(tmp_path, [text("novedad " * 6000),
+        call("write_file", path="avance.md", content="Guardado una vez"),
+        call("read_file", path="avance.md", offset=0, max_bytes=100),
+        text("Consolidado"), text("Continuación")],
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=5))
+    original_artifact = agent.recorder.artifact
+    def fail_write_capture(value):
+        if isinstance(value, dict) and value.get("path") == "avance.md" and "sha256" in value:
+            raise OSError("Synthetic capture failure after applying the write")
+        return original_artifact(value)
+    monkeypatch.setattr(agent.recorder, "artifact", fail_write_capture)
+    result = execute(agent, request)
+    assert result.stop_reason == "call_limit" and result.tool_calls == 2
+    error = next(i for i in agent.client.requests[2]["input_items"] if isinstance(i, ToolResult))
+    assert not error.payload["ok"] and error.payload["applied"] is True
+    assert error.payload["mutation"]["path"] == "avance.md"
+    assert agent.workspace.read_file("avance.md")["text"] == "Guardado una vez"
+    assert len(events(agent, "lab.file.written")) == 1
+    assert len(events(agent, "lab.context.renewed")) == 1
+    assert result.state.files_written == ("avance.md",)
+    assert result.state.capture_errors == ({"operation": "tool_capture", "error_type": "OSError"},)
+
+
+@pytest.mark.parametrize("limit,reason", [({"max_llm_calls": 2}, "call_limit"), ({"max_tool_calls": 1}, "tool_limit")])
+def test_consolidation_error_consumes_remaining_global_budget(tmp_path, limit, reason):
     agent, request = make(tmp_path, [text("novedad " * 6000),
         call("read_file", path="missing.md", offset=0, max_bytes=100)],
-        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=8))
+        config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, **limit))
     result = execute(agent, request)
-    assert result.stop_reason == "consolidation_failed"
+    assert result.stop_reason == reason and result.llm_calls == 2 and result.tool_calls == 1
     assert not events(agent, "lab.context.renewed")
-    assert any(isinstance(i, AssistantResponse) and "novedad" in i.text for i in agent.history)
+    assert any(isinstance(i, ToolResult) and not i.payload["ok"] for i in agent.history)
 
 
 def test_oversized_exchange_pauses_without_sending_or_trimming_continuation(tmp_path):
@@ -392,7 +469,7 @@ def test_review_cadence_survives_renewal_and_consolidation_has_priority(tmp_path
     turns += [text("avance") for _ in range(10 - crossing)]
     turns += [text("Revisar incertidumbre decisiva"), text("Investigación retomada")]
     agent, request = make(tmp_path, turns, config=ContinuousConfig(
-        max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=12))
+        max_context_bytes=100000, consolidation_threshold_bytes=45000, max_llm_calls=12))
     result = execute(agent, request)
     assert result.llm_calls_by_phase == {"research": 11, "consolidation": 1, "review": 1}
     assert result.llm_calls == 13

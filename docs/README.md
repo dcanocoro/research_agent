@@ -1,5 +1,19 @@
 # Documentación de Research Agent
 
+La [V6 de continuidad](experiments/continuidad-v6/protocol.md) añade foco activo en
+agenda, protección y vista del contenido recuperable, y observación longitudinal
+offline. Mantiene un investigador, sin supervisores LLM. La
+[entrega](deliveries/2026-10-29-continuity-v6.md) separa verificación local y contraste
+semántico pendiente. La [campaña real](experiments/continuidad-v6/findings.md) alcanzó
+100 llamadas ordinarias, con captura completa y progreso semántico parcial: la
+persistencia siguió concentrada en consolidación.
+
+La propuesta [V5: herramientas de estado y expedientes de empresa](experiments/herramientas-estado-v5/design-brief.md)
+conserva el diseño del encargo del 2026-10-28. Su primera implementación añade
+lecturas versionadas, edición exacta, expedientes mínimos y contratos consultables;
+véase la [entrega V5](deliveries/2026-10-28-state-tools-v5.md). La comprobación local
+no demuestra utilidad semántica ni mejora financiera.
+
 La [POC opcional de operadores Python](experiments/python-operators-v1/protocol.md)
 permite cálculos, transformaciones, reglas y modelos mediante procesos locales.
 Incluye contratos recuperables y pruebas deterministas; no es un sandbox ni acredita
