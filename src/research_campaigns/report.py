@@ -40,7 +40,7 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
     profile = record.get("runtime", {}).get("profile", {})
     lines += [f"Modelo: {cell(profile.get('model'))}. Proveedor: {cell(profile.get('provider'))}.", ""]
     if record.get("review_policy"):
-        lines += ["El límite de llamadas cubre investigación y consolidación; las revisiones periódicas son adicionales. "
+        lines += ["El límite de llamadas cubre investigación y consolidación; las revisiones periódicas y externas son adicionales. "
                   "Comparten los límites de tiempo y contexto. Política efectiva: `campaign.json → review_policy`.", ""]
     if (root / "definicion/peticion.md").is_file():
         lines += ["### Petición inicial", "", (root / "definicion/peticion.md").read_text(encoding="utf-8"), ""]
@@ -50,7 +50,7 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
         if path.is_file():
             lines.append(f"- {link(path.relative_to(root).as_posix())}")
     lines += ["", "## Sesiones e intentos", "",
-              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM total / herramientas | LLM investigación / consolidación / revisión | Segundos | Evidencia |",
+              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM total / herramientas | LLM investigación / consolidación / revisión / externa | Segundos | Evidencia |",
               "|---|---|---|---|---|---|---|---|"]
     diagnostics = []
     for session in record["sessions"]:
@@ -60,13 +60,15 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
         if session.get("run_directory"):
             name = session["run_directory"]
             link(name)  # Validate before reading any capture.
-            capture = inspect_run(root, root / name, record["runtime"])
+            capture = inspect_run(root, root / name,
+                                  record.get("runtime_by_attempt", {}).get(session["id"], record["runtime"]))
             details.update(capture)
             details["capture_errors"] = [*session.get("capture_errors", []), *[e for e in capture["capture_errors"] if e not in session.get("capture_errors", [])]]
             refs = [link(f"{name}/{file}", label) for file, label in
                     (("respuesta.md", "Respuesta"), ("manifiesto.json", "Configuración"), ("estado-inicial.json", "Estado inicial"),
                      ("estado-final.json", "Estado final"), ("eventos.jsonl", "Eventos"), ("trazas", "Trazas"))]
-            for file, label in (("continuidad/indice.json", "Continuidad"), ("progreso-v6.json", "Observación V6")):
+            for file, label in (("continuidad/indice.json", "Continuidad"), ("progreso-v6.json", "Observación V6"),
+                                ("revision-externa/final.json", "Revisión externa final")):
                 if (root / name / file).exists():
                     refs.append(link(f"{name}/{file}", label))
         else:
@@ -83,7 +85,7 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
             cell(session.get("message", activation.get("message"))),
             cell(session["status"]) + " / " + cell(details.get("stop_reason", session.get("reason"))),
             f"{cell(details.get('llm_calls'))} / {cell(details.get('tool_calls'))}",
-            " / ".join(cell(phases.get(p)) for p in ("research", "consolidation", "review")),
+            " / ".join(cell(phases.get(p)) for p in ("research", "consolidation", "review", "external_review")),
             cell(session.get("elapsed_seconds", details.get("duration_seconds"))), " · ".join(refs)]) + " |")
     lines += ["", "## Diagnósticos", "", *(diagnostics or ["Sin errores de captura observados."]),
               "", "## Instrucciones y conocimiento vigente", ""]

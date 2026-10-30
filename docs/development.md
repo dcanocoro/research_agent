@@ -470,3 +470,19 @@ La verificación de implementación usa clientes controlados sin proveedores ni 
 remotas. Los casos y rúbrica semánticos quedan preparados sin ejecutar: su futura
 aplicación requiere corpus por etapas y captura, según el protocolo. Los tests prescritos
 no demuestran elección autónoma de acciones ni razonamiento financiero superior.
+
+
+## Operación V7
+
+La evolución V7 se aplica al continuo existente, sin nueva opción de CLI ni perfil.
+El revisor usa el mismo perfil y llamadas adicionales contabilizadas como
+`external_review`. No ejecutar campañas para verificarlo: usar clientes simulados en
+`tests/test_v7.py` y la suite local. Los informes viven en `revision-externa/` de cada
+run; el informe final es distinto de la última respuesta intermedia del investigador.
+
+Los diarios de `ejecuciones/transacciones/` pertenecen al runtime y deben conservarse
+junto al estado para recuperación tras interrupción. No editarlos ni borrarlos para
+sortear conflictos: el diagnóstico de recuperación identifica el archivo que exige
+revisión. No existe aislamiento frente a editores externos durante una escritura conjunta.
+Las copias de instrucciones antiguas no se actualizan automáticamente. La nueva política
+continua sí queda registrada junto a contratos y fingerprints efectivos.

@@ -31,6 +31,8 @@ class AgentA:
         self.instructions = instructions
 
     async def run(self, request: AgentRequest) -> AgentResult:
+        from .advances import recover
+        recover(self.workspace, self.recorder.root)
         if request.continuous is not None:
             from .continuous import run_continuous
             return await run_continuous(self, request)
@@ -201,6 +203,8 @@ class AgentA:
 
     def _prepare(self, request: AgentRequest, run_id: str, interaction_id: str,
                  persistent: dict[str, Any] | None = None) -> str:
+        from .advances import recover
+        recover(self.workspace, self.recorder.root)
         instructions = (*self.instructions, *request.instructions)
         protected = [Path(str(files("research_agent"))), *instructions]
         disjoint(self.workspace.root, self.recorder.root)
@@ -236,6 +240,7 @@ class AgentA:
             "condition": "deliberative" if persistent is not None else "baseline",
             "continuous": asdict(request.continuous) if request.continuous is not None else None,
             "review_policy": review_policy,
+            "external_review_policy": {"version": "v7", "midpoint": "half ordinary limit or 50 research calls", "final": "controlled budget stop with time available", "same_profile": True, "tools": False} if request.continuous else None,
             "knowledge_checkpoint_policy": checkpoint_policy,
             "persistent_context": persistent,
             "closing_policy": {"consolidation_calls": 2, "response_calls": 1,

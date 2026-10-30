@@ -45,3 +45,16 @@ candidatos textuales. Una escritura correcta no confirma coherencia ni calidad f
 En simulación expresa el significado de la revisión con la fecha simulada; el instante
 real de los eventos es una dimensión distinta. Las fuentes previas no quedan validadas
 históricamente por usar estas herramientas.
+
+
+## Escritura conjunta V7
+
+`record_research_advance(changes, reason, source_refs)` admite de uno a cinco archivos.
+Cada cambio contiene path, action, content, expected_sha256 y operations.
+Para create, content lleva el texto y expected_sha256/operations son null. Para edit,
+content es null, expected_sha256 es la versión vigente y operations contiene ediciones
+exactas replace/insert_before/insert_after, con target único y content.
+Valida todo antes de publicar; devuelve files con versiones y fragmentos recuperables.
+Un rechazo previo no modifica archivos. Ante fallo de publicación se restaura el conjunto;
+un fallo de recuperación detiene el run. No hay aislamiento frente a editores externos.
+No se comprueba automáticamente la validez económica de reason o source_refs.

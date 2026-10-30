@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from importlib.resources import files
 
 import pytest
+from support import review_turn
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn, ToolResult
 
 from research_agent.agent import AgentA
@@ -261,7 +262,7 @@ def test_schemas_contracts_and_phase_restrictions(tmp_path):
         strict(spec.parameters)
     assert set(tools.contracts) <= tools.consolidation_tools
     payload = invoke(tools, "describe_state_tools", tool="read_state")
-    assert payload["ok"] and "state-tools-v6.1" in payload["value"]["text"]
+    assert payload["ok"] and "state-tools-v7.1" in payload["value"]["text"]
     denied = asyncio.run(tools.execute(ResponseFunctionCall("c", "describe_state_tools", {"tool": "read_state"}),
                                       allowed_names=frozenset({"describe_state_tools"})))
     assert not denied.payload["ok"]
@@ -373,6 +374,8 @@ def test_company_h1_v1_recovered_after_context_renewal(tmp_path):
             self.step = 0
             self.recovered = False
         async def respond(self, **kwargs):
+            if any("review_packet" in getattr(x, "payload", {}) for x in kwargs["input_items"]):
+                return review_turn()
             if not any(s.name == "calculate" for s in kwargs["tools"]):
                 return text("Conservado; V1 pendiente.")
             n, self.step = self.step, self.step + 1

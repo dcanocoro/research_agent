@@ -1,4 +1,4 @@
-# Estado — contrato state-tools-v6.1
+# Estado — contrato state-tools-v7.1
 
 Propósito: localizar y editar texto explícito del workspace existente. `purpose` es una
 frase breve no vacía; no concede permisos. Solo Markdown, JSON, TXT y CSV; máximo dos
@@ -73,3 +73,14 @@ edited = ops.edit_state("notas.md", read["sha256"], [{"kind": "replace", "target
 
 Disponibles durante investigación y consolidación, sin herramientas en revisión
 periódica. La documentación es opcional; no se exige leerla antes de ejecutar.
+
+
+V7 añade `record_research_advance`: creación/edición exacta conjunta de 1–5 archivos,
+
+con reason y source_refs, validación previa y diario recuperable fuera del estado.
+
+Cada cambio usa path/action/content/expected_sha256/operations; create requiere texto
+
+y versión/operaciones null; edit requiere versión/operaciones y content null.
+
+Los recibos files conservan versiones y vistas parciales; no certifican significado.

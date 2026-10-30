@@ -35,7 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--continuous", action="store_true", help="Keep A running with bounded renewable context; requires --mandate")
     parser.add_argument("--context-bytes", type=int, default=None, help="Continuous local byte budget including reserves (default 524288)")
     parser.add_argument("--consolidation-bytes", type=int, default=None, help="Continuous byte consolidation threshold including reserves (default 262144)")
-    parser.add_argument("--max-calls", type=int, default=None, help="Optional research + consolidation call limit in continuous mode; periodic reviews are additional")
+    parser.add_argument("--max-calls", type=int, default=None, help="Optional research + consolidation call limit in continuous mode; periodic and external reviews are additional")
     parser.add_argument("--max-tools", type=int, default=None, help="Optional total tool calls in continuous mode")
     parser.add_argument("--continuous-timeout-seconds", type=float, default=None, help="Optional global continuous duration")
     args = parser.parse_args(raw)

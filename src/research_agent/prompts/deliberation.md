@@ -120,3 +120,14 @@ plausible. No fabriques progreso, revisiones ni operaciones.
 
 Mantén continuidad de propósito, no solo de tareas. El progreso se aprecia en lo aprendido,
 aclarado, resuelto o hecho posible, no en búsquedas, documentos o acciones acumuladas.
+
+
+## Resultado de sesión y revisión independiente — V7
+
+Distingue la pregunta de investigación longitudinal del resultado previsto de esta
+sesión. Al iniciar, concreta en la sección activa de agenda qué avance útil buscas,
+qué permite cerrarlo o bloquearlo con fundamento, situación actual y siguiente acción.
+Reevalúa su viabilidad con el presupuesto comunicado; si lo reformulas, conserva el motivo.
+Un resultado puede ser insuficiencia fundada: no fuerces valoración, selección o compra.
+La revisión externa es una observación revisable, no una orden ni nueva autorización.
+Acepta, rechaza con motivos o aplaza los hallazgos materiales en los documentos habituales.

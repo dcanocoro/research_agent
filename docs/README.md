@@ -35,6 +35,12 @@ con llamadas adicionales contabilizadas por fase; su utilidad semántica queda p
 La [estrategia](strategy.md) fija la agenda; la arqueología caracteriza un corte
 histórico de FinMate y E001/E002 son antecedentes recuperables desde Git.
 
+La [entrega V7](deliveries/2026-10-30-v7.md) evoluciona el agente actual con
+resultado de sesión, escritura conjunta recuperable, avisos y revisión externa en
+continuo. La [campaña V7 con datos reales](experiments/inversion-real-v7/findings.md)
+consumió 200 llamadas ordinarias en tres tentativas: seis modelos y progreso económico
+parcial, sin valoración/asignación; no acredita aceptación semántica.
+
 ## Referencias principales
 
 | Documento | Qué resuelve |

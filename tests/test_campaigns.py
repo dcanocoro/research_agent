@@ -25,6 +25,37 @@ ROOT = Path(__file__).resolve().parents[1]
 from support import catalog, fake_cli
 
 
+def test_transaction_journal_directory_is_not_a_native_run(tmp_path):
+    def worker(command, out, err):
+        experiment = Path(command[command.index("--experiment") + 1])
+        (experiment / "ejecuciones/transacciones").mkdir(exist_ok=True)
+        return fake_cli(command, out, err)
+    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)),
+                               tmp_path / "out", launcher=worker)
+    assert code == 0
+    session = json.loads((campaign / "campaign.json").read_bytes())["sessions"][0]
+    assert session["capture_complete"] and session["run_directory"].endswith("s0")
+
+
+def test_report_uses_frozen_runtime_of_each_attempt(tmp_path, monkeypatch):
+    import importlib
+    module = importlib.import_module("research_campaigns.report")
+    campaign, code = run_suite(load_suite(catalog(tmp_path, cases=1, sessions=1)),
+                               tmp_path / "out", launcher=fake_cli)
+    assert code == 0
+    record = json.loads((campaign / "campaign.json").read_bytes())
+    record["runtime"] = {"profile": {"model": "later-profile"}}
+    record["runtime_by_attempt"] = {record["sessions"][0]["id"]: {}}
+    original = module.inspect_run
+    observed = []
+    def spy(root, run, runtime):
+        observed.append(runtime)
+        return original(root, run, runtime)
+    monkeypatch.setattr(module, "inspect_run", spy)
+    module.report(campaign, record)
+    assert observed == [{}]
+
+
 def test_validate_catalog_without_service_imports(tmp_path):
     fixture = catalog(tmp_path, cases=3, sessions=6)
     code = """

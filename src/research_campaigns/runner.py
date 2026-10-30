@@ -33,7 +33,7 @@ def execute(root: Path, experiment: Path, record: dict[str, Any], session: dict[
             command: list[str], *, launcher: Callable[[list[str], Path, Path], int] = launch) -> None:
     """Persist intent before launch; retain partial capture on all exit paths."""
     logs = experiment / "ejecuciones"
-    before = {p.name for p in logs.iterdir() if p.is_dir()}
+    before = {p.name for p in logs.iterdir() if p.is_dir() and (p / "manifiesto.json").is_file()}
     session.update(status="running", command=command, runs_before=sorted(before))
     for key in ("stdout", "stderr"):
         session[key] = (logs / f"{session['id']}.{key}.txt").relative_to(root).as_posix()
@@ -48,7 +48,8 @@ def execute(root: Path, experiment: Path, record: dict[str, Any], session: dict[
         session.update(status="failed", error=f"{type(exc).__name__}: {exc}")
     finally:
         session["elapsed_seconds"] = round(monotonic() - start, 3)
-        runs = [p for p in logs.iterdir() if p.is_dir() and p.name not in before]
+        runs = [p for p in logs.iterdir()
+                if p.is_dir() and (p / "manifiesto.json").is_file() and p.name not in before]
         if len(runs) == 1:
             details = inspect_run(root, runs[0], record["runtime"])
             session.update(details)

@@ -106,9 +106,7 @@ class Workspace:
         raw.decode("utf-8")
         return raw, hashlib.sha256(raw).hexdigest()
 
-    def publish(self, path: str, raw: bytes, *, create: bool = False,
-                expected_sha256: str | None = None) -> dict[str, Any]:
-        """Caller holds mutation_lock; external editors are not isolated."""
+    def validate_publish(self, path: str, raw: bytes, *, create: bool = False) -> None:
         content = raw.decode("utf-8")
         target = self.path(path)
         if target.suffix.lower() not in self.extensions:
@@ -124,6 +122,14 @@ class Workspace:
                 json.loads(content, parse_constant=reject_constant)
             except ValueError:
                 raise ValueError("Invalid JSON content.") from None
+        if self.write_validator is not None:
+            self.write_validator(path, raw)
+
+    def publish(self, path: str, raw: bytes, *, create: bool = False,
+                expected_sha256: str | None = None) -> dict[str, Any]:
+        """Caller holds mutation_lock; external editors are not isolated."""
+        self.validate_publish(path, raw, create=create)
+        target = self.path(path)
         details = self.write_validator(path, raw) if self.write_validator is not None else {}
         target.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as stream:

@@ -137,7 +137,7 @@ def evaluate_run(run: Path, checks: Path | None = None) -> dict[str, Any]:
                                  **inspect_documents(files)})
             previous = files
             previous_complete = checkpoint["capture_complete"]
-    writes = {"research": 0, "consolidation": 0, "review": 0, "unknown": 0}
+    writes = {"research": 0, "consolidation": 0, "review": 0, "external_review": 0, "unknown": 0}
     successful_reads = []
     context_number, phase = 0, "unknown"
     pending = {}

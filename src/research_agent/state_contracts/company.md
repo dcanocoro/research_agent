@@ -1,4 +1,4 @@
-# Expedientes — contrato state-tools-v6.1
+# Expedientes — contrato state-tools-v7.1
 
 Capa financiera fina sobre las primitivas de estado: no tiene almacén propio, LLM
 oculto, acceso a BD, propagación económica ni sello de análisis completo. Comparte
@@ -69,3 +69,14 @@ hits = ops.search_state(".", "empresas/ACME/modelo.md#H1", "Localizar consecuenc
 Plantilla opcional: encabezado con ID estable; observación/fuentes; interpretación;
 supuestos o cálculos; incertidumbre; condición de revisión; dependencias y pendientes.
 No exige rellenar campos ni crear un expediente para una consulta breve.
+
+
+V7 añade `record_research_advance`: creación/edición exacta conjunta de 1–5 archivos,
+
+con reason y source_refs, validación previa y diario recuperable fuera del estado.
+
+Cada cambio usa path/action/content/expected_sha256/operations; create requiere texto
+
+y versión/operaciones null; edit requiere versión/operaciones y content null.
+
+Los recibos files conservan versiones y vistas parciales; no certifican significado.

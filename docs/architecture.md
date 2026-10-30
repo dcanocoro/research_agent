@@ -488,3 +488,38 @@ sin desglose se presentan como desconocidos. El ciclo acotado no cambia.
 La [decisión](decisions/0004-revision-periodica.md) conserva la elección permanente;
 el [protocolo](experiments/contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente)
 separa la verificación mecánica de la futura observación semántica.
+
+
+## Evolución V7 — 2026-10-30
+
+El ciclo continuo actual incorpora revisión externa adicional a la autorrevisión
+permanente descrita arriba; no es una variante seleccionable. `external_review`
+cuenta en el total real y queda fuera de investigación/consolidación, compartiendo
+el deadline global. Una revisión intermedia ocurre tras consumir la mitad del límite
+ordinario si queda trabajo; sin límite, tras 50 llamadas de investigación. El cierre
+por llamadas o herramientas puede revisar si queda tiempo. No se añaden llamadas tras
+cancelación, fallo operativo o agotamiento temporal.
+
+El mismo cliente/perfil revisa secuencialmente un paquete separado (64 KiB), sin
+herramientas ni conversación del investigador. Recibe mandato, agenda, estados,
+acciones y evidencia referenciada con recortes explícitos. JSON inválido, herramientas
+o timeout producen informe fallido sin reintento. El feedback (8 KiB) es observación,
+no autoridad; solo A modifica conocimiento. Informes e inputs viven fuera del estado,
+en `revision-externa/` del run. El cierre no sustituye `respuesta.md` ni acredita
+cumplimiento del mandato. La siguiente ejecución gestionada puede recuperar el último
+informe final completo del mismo workspace como referencia histórica.
+
+La agenda distingue investigación longitudinal y resultado revisable de sesión.
+La semilla recupera hasta dos referencias Markdown explícitas del foco (8 KiB de
+contenido, IDs opcionales), con versión y parcialidad, sin recorrido recursivo.
+El registro efectivo define las capacidades mostradas por fase. Los avisos mecánicos
+son informativos y no certifican progreso ni fuerzan escrituras o prioridades.
+
+`record_research_advance` conserva 1–5 cambios conjuntos. Prevalida formatos, versiones
+y protecciones actuales, guarda un diario fuera del estado y publica atómicamente por
+archivo. Ante fallo restaura; al arrancar recupera diarios pendientes. No hay atomicidad
+visible a lectores externos: un conflicto con una edición externa detiene sin borrarla.
+Un fallo de recuperación es fatal, no un error de herramienta ordinario. Los recibos y
+la captura identifican todos los archivos incluso si falla el archivado posterior.
+
+La [entrega V7](deliveries/2026-10-30-v7.md) registra alcance y verificación.

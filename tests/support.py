@@ -10,8 +10,12 @@ class ScriptedClient:
     def __init__(self, turns):
         self.turns = iter(turns)
         self.requests = []
+        self.review_requests = []
 
     async def respond(self, **kwargs):
+        if any(getattr(item, "payload", {}).get("review_packet") for item in kwargs["input_items"]):
+            self.review_requests.append(kwargs)
+            return review_turn()
         self.requests.append(kwargs)
         turn = next(self.turns)
         if isinstance(turn, BaseException):
@@ -70,3 +74,9 @@ def fake_cli(command, out, err, *, status="completed", missing=None):
     if missing:
         (run / missing).unlink()
     return 0 if status == "completed" else 1
+
+
+def review_turn():
+    from runtime_contracts.llm import AssistantResponse, ResponseTurn
+    value = json.dumps({"progress": "No evaluado por fixture", "blockers": [], "findings": [], "recommendations": []})
+    return ResponseTurn([AssistantResponse(value)], value, None)

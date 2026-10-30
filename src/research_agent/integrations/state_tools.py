@@ -31,7 +31,7 @@ def register_state_tools(registry: ToolRegistry, workspace: Workspace) -> None:
         registry.register(name, description, {**common, **properties}, getattr(state, name),
                           execution="inline", consolidation=True, mutation=mutation, bounded=True)
         group = "company" if "company" in name else "state"
-        registry.contracts[name] = {"version": "state-tools-v6.1", "text": files("research_agent").joinpath(
+        registry.contracts[name] = {"version": "state-tools-v7.1", "text": files("research_agent").joinpath(
             f"state_contracts/{group}.md").read_text(encoding="utf-8")}
 
     add("inspect_state", "Map a file (ATX headings) or inventory a directory. Versioned, paginated; no quality inference.",
@@ -61,7 +61,7 @@ def register_state_tools(registry: ToolRegistry, workspace: Workspace) -> None:
             raise ValueError("unavailable_contract: choose an available state/company tool.")
         return {"tool": tool, **registry.contracts[tool]}
 
-    registry.contracts["describe_state_tools"] = {"version": "state-tools-v6.1", "text": files("research_agent").joinpath(
+    registry.contracts["describe_state_tools"] = {"version": "state-tools-v7.1", "text": files("research_agent").joinpath(
         "state_contracts/state.md").read_text(encoding="utf-8")}
     registry.register("describe_state_tools", "Optionally read the versioned contract and examples for an available state/company tool.",
                       {"tool": {"type": "string", "enum": list(registry.contracts)}}, describe_state_tools,

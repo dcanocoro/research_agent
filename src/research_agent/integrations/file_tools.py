@@ -21,6 +21,8 @@ def register_files(registry: ToolRegistry, workspace: Workspace, *, state_tools:
         {"operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
          "left": {"type": "number"}, "right": {"type": "number"},
          "source_refs": {"type": "array", "items": {"type": "string"}}}, calculate, material=True)
+    from ..advances import register_advance
+    register_advance(registry, workspace)
     if state_tools == "v5":
         from .state_tools import register_state_tools
         register_state_tools(registry, workspace)

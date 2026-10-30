@@ -10,6 +10,7 @@ from runtime_contracts.llm import ResponseFunctionCall, ToolResult, ToolSpec
 from .contracts import StateSummary, serializable
 from .recording import RunRecorder, encoded
 from .workspace import Workspace
+from .advances import RecoveryRequired
 
 
 def mutation_receipt(value: Any) -> dict[str, Any]:
@@ -60,6 +61,12 @@ class ToolRegistry:
     def consolidation_tools(self) -> frozenset[str]:
         return frozenset(name for name, tool in self._tools.items() if tool.consolidation)
 
+    def is_mutation(self, name: str) -> bool:
+        return name in self._tools and self._tools[name].mutation
+
+    def is_material(self, name: str) -> bool:
+        return name in self._tools and self._tools[name].material
+
     def specs(self, allowed_names: frozenset[str] | None = None) -> list[ToolSpec]:
         return [tool.spec for name, tool in self._tools.items() if allowed_names is None or name in allowed_names]
 
@@ -96,12 +103,14 @@ class ToolRegistry:
                 value = await asyncio.to_thread(tool.function, **call.arguments)
             value = serializable(value)
             if tool.mutation:
-                mutation_result = mutation_receipt(value)
-                self.files_written.append(value["path"])
+                receipts = value.get("files", [value])
+                mutation_result = {"files": [mutation_receipt(v) for v in receipts]} if "files" in value else mutation_receipt(value)
+                self.files_written.extend(v["path"] for v in receipts)
             capturing = True
             if tool.mutation:
                 assert mutation_result is not None
-                self.recorder.event("lab.file.written", call_id=call.call_id, tool_name=call.name, **mutation_result)
+                for receipt in mutation_result.get("files", [mutation_result]):
+                    self.recorder.event("lab.file.written", call_id=call.call_id, tool_name=call.name, **receipt)
             artifact = self.recorder.artifact(value)
             material = self._material(call.name, value)
             reference = material or artifact
@@ -121,6 +130,10 @@ class ToolRegistry:
             if tool.bounded and len(encoded(payload)) > 32768:
                 payload = {"ok": True, "value": {"limited": True, "recovery": "read_artifact with byte pagination",
                            "mutation": mutation_result}, "artifact_ref": reference}
+        except RecoveryRequired as exc:
+            self.recorder.event("lab.tool.failed", call_id=call.call_id, tool_name=call.name,
+                                error_type="RecoveryRequired", message=str(exc), fatal=True)
+            raise
         except asyncio.CancelledError:
             self.recorder.event("lab.tool.failed", call_id=call.call_id, tool_name=call.name, error_type="cancelled")
             raise

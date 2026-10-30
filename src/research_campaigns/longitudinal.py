@@ -256,6 +256,7 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
         def inspect_attempt(attempt: dict[str, Any]) -> bool:
             directory = attempts_root / attempt["id"]
             runs = sorted(p.name for p in (experiment / "ejecuciones").iterdir() if p.is_dir()
+                          and (p / "manifiesto.json").is_file()
                           and p.name not in attempt["runs_before"])
             if len(runs) != 1:
                 return False
@@ -320,7 +321,8 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
             shutil.copytree(experiment / "estado", directory / "checkpoint-state")
             save(directory / "simulator-before.json", simulator.state)
             attempt = {"id": attempt_id, "activation": activation, "status": "running",
-                       "runs_before": [p.name for p in (experiment / "ejecuciones").iterdir() if p.is_dir()]}
+                       "runs_before": [p.name for p in (experiment / "ejecuciones").iterdir()
+                                       if p.is_dir() and (p / "manifiesto.json").is_file()]}
             progress["active"] = len(record["sessions"])
             record["sessions"].append(attempt)
             commit()

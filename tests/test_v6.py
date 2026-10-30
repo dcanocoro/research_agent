@@ -4,6 +4,7 @@ import hashlib
 import json
 
 import pytest
+from support import review_turn
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 
 from research_agent.agent import AgentA
@@ -143,9 +144,9 @@ def test_continuous_checkpoints_and_progress_are_offline_and_not_extra_calls(tmp
     request = AgentRequest("Investiga", "state", "chat", mandate="Compara fundamentos",
                            continuous=ContinuousConfig(max_llm_calls=11))
     result = asyncio.run(agent.run(request))
-    assert result.llm_calls == len(client.requests) == 12
+    assert (result.llm_calls - result.llm_calls_by_phase["external_review"]) == len(client.requests) == 12
     report = evaluate_run(recorder.current)
-    assert report["writes_by_phase"] == {"research": 1, "consolidation": 0, "review": 0, "unknown": 0}
+    assert report["writes_by_phase"] == {"research": 1, "consolidation": 0, "review": 0, "external_review": 0, "unknown": 0}
     assert [item["label"] for item in report["observations"]] == ["initial", "review", "final"]
     assert "empresas/X/modelo.md" in report["observations"][1]["changed_documents"]
     assert all(v["status"] == "not_assessed" for v in report["semantic_review"].values())

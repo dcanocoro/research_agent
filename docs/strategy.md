@@ -1,9 +1,27 @@
 # Estrategia de investigación
 
-> Agenda revisada el 2026-10-29 con el encargo V6 aceptado por el usuario.
+> Agenda revisada el 2026-10-30 con el encargo V7 aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Encargo vigente: continuidad V6
+## Encargo vigente: V7
+
+El usuario aprueba modificar el agente actual con resultado de sesión revisable,
+escritura conjunta recuperable, recuperación del fundamento activo, avisos operativos
+y revisión independiente con el mismo perfil. Sin interruptor ni camino alternativo.
+Alcance: código, prompts, contratos, pruebas locales y documentación afectada.
+No preparar experimentos/corpus ni ejecutar campañas o proveedores. La
+[entrega V7](deliveries/2026-10-30-v7.md) separa implementación de utilidad pendiente.
+
+Posteriormente el 2026-10-30 el usuario autorizó preparar y ejecutar una única
+investigación continua de 200 llamadas ordinarias con Findata y web reales, Python
+y estado nuevo, sin sesiones artificiales ni órdenes reales. El
+[protocolo V7 real](experiments/inversion-real-v7/protocol.md) fija condiciones y límites.
+Los [hallazgos](experiments/inversion-real-v7/findings.md) registran 200 llamadas
+ordinarias en tres tentativas tras timeouts, seis modelos, sin evaluación de inversión
+completa, persistencia concentrada en consolidación y revisión externa con fuentes
+omitidas. No autorizan por sí solos otra intervención.
+
+## Antecedente: continuidad V6
 
 El usuario solicita implementar en un único corte la primera propuesta V6:
 dirección mediante agenda, persistencia incremental, contenido recuperable y evaluación
