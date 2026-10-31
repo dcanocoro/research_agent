@@ -1,85 +1,69 @@
 # Registro de experimentos y hallazgos
 
-La [metodología](../experiments.md) define cómo comparar y la
-[estrategia](../strategy.md) establece la prioridad. Las definiciones ejecutables de [benchmarks](../../campaigns)
-son estímulos y rúbricas, no campañas realizadas ni resultados semánticos.
+La [metodología](../experiments.md) define el contraste y la [estrategia](../strategy.md)
+la pregunta vigente. Implementación, ejecución y aceptación se registran por separado.
+Una campaña exploratoria real no completa automáticamente un contraste controlado.
 
-[Evaluación decisoria de Microsoft](evaluacion-msft-v1/protocol.md): encargo autorizado
-el 2026-10-31 con pregunta literal del usuario, juicio provisional activo, revisión de
-impedimentos y campaña real de una empresa con estado nuevo.
-Los [hallazgos](evaluacion-msft-v1/findings.md) distinguen producto provisional,
-impedimentos pendientes y correcciones instrumentales posteriores a la captura.
+## Registro consolidado al 2026-10-31
 
-Crear una carpeta `E001-nombre-breve/` cuando exista un contraste concreto:
+| Pregunta / intervención | Implementación o preparación | Ejecución y resultado | Límites y registro |
+|---|---|---|---|
+| Evaluación decisoria Microsoft | Objetivo V8 con evaluación activa e impedimentos | 100 ordinarias, 108 LLM; evaluación provisional y escenarios, actualización incompleta | [Protocolo](evaluacion-msft-v1/protocol.md) y [hallazgos](evaluacion-msft-v1/findings.md). Correcciones posteriores solo locales; sin recomendación validada. |
+| Objetivos y cobertura V8 | Objetivo fijo y evaluador por criterios implementados | Contraste controlado propuesto pendiente; mecanismo ejercitado en campañas posteriores | [Protocolo](objetivos-v8/protocol.md). Distancia condicionada por juicio y fuentes del evaluador. |
+| Investigación real V8 | Continuo con objetivo | 144/200 ordinarias, 154 LLM; parada por agenda excesiva; tres evaluaciones sin reducción | [Protocolo](inversion-real-v8/protocol.md) y [hallazgos](inversion-real-v8/findings.md). Sin valoración ni asignación; no contraste causal V7/V8. |
+| Investigación real V7 | Resultado de sesión, escritura conjunta y revisión externa | 200 ordinarias, 211 LLM en tres tentativas; seis modelos, sin valoración/asignación | [Protocolo](inversion-real-v7/protocol.md) y [hallazgos](inversion-real-v7/findings.md). Timeouts, cambios operativos y correlación incompleta de primeras tentativas. |
+| Continuidad V6 | Agenda activa, protección de expedientes y observación offline | 100 ordinarias, 106 LLM; captura completa, persistencia solo en consolidación | [Protocolo](continuidad-v6/protocol.md) y [hallazgos](continuidad-v6/findings.md). Continuidad semántica parcial; varios factores cambian frente a V5. |
+| Herramientas de estado V5 | Operaciones versionadas, expedientes y contratos | Primer intento: 11 llamadas; repetición corregida: 100 ordinarias, 106 LLM | [Protocolo y diseño histórico](herramientas-estado-v5/protocol.md), [hallazgos de ambos intentos](herramientas-estado-v5/findings.md). Adopción observada; integridad y calidad semántica distintas. |
+| Operadores Python | Cuatro familias de operadores opcionales | V4 con Python: dos usos autónomos correctos, 63 LLM y 58 herramientas | [Protocolo](python-operators-v1/protocol.md) y [hallazgos](python-operators-v1/findings-v4.md). Contraste sintético controlado pendiente; no valida metodología financiera. |
+| Contexto continuo V1–V4 | Renovación, entrega corregida, instrucciones y autorrevisión | Original y repetición: 60 llamadas cada uno; V3: 60; V4 sin Python: 64, incluidas cuatro revisiones | [Protocolo](contexto-continuo-v1/protocol.md) y [hallazgos consolidados](contexto-continuo-v1/findings.md). Corrección instrumental y continuidad parcial; sin causalidad ni decisión inversora. |
+| Metodología financiera | Prompts y convención por empresa implementados | Usados en campañas posteriores; contraste específico con control congelado no acreditado | [Protocolo](analisis-financiero-v1/protocol.md). Cambios de instrucciones y representación conjuntos. |
+| Intención persistente | Mandato protegido y agenda | Seis activaciones por condición con presupuesto ampliado | [Protocolo](intencion-persistente-v1/protocol.md) y [hallazgos](intencion-persistente-v1/findings-amplio.md). Condición inicial de 18 llamadas sin ejecutar; superioridad no demostrada. |
+| Colaboración histórica | Simulador y calendario | Prueba corta de tres activaciones y registro de campaña de 24 activaciones | [Protocolo](colaboracion-historica-v1/protocol.md), [prueba corta](colaboracion-historica-v1/historical-smoke.md) y [precios](colaboracion-historica-v1/price-review.md). Captura larga ausente; contaminación temporal web, sin alfa. |
+| Longitudinal sintético | Tres historias de seis sesiones preparadas históricamente | Sin ejecución real acreditada | [Protocolo](longitudinal-v1/protocol.md). Definiciones retiradas del checkout. |
+| Benchmark piloto | Cuatro casos preparados históricamente | Checks locales, sin campaña real acreditada | [Protocolo](benchmark-pilot-v1/protocol.md). No aceptación semántica. |
+| Baseline NVIDIA | Estado de archivos | Observación inicial concluida | [Hallazgos retrospectivos](baseline-nvidia-2026-10-18/findings.md). Sin protocolo previo ni control. |
+| E001 / E002 | Modo de expedientes retirado | Persistencia inicial insuficiente; conservación y recuperación posterior con límites | Antecedentes recuperables desde Git, indicados abajo; no describen el runtime actual. |
 
-- `protocol.md`: estado (propuesto, en curso o concluido), pregunta, hipótesis,
-  variantes, operaciones, entradas, controles, presupuestos, repeticiones y rúbrica.
-  Indicar de antemano qué resultado justificaría una decisión. Fijar revisión antes
-  de ejecutar y registrar cualquier desviación sin sobrescribir el protocolo original.
-- `findings.md`: base y ejecuciones, resultados observados, interpretación, fallos,
-  límites de captura, incertidumbres y decisión propuesta o siguiente comparación.
-  Separar resultado operativo, checks y juicio semántico; enlazar el ADR si se acepta.
+## Aprendizajes transversales y preguntas abiertas
 
-No crear resultados vacíos como si se hubiera ejecutado. Conservar también intentos
-fallidos y revisiones anteriores. Identificar revisión de código, configuración,
-wheel, entradas y artefactos con hashes o referencias recuperables. Una ruta local en
-`artifacts/` no constituye evidencia portable: declarar disponibilidad y restricciones
-si las capturas no pueden compartirse. No incorporar secretos o payloads privados.
+- **Capturar y recuperar no basta para mantener significado.** V1–V4 conservaron
+  documentos y renovaron contexto, pero también dejaron referencias o pendientes
+  desactualizados. La repetición inicial corrigió una redirección de resultados;
+  no resolvió por ello la revisión entre documentos.
+- **La persistencia incremental sigue abierta.** V4 sin Python tuvo dos escrituras
+  ordinarias; V5 repetido, V6 y V7 real concentraron las suyas en consolidación.
+  V8 real y Microsoft tuvieron una escritura durante investigación cada uno.
+  Son trayectorias observadas, no una tendencia causal demostrada entre versiones.
+- **Cálculo correcto y evaluación útil requieren comprobaciones diferentes.** Los
+  operadores ejecutaron cálculos recuperables; V3 y V5 también dejaron errores en
+  prosa. Microsoft produjo escenarios, pero no propagó todos los datos nuevos al juicio.
+- **El feedback depende de lo que recibe y de lo que cambia después.** V4 mostró
+  seguimiento parcial de prioridades; V8 mantuvo cobertura sin reducción y sufrió
+  omisiones del paquete. Microsoft distinguió cálculo de búsqueda, sin cerrar la
+  actualización decisoria. Ningún recuento acredita superioridad inversora.
 
-[V8 — objetivos explícitos y cobertura](objetivos-v8/protocol.md): mecanismo con
-verificación local; contraste semántico propuesto y sin ejecutar. La distancia refleja
-el juicio del evaluador y no sustituye una rúbrica independiente de calidad.
+La [estrategia](../strategy.md) conserva estas preguntas para el siguiente encargo.
+Los registros individuales explican controles, desviaciones y límites que impiden
+convertir esta síntesis en una comparación causal.
 
-[V8 real — repetición de investigación con objetivo](inversion-real-v8/protocol.md):
-campaña autorizada el 2026-10-31 con datos vivos y estado nuevo, bajo condiciones V7
-y evaluador V8. Los [hallazgos](inversion-real-v8/findings.md) registran 144 llamadas
-ordinarias, parada por agenda excesiva y cobertura sin reducción. Definición y captura
-separadas; no es contraste causal V7/V8.
+## Cómo mantener el registro
 
-[V5 — herramientas de estado y expedientes de empresa](herramientas-estado-v5/design-brief.md)
-conserva el diseño y enlaza la [implementación local](../deliveries/2026-10-28-state-tools-v5.md).
-Incluye operaciones intencionales, contratos bajo demanda y selección de resultados
-para el contexto; el contraste semántico sigue pendiente.
+Usar un registro por pregunta o intervención: `protocol.md` para condiciones e hipótesis,
+y `findings.md` cuando haya observación. Una repetición conserva fecha, cambios y resultado
+del intento original. Los diseños previos se identifican como históricos al consolidarlos.
+No crear hallazgos vacíos ni reescribir las condiciones originales con resultados posteriores.
 
-La [campaña V5 de 100 llamadas](herramientas-estado-v5/protocol.md), autorizada el
-2026-10-28, repite el escenario V4 con Python, estado nuevo y herramientas V5.
-Los [hallazgos](herramientas-estado-v5/findings.md) registran detención temprana tras
-11 llamadas por una edición rechazada en consolidación; no es un contraste causal.
-La [repetición tras corregir el cierre](herramientas-estado-v5/findings-repeticion.md)
-alcanzó las 100 llamadas ordinarias, con diez renovaciones y captura completa;
-adopción instrumental observada y calidad semántica parcial.
-
-Mantener aquí una fila por experimento cuando exista: ID, pregunta, estado, enlaces
-a protocolo/hallazgos y decisión asociada. Un experimento puede concluir sin recomendar
-un cambio arquitectónico; una entrega de ingeniería no sustituye sus hallazgos.
-
-| ID | Pregunta | Registro |
-|---|---|---|
-| Inversión real V7 | ¿200 llamadas continuas con Findata y web reales construyen evaluaciones acumulativas útiles? | [Protocolo](inversion-real-v7/protocol.md), [rúbrica](inversion-real-v7/rubrica.md) y [hallazgos](inversion-real-v7/findings.md): 200 llamadas ordinarias en tres tentativas; seis modelos, sin valoración/asignación, persistencia solo en consolidación y revisión con fuentes omitidas. |
-| Continuidad V6 | ¿Agenda explícita y operaciones recuperables mejoran progreso y fidelidad con coste conocido? | [Protocolo](continuidad-v6/protocol.md), [rúbrica](../../campaigns/contexto-continuo-v6/rubrica.md) y [hallazgos](continuidad-v6/findings.md): 100 llamadas ordinarias, captura completa, menos errores, sin persistencia ordinaria y coherencia parcial; sin supervisores LLM. |
-| Operadores Python v1 | ¿Los procedimientos programables mejoran exactitud y utilidad con coste proporcionado? | [Protocolo](python-operators-v1/protocol.md), [corpus sintético](python-operators-v1/fixtures.json) y [rúbrica](python-operators-v1/rubric.md); [observación V4 real](python-operators-v1/findings-v4.md): dos usos autónomos correctos. Contraste controlado pendiente. |
-| Contexto continuo v1 | ¿A conserva intención y avanza a través de reconstrucciones con ventana acotada? | [Protocolo](contexto-continuo-v1/protocol.md) y [hallazgos](contexto-continuo-v1/findings.md); original y repetición ejecutados, bloqueo técnico corregido; continuidad semántica parcial. [V3](contexto-continuo-v1/protocol.md#v3--autorregulación-mediante-instrucciones-y-renovación-menos-frecuente): instrucciones reforzadas y umbral mayor, sin campaña ejecutada. |
-| Análisis financiero v1 | ¿Metodología y conocimiento Markdown mejoran el análisis acumulativo? | [Protocolo](analisis-financiero-v1/protocol.md) y [rúbrica](analisis-financiero-v1/rubric.md); implementación local, contraste y aceptación semántica sin ejecutar. |
-| Intención persistente v1 | ¿Mandato y agenda ayudan a mantener intención y producir progreso? | [Protocolo](intencion-persistente-v1/protocol.md); condición ampliada de 60 llamadas: seis activaciones completadas por condición. [Hallazgos preliminares](intencion-persistente-v1/findings-amplio.md); condición de 18 llamadas sin ejecutar. |
-| Colaboración histórica v1 | ¿Cómo colabora A durante meses con iniciativa y cartera ficticia? | [Protocolo](colaboracion-historica-v1/protocol.md); 24 activaciones completadas. Informe local (`../../artifacts/campana-historica-completa-v1/informe-ejecucion.md`; no disponible en este checkout), ignorado y no portable; web temporalmente contaminada, sin prueba de alfa. |
-| Longitudinal v1 | ¿Cómo combina A investigación, revisión y memoria en tres historias exigentes? | Tres escenarios de seis sesiones generados; [protocolo](longitudinal-v1/protocol.md). Corpus sintético y rúbricas previas; sin ejecutar. |
-| Benchmark piloto v1 | ¿Qué hace A ante contradicción, continuidad, ruido y fuentes fallidas? | Cuatro casos preparados; [protocolo](benchmark-pilot-v1/protocol.md). Verificación local con servicios simulados; sin campaña real ni aceptación semántica. |
-| Baseline NVIDIA 2026-10-18 | ¿Qué dejó la primera ejecución del estado de archivos? | Observación exploratoria concluida; [hallazgos retrospectivos](baseline-nvidia-2026-10-18/findings.md). Sin protocolo previo ni control. |
-| E001 | ¿A conserva conocimiento de NVIDIA y lo recupera tras reiniciar? | Histórico: sin expediente; recuperación desde Git indicada abajo. |
-| E002 | ¿Presupuesto visible y cierre con escritura permiten conservar y continuar? | Histórico: dos revisiones y recuperación observada, consolidación parcial; recuperación desde Git indicada abajo. |
-
-El ciclo continuo incorpora desde el 2026-10-27 la
-[revisión periódica permanente](contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente).
-Su verificación local es mecánica; la observación v4 queda sin ejecutar. Las filas
-anteriores conservan los estados de los cortes históricos.
+Los hallazgos deben conservar condiciones efectivas, tentativas, fallos, resultado,
+interpretación e incertidumbres y una sección de procedencia y disponibilidad. Las rutas
+originales de `artifacts/` identifican capturas locales que pueden archivarse fuera del
+checkout; no son enlaces portables. No se conoce su futura ubicación externa. El relato
+permite entender el experimento, pero no reemplaza los originales para repetir auditorías.
+Las pruebas y entregas fechadas no se presentan como verificaciones repetidas hoy.
 
 ## Antecedentes E001 y E002
 
-Sus cuatro documentos no están en el árbol de trabajo actual. No se han restaurado
-como parte de la revisión del baseline. Los resúmenes de las entregas de
-[expedientes](../deliveries/2026-10-17-casefile.md) y
-[conservación](../deliveries/2026-10-17-persistent-research.md) permanecen disponibles.
-Para consultar las versiones históricas sin modificar archivos:
+Los cuatro documentos no están en el árbol. Se comprobó que esta revisión Git permite
+recuperar sus protocolos y hallazgos, sin restaurar archivos:
 
 ```powershell
 git show 20afee9:docs/experiments/E001-nvidia-casefile/protocol.md
@@ -88,7 +72,7 @@ git show 20afee9:docs/experiments/E002-persistent-research/protocol.md
 git show 20afee9:docs/experiments/E002-persistent-research/findings.md
 ```
 
-Estos registros describen el modo de expedientes retirado. No son evidencia del estado
-actual de archivos. Crear un experimento separado con la
-[CLI vigente](../development.md#ejecutar-a-nuevo-experimento-o-continuación) para un
-contraste nuevo y seguir el [baseline](../baseline.md) para fijar las condiciones.
+Las entregas de [expedientes](../deliveries/2026-10-17-casefile.md) y
+[conservación](../deliveries/2026-10-17-persistent-research.md) resumen los intentos.
+El [baseline](../baseline.md) conserva la transición al estado de archivos. Estos
+antecedentes no constituyen aceptación del mecanismo vigente ni de una arquitectura FinMate.

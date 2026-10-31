@@ -6,7 +6,7 @@ excluyendo la propuesta posterior de supervisores LLM.
 
 ## Base, observación e hipótesis
 
-Los [hallazgos V5](../herramientas-estado-v5/findings-repeticion.md) documentan 19 escrituras
+Los [hallazgos V5](../herramientas-estado-v5/findings.md) documentan 19 escrituras
 concentradas en consolidación, H1 de AAPL vacío, pendientes parcialmente obsoletos de
 ADP, acumulación de intenciones y una cifra incorrecta en el texto de AON. Son fallos
 observados; no prueban que una única causa explique todos.
@@ -41,13 +41,13 @@ Referencias futuras ausentes no bloquean una escritura legítima.
 
 ## Configuración y reproducción futura
 
-La [definición V6](../../../campaigns/contexto-continuo-v6/scenario.json) conserva
+La definición V6 (`campaigns/contexto-continuo-v6/scenario.json`; referencia local histórica) conserva
 universo, fecha fija 2023-01-01, dataset SHA-256
 `4d93cafb0f0816a9ed3af6c047cb3a75d3cf790b204cf5d91eb86c64aecd34b6`, mandato,
 petición, modelo `gpt-6-luna`, razonamiento medium, salida máxima 16000 y límites V5.
 Se mantienen 100 llamadas ordinarias, 150 herramientas, 1200 segundos y umbrales
 262144/524288 bytes. Las revisiones adicionales conservan su contabilización.
-La [rúbrica](../../../campaigns/contexto-continuo-v6/rubrica.md) está fuera de las
+La rúbrica (`campaigns/contexto-continuo-v6/rubrica.md`; referencia local histórica) está fuera de las
 instrucciones del agente.
 
 Usar un destino nuevo, perfil de herramientas `v5` y prompts V6 actuales. `v5` sigue

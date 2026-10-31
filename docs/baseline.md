@@ -1,6 +1,8 @@
 # Baseline de Research Agent — 2026-10-18
 
-Estado: referencia elegida por el usuario para próximos experimentos. No implica
+Estado: referencia histórica elegida el 2026-10-18; las evoluciones posteriores
+no están incluidas en este corte. Para el funcionamiento vigente consultar
+[arquitectura](architecture.md). No implica
 aceptación financiera ni elección de la arquitectura final de FinMate.
 
 ## Identidad de la referencia
@@ -90,3 +92,13 @@ hipótesis para próximos protocolos, no cambios implementados ni campañas auto
 `pyproject.toml` aún declara `py.typed`, ausente en el árbol actual por un borrado previo.
 Los checks locales pasan sin él; no se afirma publicación de wheel ni cumplimiento del
 contrato PEP 561 para consumidores externos. Resolverlo antes de distribuir el paquete.
+
+## Antecedente retirado: modo de expedientes
+
+El modo `cases`, `CaseStore`, sus herramientas y su contrato de publicación se retiraron
+al adoptar el estado de archivos. No hay migración automática. Los protocolos y resultados
+históricos de [E001](experiments/README.md#antecedentes-e001-y-e002) y
+[E002](experiments/README.md#antecedentes-e001-y-e002) describen el candidato ejecutado
+entonces. Sus documentos ya no están en el árbol actual; el
+[registro histórico](experiments/README.md#antecedentes-e001-y-e002) indica su recuperación desde Git. La [decisión](decisions/0001-estado-por-experimento.md)
+registra el cambio local, sin elegir la arquitectura final de FinMate.

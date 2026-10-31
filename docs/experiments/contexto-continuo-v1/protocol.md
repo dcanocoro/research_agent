@@ -1,9 +1,12 @@
 # Contexto continuo v1
 
-> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
-> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+> Lectura histórica: los comandos `research_benchmarks`, las utilidades de
+> `scripts/` y varias definiciones de campañas se retiraron del checkout. Se
+> conservan como condiciones del corte, no como instrucciones ejecutables actuales.
+> La operación vigente está en la [guía de campañas](../../campaigns.md).
 
-Estado: piloto original y repetición con entrega corregida ejecutados; ver [hallazgos](findings.md).
+Estado consolidado: piloto original, repetición corregida, V3 y V4 ejecutados;
+ver [hallazgos](findings.md). Las secciones siguientes conservan los encargos por fecha.
 Fecha: 2026-10-26. Encargo: sustituir el tokenizer y preparar el escenario, con
 verificación local. Encargo posterior explícito: corregir la entrega y repetir el piloto
 con proveedor, conservando la ejecución original. No implica aceptación semántica.
@@ -31,16 +34,16 @@ el máximo reemplaza la entrega por referencia. Si un intercambio no cabe, se pa
 preservando evidencia. Memoria de archivos existente, índice y agenda
 automáticos y recuperación adicional selectiva. Las escrituras de consolidación son opcionales.
 
-La [arquitectura](../../architecture.md#modo-continuo-experimental--2026-10-26) posee el contrato;
+La [arquitectura](../../architecture.md#ciclo-continuo-y-presupuesto-de-contexto) posee el contrato;
 [desarrollo](../../development.md#ejecutar-el-modo-continuo-experimental), la interfaz general.
 
 ## Escenario congelado del piloto
 
-Las [definiciones](../../../campaigns/contexto-continuo-v1) contienen
-[configuración](../../../campaigns/contexto-continuo-v1/scenario.json),
-[mandato](../../../campaigns/contexto-continuo-v1/mandato.md),
-[petición](../../../campaigns/contexto-continuo-v1/peticion.md) y
-[rúbrica](../../../campaigns/contexto-continuo-v1/rubrica.md).
+Las definiciones (`campaigns/contexto-continuo-v1`; referencia local histórica) contienen
+configuración (`campaigns/contexto-continuo-v1/scenario.json`; referencia local histórica),
+mandato (`campaigns/contexto-continuo-v1/mandato.md`; referencia local histórica),
+petición (`campaigns/contexto-continuo-v1/peticion.md`; referencia local histórica) y
+rúbrica (`campaigns/contexto-continuo-v1/rubrica.md`; referencia local histórica).
 
 - Fecha única: 2023-01-01, sin avance de calendario. Universo de 50 empresas, 100000 USD
   ficticios, máximo diez posiciones, cartera y memoria nuevas. Las órdenes quedan pendientes.
@@ -148,10 +151,11 @@ observaciones de cada intento y la interpretación.
 
 Encargo del 2026-10-27: incorporar en español las orientaciones sobre progreso,
 conocimiento, recuperación y coherencia, y reducir la frecuencia de recomposición.
-Implementado y verificado localmente; campaña v3 sin ejecutar. Las
-[definiciones v3](../../../campaigns/contexto-continuo-v3/scenario.json) conservan
+En el corte de implementación se verificó localmente, sin ejecutar V3. La campaña
+posterior sí se realizó y consta en los [hallazgos](findings.md). Las
+definiciones v3 (`campaigns/contexto-continuo-v3/scenario.json`; referencia local histórica) conservan
 mandato, petición, dataset, perfil, fecha, máximo de contexto y presupuestos del piloto.
-La [rúbrica ampliada](../../../campaigns/contexto-continuo-v3/rubrica.md) añade criterios
+La rúbrica ampliada (`campaigns/contexto-continuo-v3/rubrica.md`; referencia local histórica) añade criterios
 de autorregulación. Las definiciones v1 y las copias de los intentos anteriores se conservan.
 
 Los prompts vigentes de agente, deliberación y análisis financiero refuerzan revisión
@@ -191,9 +195,10 @@ Esta entrega no ejecuta la campaña ni modifica capturas históricas.
 Encargo aceptado el 2026-10-27: introducir una revisión intelectual explícita,
 independiente de la consolidación técnica, en toda ejecución continua. La
 [decisión](../../decisions/0004-revision-periodica.md) registra el alcance permanente;
-la [arquitectura](../../architecture.md#revisión-periódica-permanente--2026-10-27), su contrato.
+la [arquitectura](../../architecture.md#autorrevisión-periódica), su contrato.
 La implementación y los clientes controlados no prueban beneficio semántico. Esta
-entrega no crea ni ejecuta una campaña v4 y no altera definiciones o capturas v3.
+entrega inicial no creó ni ejecutó V4. La observación posterior sin Python está
+en los [hallazgos](findings.md); no altera las capturas V3.
 
 La revisión ocurre tras diez llamadas de investigación, sin contar consolidaciones
 ni revisiones, si queda presupuesto para continuar. Usa el mismo contexto y modelo,

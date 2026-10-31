@@ -1,273 +1,57 @@
 # Estrategia de investigación
 
-> Agenda revisada el 2026-10-31 con el encargo V8 aceptado por el usuario.
-> Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
+> Consolidación del 2026-10-31. Conserva el encargo vigente y las decisiones aceptadas;
+> no autoriza implementaciones, campañas adicionales ni cambios en FinMate.
 
-## Encargo vigente: V8
+## Pregunta vigente
 
-El encargo posterior del 2026-10-31 autoriza dirección hacia una evaluación que permita
-decidir: documento provisional activo, impedimentos clasificados, seguimiento de
-adaptaciones y límite de agenda antes de escritura. El usuario fija literalmente
-la pregunta sobre Microsoft; el [protocolo](experiments/evaluacion-msft-v1/protocol.md)
-define estado nuevo y presupuestos antes de lanzar la campaña real autorizada.
-No se modifica la campaña V8 previa ni FinMate. El contraste no es causal por cambiar
-también tarea e instrucciones.
-Los [hallazgos](experiments/evaluacion-msft-v1/findings.md) registran evaluación
-provisional y escenarios, 100 llamadas ordinarias y cierre por presupuesto. No se
-completó la actualización de escenarios. Las correcciones de recortes y recuperación
-de revisión parcial fueron posteriores al cierre y solo tienen comprobación local.
+Investigar cómo un único agente convierte evidencia y cálculos en una evaluación
+revisable que permita decidir, conservando fundamentos e incertidumbres a través de
+las renovaciones de contexto. La pregunta financiera es una especialización del
+laboratorio, no una arquitectura elegida para FinMate.
 
-El usuario autoriza implementar el plan de [objetivos y cobertura V8](experiments/objetivos-v8/protocol.md):
-un objetivo fijo por ejecución, evaluador separado, distancia determinista dada la
-evaluación, feedback y reglas de reconsideración. Incluye contratos, CLI, captura,
-campañas, pruebas locales y documentación; no incluye proveedores ni campañas reales.
-Con objetivo sustituye la revisión externa V7; sin objetivo se conserva V7. La
-autorrevisión permanente permanece. No introduce grafos, dependencias ni planificador,
-ni cambia FinMate. La [entrega](deliveries/2026-10-31-v8.md) registra implementación
-y verificación; utilidad semántica y calidad siguen pendientes.
+El último encargo funcional fue la dirección decisoria sobre objetivos V8: evaluación
+provisional activa, impedimentos clasificados, seguimiento de adaptaciones y límite
+de agenda previo a escritura. La campaña de Microsoft usó la pregunta literal del
+usuario, estado nuevo y 100 llamadas ordinarias. Sus [hallazgos](experiments/evaluacion-msft-v1/findings.md)
+registran escenarios y juicio provisional, pero actualización incompleta de escenarios.
+Las correcciones de recortes y recuperación de revisión parcial fueron posteriores
+al cierre y solo tienen comprobación local. La [entrega](deliveries/2026-10-31-decision-objectives.md)
+separa esos momentos.
 
-Posteriormente el 2026-10-31 el usuario autoriza otra campaña como V7 y su conservación:
-estado nuevo, datos reales, 200 llamadas ordinarias, Python y objetivo V8 explícito.
-El [protocolo real V8](experiments/inversion-real-v8/protocol.md) fija presupuestos,
-definición y captura antes de lanzar. No se alteran runtime ni prompts durante el run.
-Los [hallazgos](experiments/inversion-real-v8/findings.md) registran 144 llamadas
-ordinarias y parada por agenda de 8987 bytes frente a 8192 permitidos, con captura
-completa y tres evaluaciones sin reducción. No se recorta estado ni se cambia el
-mecanismo para forzar continuación; el informe no autoriza otra intervención.
+## Qué sigue abierto
 
-## Antecedente: V7
+- Persistencia incremental y coherencia: varias campañas concentraron las escrituras
+  en consolidación y dejaron pendientes contradictorios entre agenda y expedientes.
+- Dirección útil: conservar el mandato o recibir feedback no demuestra que se elijan
+  acciones capaces de resolver los impedimentos materiales.
+- Recuperación suficiente: fuentes y evaluaciones recortadas limitan al investigador
+  y al evaluador; cobertura y distancia reflejan un juicio condicionado por esa vista.
+- Evaluación decisoria: distinguir datos pendientes, cálculos posibles e interpretación;
+  revisar si una adaptación resuelve el bloqueo antes de seguir ampliando evidencia.
+- Comparabilidad: las ejecuciones V5–V8 cambian varios factores o tareas; no permiten
+  atribuir causalidad ni afirmar superioridad financiera.
 
-El usuario aprueba modificar el agente actual con resultado de sesión revisable,
-escritura conjunta recuperable, recuperación del fundamento activo, avisos operativos
-y revisión independiente con el mismo perfil. Sin interruptor ni camino alternativo.
-Alcance: código, prompts, contratos, pruebas locales y documentación afectada.
-No preparar experimentos/corpus ni ejecutar campañas o proveedores. La
-[entrega V7](deliveries/2026-10-30-v7.md) separa implementación de utilidad pendiente.
+Estos puntos son preguntas para el siguiente encargo, no un permiso para ejecutar fases.
+El [registro experimental](experiments/README.md) conserva condiciones y resultados;
+las [decisiones](decisions/README.md), las elecciones duraderas.
 
-Posteriormente el 2026-10-30 el usuario autorizó preparar y ejecutar una única
-investigación continua de 200 llamadas ordinarias con Findata y web reales, Python
-y estado nuevo, sin sesiones artificiales ni órdenes reales. El
-[protocolo V7 real](experiments/inversion-real-v7/protocol.md) fija condiciones y límites.
-Los [hallazgos](experiments/inversion-real-v7/findings.md) registran 200 llamadas
-ordinarias en tres tentativas tras timeouts, seis modelos, sin evaluación de inversión
-completa, persistencia concentrada en consolidación y revisión externa con fuentes
-omitidas. No autorizan por sí solos otra intervención.
+## Criterios para avanzar
 
-## Antecedente: continuidad V6
+1. Formular una pregunta material y la alternativa más sencilla antes de añadir mecanismos.
+2. Fijar entradas, modelo, presupuesto, rúbrica y criterio de avance antes del contraste;
+   separar campañas exploratorias de comparaciones controladas.
+3. Comprobar integridad y recuperación por separado de fidelidad numérica, coherencia,
+   utilidad del juicio y resultados de inversión. No premiar volumen de archivos o pasos.
+4. Conservar fallos y tentativas; documentar observación, interpretación e hipótesis antes
+   de proponer una decisión arquitectónica.
 
-El usuario solicita implementar en un único corte la primera propuesta V6:
-dirección mediante agenda, persistencia incremental, contenido recuperable y evaluación
-longitudinal externa. El [protocolo](experiments/continuidad-v6/protocol.md) delimita
-el contraste. Mantener un investigador; queda excluida la propuesta posterior de
-verificadores y evaluadores LLM dentro del bucle. Alcance: implementación, pruebas
-locales y preparación del experimento; sin campaña real ni cambios en FinMate.
-La hipótesis de mejora semántica sigue pendiente de contraste autorizado.
+## Marco de continuidad
 
-Posteriormente el mismo día el usuario autorizó una campaña con las condiciones V5.
-Los [hallazgos V6](experiments/continuidad-v6/findings.md) registran 100 llamadas
-ordinarias y captura completa, menos errores instrumentales, pero ninguna escritura
-durante investigación, mayor consolidación y coherencia parcial. No constituyen
-aceptación semántica ni autorizan por sí solos otra intervención arquitectónica.
-
-## Antecedente: operadores Python opcionales
-
-El 2026-10-27 el usuario aprobó implementar la [POC de operadores Python](experiments/python-operators-v1/protocol.md):
-cuatro contratos, documentación recuperable, ejecución local opcional, prompts y pruebas.
-Se prioriza sencillez con procesos locales y filtros preventivos; se acepta expresamente
-que no sea un sandbox ni tenga límite estricto de memoria. El alcance incluye verificación
-local y preparación del contraste; no autoriza campañas con proveedores ni aceptación
-financiera. Las capacidades y revisiones del ciclo continuo se conservan.
-
-Posteriormente el usuario autorizó ejecutar V4 con esta versión y comprobar el uso
-de Python. La [observación](experiments/python-operators-v1/findings-v4.md) registra
-dos ejecuciones autónomas correctas e incorporación de los resultados al conocimiento;
-no sustituye el contraste controlado ni acredita mejora financiera causal.
-
-## Antecedente: bucle continuo con contexto acotado
-
-El encargo aceptado del 2026-10-27 añade la
-[revisión periódica permanente](decisions/0004-revision-periodica.md) solo al ciclo
-continuo: una llamada aparte sin herramientas cada diez llamadas de investigación,
-con presupuesto adicional y captura por fase. La consolidación técnica mantiene
-prioridad. El alcance es implementación y verificación local; la futura v4 no se
-ejecuta en este encargo. Los antecedentes siguientes conservan su estado histórico.
-
-El 2026-10-26 el usuario aprobó implementar el [modo continuo](experiments/contexto-continuo-v1/protocol.md)
-de A con mandato persistente, presupuesto local inicialmente en tokens y reconstrucción desde archivos.
-El primer contraste mantiene fija la fecha simulada y no cambia el calendario longitudinal.
-El alcance es implementación y verificación local con clientes simulados; no autoriza
-proveedores ni campañas reales. La conservación semántica y la selección de trabajo siguen
-pendientes de observar. No elige arquitectura definitiva para FinMate.
-
-El encargo posterior del 2026-10-26 sustituye el tokenizer por tamaño UTF-8 y prepara
-un piloto manual con mandato, dataset local congelado, rúbrica y límites. Autoriza
-implementación y preparación local. El piloto se ejecutó posteriormente de forma manual.
-Tras revisar sus resultados, el usuario autorizó el 2026-10-26 corregir la entrega de
-resultados al cruzar el umbral y repetir la campaña con las mismas entradas y estado
-nuevo. El [protocolo](experiments/contexto-continuo-v1/protocol.md) conserva el contraste;
-ambos intentos alcanzaron 60 llamadas y seis renovaciones. Los
-[hallazgos](experiments/contexto-continuo-v1/findings.md) confirman la desaparición de la
-redirección adicional de lecturas, con continuidad parcial y problemas de revisión entre
-documentos. No se autoriza por ello una ejecución indefinida ni aceptación semántica.
-
-El encargo del 2026-10-27 incorpora la [intervención v3](experiments/contexto-continuo-v1/protocol.md#v3--autorregulación-mediante-instrucciones-y-renovación-menos-frecuente):
-reforzar los prompts en español sobre progreso, construcción de conocimiento,
-recuperación y coherencia, y elevar el umbral a 262144 bytes para reducir renovaciones.
-Es una intervención de instrucciones y configuración, sin reflexión obligatoria desde
-el harness. Su implementación y verificación local no establecen eficacia semántica;
-la campaña v3 sigue sin ejecutar.
-
-## Antecedente: metodología financiera longitudinal
-
-El 2026-10-25 el usuario aprobó integrar una metodología financiera y una convención
-mínima de conocimiento por empresa en los prompts por defecto. El
-[protocolo](experiments/analisis-financiero-v1/protocol.md) conserva el contraste frente
-al deliberativo anterior, con control congelado, misma base técnica y estados nuevos.
-El alcance incluye implementación y comprobaciones locales sin proveedores; no autoriza
-campañas ni pruebas con LLM real. La aceptación semántica queda pendiente. La metodología
-y la representación se contrastan juntas, sin elegir arquitectura para FinMate.
-
-## Antecedente: intención persistente
-
-El usuario aprobó preparar la [condición de intención persistente](experiments/intencion-persistente-v1/protocol.md)
-con mandato auténtico, agenda automática y disciplina de continuidad sobre A. La
-[decisión experimental](decisions/0003-intencion-persistente.md) conserva el alcance:
-implementación y comprobaciones locales, sin ejecutar proveedores ni la campaña real.
-El piloto comparará seis activaciones por condición con datos congelados y web viva;
-su utilidad semántica sigue pendiente. No se elige la arquitectura final de FinMate.
-
-Posteriormente el usuario autorizó ejecutar con 60 llamadas y 20 minutos por activación.
-Ambas condiciones completaron seis activaciones; los [hallazgos preliminares](experiments/intencion-persistente-v1/findings-amplio.md)
-registran continuidad del contexto y cierres autónomos, sin demostrar progreso superior.
-El escenario de 18 llamadas no se ejecutó. La siguiente revisión debe valorar el trabajo
-pendiente y sus bloqueos antes de atribuir la limitación a falta de recursos.
-
-## Antecedente: colaboración longitudinal
-
-Actualizado el 2026-10-24 por aprobación explícita del plan del usuario. Construir
-el entorno longitudinal de 50 empresas y hasta 10 posiciones para observar memoria,
-revisión e iniciativa. Se acepta disponibilidad anual estimada de 120 días naturales,
-sin atribuir resultados de alfa. El [protocolo](experiments/colaboracion-historica-v1/protocol.md)
-y la [decisión](decisions/0002-simulacion-longitudinal.md) conservan el alcance.
-La [revisión de precios](experiments/colaboracion-historica-v1/price-review.md) habilita
-el dataset ajustado con las excepciones declaradas. La prueba corta histórica real
-está completada; también se completaron las 24 activaciones de dos años. El
-informe local (`../artifacts/campana-historica-completa-v1/informe-ejecucion.md`; no disponible en este checkout),
-ignorado y no portable, documenta continuidad, pérdida parcial del mandato y contaminación
-temporal web; no prueba alfa. Ese encargo no incorporó mecanismos cognitivos ni evaluador. El baseline anterior y los
-antecedentes siguientes no se reescriben como resultados de este encargo.
-
-## Prioridad anterior y antecedentes
-
-**Contrastar conservación y continuidad con un estado de archivos por experimento.**
-El [baseline acordado](baseline.md), basado en el plan aceptado el 2026-10-18, sustituye el almacén de expedientes por un único estado
-editable, materiales automáticos, instrucciones separadas y archivo por run. Git es
-manual; una prueba puede empezar vacía o continuar su propio estado. La
-[decisión local](decisions/0001-estado-por-experimento.md) y la
-[arquitectura](architecture.md) fijan el alcance. No se elige la arquitectura final
-ni se aceptan semánticamente las evaluaciones por este cambio de representación.
-
-El [mapa conceptual](finmate-concept-model/modelo-conocimiento-actual.md) y su
-[anexo](finmate-concept-model/estructuras-y-campos.md) siguen como referencia.
-[E001](experiments/README.md#antecedentes-e001-y-e002) y
-[E002](experiments/README.md#antecedentes-e001-y-e002) conservan los resultados del
-candidato anterior. La nueva representación tiene verificación local controlada y
-una ejecución real de NVIDIA con [hallazgos retrospectivos](experiments/baseline-nvidia-2026-10-18/findings.md).
-No se ha ejecutado una comparación controlada ni una continuación real de ese estado;
-la revisión ante contradicción sigue sin observarse.
-Las variantes A0–A3 siguen siendo posteriores.
-
-El punto de partida es distinguir cuatro preguntas:
-
-| Perspectiva | Pregunta | Ejemplo |
-|---|---|---|
-| Modelo conceptual | ¿Qué significa y qué relaciones necesita el conocimiento? | Evaluación, fundamento y condición de revisión |
-| Representación y persistencia | ¿Cómo se identifica, valida, conserva y recupera? | Markdown, JSON, tablas, grafos o combinación |
-| Transiciones | ¿Cómo se investiga y modifica ese estado? | Un agente propone una revisión y se valida su aplicación |
-| Presentación | ¿Cómo lo entiende y utiliza una persona? | Vista de evaluación vigente y cambios desde la anterior |
-
-Diseñar desde el estado no obliga a crear cuatro subsistemas. Las vistas y las
-operaciones sirven para contrastar el modelo desde el principio. Una card no define
-por sí sola una entidad; un operador existente tampoco prueba que su entrada deba
-conservarse como concepto independiente.
-
-## Secuencia y criterios de avance
-
-| Fase | Trabajo mínimo | Evidencia para decidir el siguiente paso |
-|---|---|---|
-| 1. Reconstruir el modelo actual | Conceptos, relaciones, ciclos de vida y consumidores, con referencias al código | Revisión humana de la fidelidad del mapa y de los problemas identificados |
-| 2. Formular alternativas | Modelos narrativo, argumentativo y financiero-argumentativo como candidatos, con los mismos ejemplos | Selección de conceptos y preguntas que merecen comparación |
-| 3. Contrastar operaciones | Construir, incorporar evidencia, contradecir, revisar, recuperar historia y producir vistas | Hallazgos sobre capacidades, pérdidas y complejidad; selección de un candidato provisional |
-| 4. Probar representación física | Implementación mínima de las opciones que el candidato necesite | Lectura, edición, validación, historial y recuperación comprobados con coste conocido |
-| 5. Estudiar transiciones | Conectar A y comparar disciplinas de investigación y revisión | Campañas longitudinales con integridad y calidad evaluadas por separado |
-| 6. Reconstruir progresivamente | Adaptar ejecución, persistencia y presentación por capacidades | Comprobación y reversión de cada sustitución antes de ampliar el alcance |
-
-Las fases admiten retroalimentación. No requieren implementar todas las alternativas
-ni una reescritura completa. La elección de un modelo o una sustitución material
-requiere decisión humana; los prototipos y campañas necesitan un encargo concreto.
-
-## Referencia del encargo de arqueología
-
-Partir del [mapa de referencias](finmate-references.md) y seguir productores,
-persistencia y consumidores reales. Estudiar usuario e intenciones; empresa y
-expediente; tesis, hipótesis, argumentos y evidencia; evaluaciones y valoraciones;
-necesidades e intentos de investigación; decisiones, posiciones e historia.
-Son áreas a investigar, no un inventario confirmado de entidades obligatorias.
-
-Para cada concepto, documentar significado, identidad, relaciones, ciclo de vida,
-quién lo crea o modifica, dónde se guarda y quién lo consume. Acompañarlo de un
-ejemplo recuperable y referencias verificables al código. Señalar ausencias y
-definiciones ambiguas, especialmente entre tesis, hipótesis, argumento y evaluación.
-
-Seguir un recorrido concreto desde una intención hasta una investigación, evidencia,
-evaluación persistida y revisión posterior, hasta donde exista. Examinar también qué
-leen las vistas y acciones. Identificar duplicaciones, pérdidas de contexto y qué
-estados anteriores se pueden reconstruir realmente; un hash no conserva su contenido.
-
-El encargo de referencia cubre tres piezas, reunidas en la arqueología enlazada:
-
-- Modelo actual: conceptos y relaciones, con evidencia de implementación.
-- Mapa de ciclos de vida: diagramas y ejemplos de lectura, modificación y consumo.
-- Diagnóstico: problemas observados, garantías que protegen los mecanismos e hipótesis
-  de simplificación. Clasificar algo como prescindible no autoriza eliminarlo.
-
-Cerrar con incertidumbres y comparaciones propuestas. La revisión humana confirma
-que el mapa describe fielmente el sistema antes de seleccionar alternativas.
-No se realiza aquí ese análisis ni se modifica FinMate.
-
-E001 se ha ejecutado: sus [hallazgos](experiments/README.md#antecedentes-e001-y-e002)
-registran ausencia de guardado en ambos procesos y truncamiento del primer cierre.
-E002 se ha ejecutado: sus [hallazgos](experiments/README.md#antecedentes-e001-y-e002)
-registran dos revisiones y recuperación tras reiniciar, con consolidación incompleta.
-El plazo de consolidación se corrigió después y solo tiene comprobación local. La
-representación nueva conserva esa corrección, pero elimina la publicación obligatoria.
-El siguiente contraste deberá evaluar consolidación y recuperación con archivos,
-sin presentar los resultados de E002 como evidencia del mecanismo nuevo. No se ha
-repetido E002. El run nuevo de NVIDIA es una observación del baseline de archivos,
-no una repetición comparable de E002 ni una campaña controlada.
-
-## Cómo usar los antecedentes
-
-Los textos históricos aportados recuerdan riesgos útiles: coordinar más no garantiza
-mejor análisis; una mejora local puede impedir la entrega por coste o timeout; una
-referencia válida no prueba una inferencia; memoria útil, historial y trazas cumplen
-funciones distintas. También señalan que autonomía e integridad necesitan evaluarse
-por separado, y que una agregación de argumentos no es una probabilidad calibrada.
-
-Son pistas para buscar evidencia. Los recuentos de campañas, explicaciones causales
-y resultados recordados no se adoptan como hallazgos locales sin localizar revisión,
-configuración, artefactos y límites originales. El mapa histórico de FinMate facilita
-la búsqueda; el código y los registros fechados determinan qué puede afirmarse.
-
-## Criterio para elegir mecanismos
-
-Antes de añadir o retirar estructura, explicar qué operación o garantía permite,
-qué fallo evita, qué alternativa más sencilla existe y cómo medir beneficio y coste.
-Comparar actualizaciones longitudinales y recuperación, además del ejemplo inicial.
-La ausencia de una necesidad multiusuario en A no demuestra que desaparezca del producto.
-
-Las preguntas abiertas incluyen qué necesita identidad e historial, cuánto texto libre
-es suficiente, qué estructura financiera aporta valor y qué responsabilidades deberán
-asumir el agente y la aplicación. Conservar los hallazgos en el
-[registro experimental](experiments/README.md) y las elecciones duraderas en
-[decisiones](decisions/README.md). No convertir un resultado en una decisión implícita.
+La [visión](purpose.md) mantiene como objetivo una evaluación auditable que evoluciona
+con evidencia. Conceptos, representación, transiciones y presentación siguen siendo
+preguntas distintas; Markdown, operadores o herramientas experimentales no son una
+elección aceptada para FinMate. El [baseline](baseline.md) identifica el corte histórico
+del 18 de octubre, no el runtime actual. La secuencia de estudio sigue siendo comprender
+los conceptos y sus consumidores, contrastar operaciones, evaluar persistencia y
+transiciones y, solo con evidencia, adaptar capacidades al producto.

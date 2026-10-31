@@ -4,7 +4,7 @@ Fecha de captura: 2026-10-24. Estado: aprobada para el laboratorio exploratorio 
 
 ## Resultado y procedencia
 
-Se conserva el universo de 50 empresas. El dataset revisado contiene 25.400 cierres diarios y los fundamentales reales previamente exportados de Findata en solo lectura. No se ha escrito en Findata ni modificado su wheel. El escenario original con revisión pendiente permanece intacto; el [escenario revisado](../../../campaigns/colaboracion-historica-v1/reviewed-scenario.yaml) requiere este dataset ajustado mediante `--data`.
+Se conserva el universo de 50 empresas. El dataset revisado contiene 25.400 cierres diarios y los fundamentales reales previamente exportados de Findata en solo lectura. No se ha escrito en Findata ni modificado su wheel. El escenario original con revisión pendiente permanece intacto; el escenario revisado (`campaigns/colaboracion-historica-v1/reviewed-scenario.yaml`; referencia local histórica) requiere este dataset ajustado mediante `--data`.
 
 Las respuestas completas, hashes, parámetros y cálculo se conservan localmente en `artifacts/price-review-adjusted-v3/`: `responses/`, `sources.json`, `findata-original.json`, `issuer-actions.json`, `data.json`, `review.json`, `reconciliation.json` y `preflight-approved.json`. El preflight resulta `ready=true` para las 50 empresas.
 
@@ -36,7 +36,7 @@ La fuente financiera registra exactamente esos tres splits dentro del intervalo.
 
 Yahoo rechazó las fechas históricas y otras consultas devolvieron granularidad intradiaria y metadatos incompatibles con el intervalo. Se descartaron esas respuestas como fuente de precios de 2023–2024. No se sustituyó AVB por otra empresa.
 
-Se mantienen sus cierres reales sin ajustar de Findata. Se documentan ocho dividendos ordinarios en [declaraciones del emisor](../../../campaigns/colaboracion-historica-v1/issuer-actions.json): cuatro de 1,65 USD para 2023 y cuatro de 1,70 USD para 2024. Las páginas del emisor se capturaron en `artifacts/price-review-2023-2024-v1/AVB-declaration-*.html`, comprobando importe y record date.
+Se mantienen sus cierres reales sin ajustar de Findata. Se documentan ocho dividendos ordinarios en declaraciones del emisor (`campaigns/colaboracion-historica-v1/issuer-actions.json`; referencia local histórica): cuatro de 1,65 USD para 2023 y cuatro de 1,70 USD para 2024. Las páginas del emisor se capturaron en `artifacts/price-review-2023-2024-v1/AVB-declaration-*.html`, comprobando importe y record date.
 
 Las fechas ex-dividendo se **derivan**, no se presentan como suministradas por el emisor: sesión observada anterior al record date para el régimen T+2; mismo record date desde 2024-05-29. La [regla y transición](https://www.nasdaqtrader.com/TraderNews.aspx?id=ETA2024-29) se guardan como procedencia. Las ocho fechas resultantes son 2023-03-30, 2023-06-29, 2023-09-28, 2023-12-28, 2024-03-27, 2024-06-28, 2024-09-30 y 2024-12-31.
 

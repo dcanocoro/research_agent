@@ -4,6 +4,9 @@ Estado: implementado y verificado localmente con servicios simulados; campaña c
 proveedores reales no ejecutada. Encargo: cuatro casos, herramientas reales y archivo
 de evidencia, sin Excel, jueces LLM ni puntuación automática. Fecha: 2026-10-20.
 
+Las definiciones se retiraron del checkout en `3c1d481`; las rutas siguientes
+identifican su ubicación histórica, no archivos disponibles.
+
 ## Pregunta y alcance
 
 ¿Qué acciones observables realiza A ante contradicción, continuidad, ruido y fuentes
@@ -13,12 +16,12 @@ La [metodología](../../experiments.md) distingue operación y aceptación semá
 
 | Caso | Definición | Sesiones | Referencia del revisor |
 |---|---|---|---|
-| B1 | Fuentes contradictorias (`campaigns/pilot-v1/B1/case.yaml` en Git) | 1 | Rúbrica (`campaigns/pilot-v1/B1/rubric.md` en Git) |
-| E2 | Continuidad (`campaigns/pilot-v1/E2/case.yaml` en Git) | 4 | Rúbrica (`campaigns/pilot-v1/E2/rubric.md` en Git) |
-| F3 | Información irrelevante (`campaigns/pilot-v1/F3/case.yaml` en Git) | 2 | Rúbrica (`campaigns/pilot-v1/F3/rubric.md` en Git) |
-| G2 | Fuentes fallidas (`campaigns/pilot-v1/G2/case.yaml` en Git) | 1 | Rúbrica (`campaigns/pilot-v1/G2/rubric.md` en Git) |
+| B1 | Fuentes contradictorias (`campaigns/pilot-v1/B1/case.yaml`; versión histórica en Git) | 1 | Rúbrica (`campaigns/pilot-v1/B1/rubric.md`; versión histórica en Git) |
+| E2 | Continuidad (`campaigns/pilot-v1/E2/case.yaml`; versión histórica en Git) | 4 | Rúbrica (`campaigns/pilot-v1/E2/rubric.md`; versión histórica en Git) |
+| F3 | Información irrelevante (`campaigns/pilot-v1/F3/case.yaml`; versión histórica en Git) | 2 | Rúbrica (`campaigns/pilot-v1/F3/rubric.md`; versión histórica en Git) |
+| G2 | Fuentes fallidas (`campaigns/pilot-v1/G2/case.yaml`; versión histórica en Git) | 1 | Rúbrica (`campaigns/pilot-v1/G2/rubric.md`; versión histórica en Git) |
 
-La suite (`campaigns/pilot-v1/suite.yaml` en Git) fija este orden. Las dificultades
+La suite (`campaigns/pilot-v1/suite.yaml`; versión histórica en Git) fija este orden. Las dificultades
 dependen de incertidumbre, compatibilidad de datos y recuperación, no del número de
 mensajes. Los documentos incluyen procedencia, fecha y carácter sintético/hipotético;
 no convertirlos en datos actuales de una empresa real.
@@ -101,3 +104,13 @@ explícitamente `run`; no se inicia en tests, instalación o validación.
 `artifacts/` es local e ignorado. Su contenido no es evidencia portable; antes de
 compartirlo revisar datos privados y disponibilidad de materiales. No crear hallazgos
 de calidad financiera hasta disponer de ejecuciones y revisión humana.
+
+## Procedencia y disponibilidad
+
+Consolidación del 2026-10-31: se conserva el registro documental fechado y sus
+condiciones; no se repitió la ejecución ni se recuperaron capturas ausentes. La preparación o implementación descrita no demuestra que se haya ejecutado el contraste
+controlado propuesto. Las observaciones reales relacionadas se identifican por separado
+en el [registro experimental](../README.md). Las rutas locales citadas son procedencia
+histórica y pueden no existir en el checkout o quedar en un archivo externo de ubicación
+no fijada. Si no están disponibles los originales, sus cifras y verificaciones son
+afirmaciones del registro previo, no resultados nuevamente comprobados en esta revisión.

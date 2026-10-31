@@ -23,7 +23,7 @@ desglose por fase. El ciclo acotado mantiene su comportamiento.
 
 Se consideraron un aviso dentro de la siguiente acción ordinaria, un techo compartido
 de llamadas y extenderlo al ciclo acotado. El usuario eligió llamada aparte, presupuesto
-adicional y alcance continuo. La [arquitectura](../architecture.md#revisión-periódica-permanente--2026-10-27)
+adicional y alcance continuo. La [arquitectura](../architecture.md#autorrevisión-periódica)
 define el contrato y el [protocolo](../experiments/contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente)
 define la observación futura.
 

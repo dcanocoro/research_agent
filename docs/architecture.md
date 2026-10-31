@@ -1,11 +1,12 @@
 # Arquitectura implementada
 
-> Estado local a 2026-10-24. Autoridad: código, schemas y wheel instalado.
+> Referencia documental consolidada el 2026-10-31. Autoridad: código, schemas y
+> configuración efectiva; el wheel instalado puede diferir de las fuentes de FinMate.
 
 ## Frontera y componentes
 
-Desde el 2026-10-26 existe además el [modo continuo opcional](experiments/contexto-continuo-v1/protocol.md).
-La descripción del ciclo acotado siguiente conserva su contrato por defecto.
+A dispone de ciclo acotado y continuo opcional. Ambos usan el mismo agente y
+registro de herramientas; sus presupuestos y formas de cierre son distintos.
 
 A posee un único ciclo modelo → herramienta → modelo → respuesta. No importa
 `finmate`, `engine` ni `api`; Findata, Infra y los contratos comunes se consumen desde
@@ -30,6 +31,234 @@ en `_prepare` y `_finish`. Cada herramienta declara ejecución (`inline`, `threa
 `async`), conservación como material y disponibilidad durante consolidación; su
 validador se construye al registrarla. Las operaciones de archivos se ejecutan en
 línea para evitar escrituras en hilos después de cerrar un run.
+
+## Estado, instrucciones y ejecuciones
+
+Cada experimento CLI tiene su propio estado y puede recibir varios runs:
+
+```text
+experimento/
+  instrucciones/
+    agente.md
+    investigacion-financiera.md
+  estado/
+    indice.md
+    evaluacion.md
+    materiales/
+      2026-10-18-inicial-01-read-document.json
+  ejecuciones/
+    2026-10-18-inicial/
+      peticion.md
+      respuesta.md
+      manifiesto.json
+      resultado.json
+      conversacion.json
+      eventos.jsonl
+      estado-inicial.json
+      estado-final.json
+      git-final.json
+      trazas/
+        modelo-0001.json.gz
+```
+
+La profundidad máxima de carpetas es tres desde la raíz del experimento, sin contar
+los internos de Git. Evaluación y pendientes son nombres sugeridos, no una plantilla.
+Los nombres de runs son humanos, con fecha local y sufijo consecutivo ante colisiones;
+los IDs técnicos permanecen dentro de los registros. La fecha de los nombres utiliza
+`Europe/Madrid` en el código actual.
+
+Hay tres estados distintos: archivos persistentes, contexto transitorio de A y evidencia
+de ejecución. En baseline solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
+explícita; el resto se consulta bajo demanda. La CLI crea una instancia nueva por run:
+continuar reutiliza archivos, sin restaurar el chat. La integración local con
+Experience Audit se ha retirado; no se mantiene su contrato de ejecución externa.
+
+Las instrucciones CLI son copias editables de los prompts al crear el experimento;
+los runs usan esas copias, conservando texto y hashes efectivos en el manifiesto.
+Las fuentes y archivos del estado son datos, nunca instrucciones de desarrollo.
+Un bloqueo de proceso excluye runs simultáneos del mismo experimento y se libera al
+morir el proceso. El archivo `.run.lock` no debe borrarse para resolver contención.
+
+### Herramientas de estado V5 — 2026-10-28
+
+Los experimentos nuevos incorporan el perfil `v5` en `herramientas.json`, fuera de
+`estado/`, y una guía congelada en sus instrucciones. Los existentes sin configuración
+conservan `legacy`. La API directa mantiene `legacy` por defecto; la CLI resuelve el
+perfil del experimento. La [guía de desarrollo](development.md#herramientas-de-estado-v5)
+explica creación y adopción explícita.
+
+[StateOperations](../src/research_agent/state_tools.py) implementa vistas deterministas
+sobre Workspace: inventario/mapa, lectura por bytes/líneas/sección, búsqueda contextual,
+creación exclusiva y edición exacta. Cada consulta usa bytes y hash de la misma lectura;
+las continuaciones vinculan argumentos y versiones. Las secciones reconocen encabezados
+ATX fuera de código cercado; los mapas no certifican cobertura semántica. Las lecturas
+pueden continuar dentro de una línea larga. Las búsquedas se ordenan por ruta/línea,
+con hasta 50 coincidencias y contextos largos explícitamente parciales.
+
+Las nuevas mutaciones y las escrituras anteriores comparten un bloqueo por raíz dentro
+del proceso. Crear publica un temporal mediante enlace duro sin reemplazo; editar valida
+todas las sustituciones/inserciones en memoria y comprueba de nuevo el hash antes de
+reemplazar. La edición individual no ofrece CAS frente a editores externos. La escritura
+conjunta recuperable se describe más abajo.
+Las herramientas antiguas conservan sus schemas y permiten reemplazo sin versión.
+
+La capa de empresa resuelve exclusivamente `empresas/<simbolo>/<dimension>.md` para
+modelo, valoracion y evaluacion. Orienta, recupera y crea/revisa una dimensión; no crea
+las otras automáticamente. Los IDs iniciales de encabezados son localizadores y los
+duplicados se informan. La edición específica preserva los IDs reconocidos, pero no
+puede comprobar su significado. No hay motor de dependencias ni validación financiera.
+
+[El registro V5](../src/research_agent/integrations/state_tools.py) declara schemas
+cerrados, campos condicionales nullables y propósito obligatorio. Las operaciones se
+admiten en consolidación; la revisión periódica continúa sin herramientas. Cada resultado
+nuevo, incluido el envoltorio, se limita a 32 KiB; vistas paginadas reservan espacio para
+metadatos y escapado. El original de la respuesta se conserva como artefacto recuperable.
+
+El registro identifica mutaciones mediante metadata, incluyendo los escritores previos.
+Actualiza `files_written` antes de capturar; si falla la captura posterior informa
+`applied=true` con el recibo de versión. Reintentar exige inspeccionar el estado real.
+Los contratos empaquetados se consultan opcionalmente con `describe_state_tools` y sus
+textos/versiones/hashes se conservan en el manifiesto. Las continuaciones registran y
+anuncian cambios respecto al run anterior del mismo workspace. No hay almacén nuevo
+de versiones ni restauración automática de cada edición.
+
+El cálculo inicial de presupuesto de `research_campaigns` registra el mismo perfil
+efectivo y las campañas congelan su configuración. La aceptación local y los límites
+se conservan en la [entrega](deliveries/2026-10-28-state-tools-v5.md).
+
+### Continuidad V6 — 2026-10-29
+
+La [intervención V6](experiments/continuidad-v6/protocol.md) mantiene un investigador,
+ReAct y el perfil de herramientas `v5`, con contratos `state-tools-v6.1`. No añade
+supervisores LLM. Nuevos experimentos deliberativos reciben una agenda con prioridades,
+investigación activa, aplazadas y decisiones. Sus copias de instrucciones definen el
+mantenimiento; continuaciones no reescriben agendas o instrucciones existentes.
+
+`context_seed` incorpora la agenda una sola vez y un localizador de su sección activa,
+derivado por ATX. Agenda antigua o ambigua: foco no disponible, sin inventarlo ni migrarlo.
+La ausencia de índice es explícita. No se cargan automáticamente expedientes. La
+consolidación guarda lo aún pendiente; la revisión sin herramientas reevalúa progreso
+y puede orientar actualizaciones en la continuación ordinaria, sin llamadas nuevas.
+
+`StateOperations` instala en Workspace una política de escritura de expedientes:
+todos los escritores de esa composición pasan los mismos checks antes de publicar.
+Rechaza IDs eliminados o duplicados y vaciado de cuerpos antes poblados, usando los
+mismos límites de sección que la lectura. Devuelve secciones afectadas acotadas y
+advertencias sobre IDs vacíos y referencias locales literales. Permite referencias
+futuras; no comprueba semántica, unidades en prosa ni validez de `source_refs`.
+Workspace sin la composición V5 y editores externos no tienen esa política de dominio.
+
+El continuo guarda `continuidad/estado-NNNN.json` e índice al inicio, revisión,
+renovación y cierre. Texto exacto/CRLF y hashes del conocimiento, fase y contadores;
+los materiales permanecen en sus capturas originales. La política efectiva está en
+manifiesto y campaña; errores se incorporan a `capture_errors`. No son versiones de
+cada edición ni sustituyen los diarios de escritura conjunta. No se reinyectan como memoria.
+
+`research_campaigns progress` compara estos estados offline y conserva observaciones,
+escrituras por fase, lecturas y comprobaciones numéricas explícitas con Decimal sobre
+materiales capturados. Progreso, calidad, utilidad y recuperación requieren rúbrica:
+el informe los deja `not_assessed`, sin puntuación única ni feedback al agente.
+La [guía](development.md#continuidad-v6-y-evaluación-offline) explica uso y límites.
+
+## Mandato persistente y agenda
+
+`AgentRequest.mandate`, opcional y añadido al final del contrato, activa la condición
+deliberativa. La CLI lo recibe mediante `--mandate PATH`, fuera de estado y ejecuciones.
+`prepare_experiment(deliberative=True)` copia `deliberacion.md` y crea `estado/agenda.md`
+con la plantilla compacta V6. Las continuaciones exigen ambos y el mandato; no migran instrucciones antiguas.
+
+El mandato auténtico se entrega como mensaje de usuario separado; la agenda se entrega
+como `ConversationContext.deliberative_agenda`, memoria revisable sin autoridad.
+Se conservan el índice y las herramientas de recuperación. Mandato no vacío: hasta
+16 KiB UTF-8; agenda: hasta 8 KiB, vacía permitida. Se rechazan ausencias, UTF-8 inválido
+y excesos antes de llamar al modelo, sin truncamiento. El manifiesto registra `condition`
+y `persistent_context` con texto/hash de mandato y agenda inicial. La API directa
+valida el contexto; sin experimento gestionado añade la guía deliberativa del paquete
+si no se proporcionó una copia. En un experimento gestionado exige la copia explícita.
+
+`research_campaigns run DEFINICION --condition baseline|deliberative` congela condición y hash.
+En deliberative escribe `agente/mandato.md` con mensajes auténticos hasta la fecha,
+fuera del estado. Cada intento lo reconstruye desde el escenario; al reconocer su
+captura contrasta el manifiesto con el mandato esperado y la agenda del checkpoint.
+Campañas antiguas sin condición se interpretan como baseline, manteniendo los checks
+de identidad. Las dos llamadas de consolidación y la respuesta final no cambian.
+
+El [protocolo](experiments/intencion-persistente-v1/protocol.md) y la
+[decisión experimental](decisions/0003-intencion-persistente.md) delimitan el piloto
+y sus resultados posteriores; no acredita aceptación semántica.
+
+## Instrucciones y especialización financiera
+
+Los prompts nuevos por defecto incorporan análisis económico acumulativo y la
+convención `empresas/<simbolo>/modelo.md`, `valoracion.md` y `evaluacion.md`: ubicación
+obligatoria al desarrollar una evaluación con continuidad prevista, contenido progresivo.
+No se crean documentos por anticipado ni se exige un expediente para consultas breves.
+Las hipótesis importantes tienen IDs locales; las referencias entre documentos usan
+ruta e ID. La revisión de dependencias la realiza A mediante lectura y búsqueda, sin
+parser ni propagación automática. Índice, agenda, materiales y recuperación selectiva
+mantienen sus contratos; no se carga automáticamente el conjunto de empresas.
+
+El prompt general conserva el núcleo general y remite a la especialización. El
+financiero permite estimaciones justificadas mediante la aritmética existente con
+resultados conservados, sin atribuir un motor DCF ni capacidades nuevas. La agenda
+relaciona preguntas, fundamentos, bloqueos y siguientes acciones sin imponer workflow.
+
+`prepare_experiment(..., instructions_dir=...)` permite sustituir el conjunto inicial
+completo solo al crear un experimento, sin instrucciones adicionales simultáneas. El
+controlador longitudinal expone `run --instructions-dir`; valida nombres canónicos,
+contenido UTF-8 no vacío y ausencia de entradas adicionales antes de construir clientes.
+Las copias efectivas quedan congeladas con los hashes existentes. Las continuaciones
+manuales conservan sus copias; `resume` rechaza cambios y no acepta otro conjunto.
+
+El [protocolo financiero](experiments/analisis-financiero-v1/protocol.md) prepara control
+e intervención bajo la misma condición deliberativa. Hay verificación mecánica con
+clientes controlados y usos posteriores de las instrucciones en campañas; el contraste
+controlado específico y la aceptación semántica siguen pendientes. No cambia el baseline histórico.
+
+La revisión coordinada del 2026-10-25 unifica los tres prompts en español y asigna un
+propietario por responsabilidad: el general conserva rigor, recuperación selectiva,
+guardado y límites; deliberación elige investigaciones y mantiene la agenda; el financiero
+define metodología, ubicaciones y revisión de dependencias. Al cambiar una hipótesis
+identificada exige consultar sus dependientes relevantes antes de dar por terminada la
+actualización, revisándolos, justificando ausencia de impacto o marcando revisión pendiente.
+`oportunidades.md` conserva comparaciones y `cartera.md` opcional conserva interpretación
+de la asignación; las herramientas siguen siendo autoridad sobre posiciones y operaciones.
+Son instrucciones al LLM, sin enforcement nuevo del runtime ni validación semántica.
+
+## Herramientas y materiales
+
+| Grupo | Herramientas |
+|---|---|
+| Archivos | `list_files`, `read_file`, `search_files`, `write_file` |
+| Compatibilidad | `write_markdown`, `read_artifact` |
+| Findata | `search_companies`, `read_company`, `read_financials`, `read_metric_trend` |
+| Web | `search_web`, `read_document` |
+| Cálculo | `calculate` (aritmética determinista con referencias) |
+| Estado V5 | `inspect_state`, `read_state`, `search_state`, `create_state`, `edit_state` |
+| Empresa V5 | `inspect_company`, `read_company_document`, `update_company_document` |
+| Contratos V5 | `describe_state_tools` |
+| Escritura conjunta | `record_research_advance` |
+| Python opcional | `describe_python_operator`, `run_python` |
+
+`write_file` admite Markdown, JSON válido, TXT y CSV UTF-8 hasta 128 KiB. Reemplaza
+atómicamente cada archivo. Lecturas paginadas hasta 32 KiB; búsquedas literales acotadas.
+No se permite escapar del estado, acceder a rutas ocultas, streams de Windows,
+enlaces o junctions, escribir formatos ejecutables o sobrescribir `materiales/`.
+Estas comprobaciones no son un sandbox frente a procesos externos concurrentes.
+
+Las siete herramientas de Findata/web/cálculo conservan automáticamente cada resultado
+satisfactorio completo en `materiales/`, con nombres por run, secuencia y herramienta.
+El contenido mantiene el schema y metadatos originales, incluidas ausencias y recortes.
+El registro asocia argumentos, herramienta, hash y productor. Errores quedan en las trazas.
+Cada resultado de esas siete herramientas devuelve `material_ref` y el alias `artifact_ref`; referencias relativas
+al estado permiten continuar después de trasladar el experimento. Los resultados grandes
+no se truncan en disco: se entregan referencias para leerlos por páginas.
+
+Los resultados de herramientas de archivos y otras operaciones permanecen en el archivo
+de ejecución; `read_artifact` es un adaptador para materiales y resultados archivados.
+Las referencias del archivo técnico siguen acotadas al workspace del run; para continuidad
+portable deben usarse los materiales. Guardar un resultado no incorpora su interpretación
+a una evaluación, ni una cita certifica inferencias o comparabilidad numérica.
 
 ## Operadores Python opcionales
 
@@ -80,163 +309,6 @@ Las campañas conservan la captura nativa de cada ejecución; no hay conversión
 ni lectores de los formatos retirados. La [guía de campañas](campaigns.md) describe
 el registro único, las modalidades y la recuperación.
 
-## Estado, instrucciones y ejecuciones
-
-### Continuidad V6 — 2026-10-29
-
-La [intervención V6](experiments/continuidad-v6/protocol.md) mantiene un investigador,
-ReAct y el perfil de herramientas `v5`, con contratos `state-tools-v6.1`. No añade
-supervisores LLM. Nuevos experimentos deliberativos reciben una agenda con prioridades,
-investigación activa, aplazadas y decisiones. Sus copias de instrucciones definen el
-mantenimiento; continuaciones no reescriben agendas o instrucciones existentes.
-
-`context_seed` incorpora la agenda una sola vez y un localizador de su sección activa,
-derivado por ATX. Agenda antigua o ambigua: foco no disponible, sin inventarlo ni migrarlo.
-La ausencia de índice es explícita. No se cargan automáticamente expedientes. La
-consolidación guarda lo aún pendiente; la revisión sin herramientas reevalúa progreso
-y puede orientar actualizaciones en la continuación ordinaria, sin llamadas nuevas.
-
-`StateOperations` instala en Workspace una política de escritura de expedientes:
-todos los escritores de esa composición pasan los mismos checks antes de publicar.
-Rechaza IDs eliminados o duplicados y vaciado de cuerpos antes poblados, usando los
-mismos límites de sección que la lectura. Devuelve secciones afectadas acotadas y
-advertencias sobre IDs vacíos y referencias locales literales. Permite referencias
-futuras; no comprueba semántica, unidades en prosa ni validez de `source_refs`.
-Workspace sin la composición V5 y editores externos no tienen esa política de dominio.
-
-El continuo guarda `continuidad/estado-NNNN.json` e índice al inicio, revisión,
-renovación y cierre. Texto exacto/CRLF y hashes del conocimiento, fase y contadores;
-los materiales permanecen en sus capturas originales. La política efectiva está en
-manifiesto y campaña; errores se incorporan a `capture_errors`. No son versiones de
-cada edición ni transacciones multiarchivo. No se reinyectan como memoria.
-
-`research_campaigns progress` compara estos estados offline y conserva observaciones,
-escrituras por fase, lecturas y comprobaciones numéricas explícitas con Decimal sobre
-materiales capturados. Progreso, calidad, utilidad y recuperación requieren rúbrica:
-el informe los deja `not_assessed`, sin puntuación única ni feedback al agente.
-La [guía](development.md#continuidad-v6-y-evaluación-offline) explica uso y límites.
-
-### Herramientas de estado V5 — 2026-10-28
-
-Los experimentos nuevos incorporan el perfil `v5` en `herramientas.json`, fuera de
-`estado/`, y una guía congelada en sus instrucciones. Los existentes sin configuración
-conservan `legacy`. La API directa mantiene `legacy` por defecto; la CLI resuelve el
-perfil del experimento. La [guía de desarrollo](development.md#herramientas-de-estado-v5)
-explica creación y adopción explícita.
-
-[StateOperations](../src/research_agent/state_tools.py) implementa vistas deterministas
-sobre Workspace: inventario/mapa, lectura por bytes/líneas/sección, búsqueda contextual,
-creación exclusiva y edición exacta. Cada consulta usa bytes y hash de la misma lectura;
-las continuaciones vinculan argumentos y versiones. Las secciones reconocen encabezados
-ATX fuera de código cercado; los mapas no certifican cobertura semántica. Las lecturas
-pueden continuar dentro de una línea larga. Las búsquedas se ordenan por ruta/línea,
-con hasta 50 coincidencias y contextos largos explícitamente parciales.
-
-Las nuevas mutaciones y las escrituras anteriores comparten un bloqueo por raíz dentro
-del proceso. Crear publica un temporal mediante enlace duro sin reemplazo; editar valida
-todas las sustituciones/inserciones en memoria y comprueba de nuevo el hash antes de
-reemplazar. Sigue sin haber CAS frente a editores externos ni transacciones multiarchivo.
-Las herramientas antiguas conservan sus schemas y permiten reemplazo sin versión.
-
-La capa de empresa resuelve exclusivamente `empresas/<simbolo>/<dimension>.md` para
-modelo, valoracion y evaluacion. Orienta, recupera y crea/revisa una dimensión; no crea
-las otras automáticamente. Los IDs iniciales de encabezados son localizadores y los
-duplicados se informan. La edición específica preserva los IDs reconocidos, pero no
-puede comprobar su significado. No hay motor de dependencias ni validación financiera.
-
-[El registro V5](../src/research_agent/integrations/state_tools.py) declara schemas
-cerrados, campos condicionales nullables y propósito obligatorio. Las operaciones se
-admiten en consolidación; la revisión periódica continúa sin herramientas. Cada resultado
-nuevo, incluido el envoltorio, se limita a 32 KiB; vistas paginadas reservan espacio para
-metadatos y escapado. El original de la respuesta se conserva como artefacto recuperable.
-
-El registro identifica mutaciones mediante metadata, incluyendo los escritores previos.
-Actualiza `files_written` antes de capturar; si falla la captura posterior informa
-`applied=true` con el recibo de versión. Reintentar exige inspeccionar el estado real.
-Los contratos empaquetados se consultan opcionalmente con `describe_state_tools` y sus
-textos/versiones/hashes se conservan en el manifiesto. Las continuaciones registran y
-anuncian cambios respecto al run anterior del mismo workspace. No hay almacén nuevo
-de versiones ni restauración automática de cada edición.
-
-El cálculo inicial de presupuesto de `research_campaigns` registra el mismo perfil
-efectivo y las campañas congelan su configuración. La aceptación local y los límites
-se conservan en la [entrega](deliveries/2026-10-28-state-tools-v5.md).
-
-Cada experimento CLI tiene su propio estado y puede recibir varios runs:
-
-```text
-experimento/
-  instrucciones/
-    agente.md
-    investigacion-financiera.md
-  estado/
-    indice.md
-    evaluacion.md
-    materiales/
-      2026-10-18-inicial-01-read-document.json
-  ejecuciones/
-    2026-10-18-inicial/
-      peticion.md
-      respuesta.md
-      manifiesto.json
-      resultado.json
-      conversacion.json
-      eventos.jsonl
-      estado-inicial.json
-      estado-final.json
-      git-final.json
-      trazas/
-        modelo-0001.json.gz
-```
-
-La profundidad máxima de carpetas es tres desde la raíz del experimento, sin contar
-los internos de Git. Evaluación y pendientes son nombres sugeridos, no una plantilla.
-Los nombres de runs son humanos, con fecha local y sufijo consecutivo ante colisiones;
-los IDs técnicos permanecen dentro de los registros. La fecha de los nombres utiliza
-`Europe/Madrid` en el código actual.
-
-Hay tres estados distintos: archivos persistentes, contexto transitorio de A y evidencia
-de ejecución. En baseline solo `indice.md` se carga automáticamente, hasta 8 KiB, con continuación
-explícita; el resto se consulta bajo demanda. La CLI crea una instancia nueva por run:
-continuar reutiliza archivos, sin restaurar el chat. La integración local con
-Experience Audit se ha retirado; no se mantiene su contrato de ejecución externa.
-
-Las instrucciones CLI son copias editables de los prompts al crear el experimento;
-los runs usan esas copias, conservando texto y hashes efectivos en el manifiesto.
-Las fuentes y archivos del estado son datos, nunca instrucciones de desarrollo.
-Un bloqueo de proceso excluye runs simultáneos del mismo experimento y se libera al
-morir el proceso. El archivo `.run.lock` no debe borrarse para resolver contención.
-
-## Herramientas y materiales
-
-| Grupo | Herramientas |
-|---|---|
-| Archivos | `list_files`, `read_file`, `search_files`, `write_file` |
-| Compatibilidad | `write_markdown`, `read_artifact` |
-| Findata | `search_companies`, `read_company`, `read_financials`, `read_metric_trend` |
-| Web | `search_web`, `read_document` |
-| Cálculo | `calculate` (aritmética determinista con referencias) |
-
-`write_file` admite Markdown, JSON válido, TXT y CSV UTF-8 hasta 128 KiB. Reemplaza
-atómicamente cada archivo. Lecturas paginadas hasta 32 KiB; búsquedas literales acotadas.
-No se permite escapar del estado, acceder a rutas ocultas, streams de Windows,
-enlaces o junctions, escribir formatos ejecutables o sobrescribir `materiales/`.
-Estas comprobaciones no son un sandbox frente a procesos externos concurrentes.
-
-Las siete herramientas de Findata/web/cálculo conservan automáticamente cada resultado
-satisfactorio completo en `materiales/`, con nombres por run, secuencia y herramienta.
-El contenido mantiene el schema y metadatos originales, incluidas ausencias y recortes.
-El registro asocia argumentos, herramienta, hash y productor. Errores quedan en las trazas.
-Cada resultado de esas siete herramientas devuelve `material_ref` y el alias `artifact_ref`; referencias relativas
-al estado permiten continuar después de trasladar el experimento. Los resultados grandes
-no se truncan en disco: se entregan referencias para leerlos por páginas.
-
-Los resultados de herramientas de archivos y otras operaciones permanecen en el archivo
-de ejecución; `read_artifact` es un adaptador para materiales y resultados archivados.
-Las referencias del archivo técnico siguen acotadas al workspace del run; para continuidad
-portable deben usarse los materiales. Guardar un resultado no incorpora su interpretación
-a una evaluación, ni una cita certifica inferencias o comparabilidad numérica.
-
 ## Conservación y cierre de la investigación
 
 Desde el 2026-10-21, el [prompt general](../src/research_agent/prompts/agent_a.md)
@@ -285,110 +357,7 @@ diagnósticos. No se compacta ni transforma la evidencia al cerrar. Las referenc
 comprobación de identidad del workspace. La [guía de campañas](campaigns.md)
 explica las modalidades, revisión y límites de recuperación.
 
-## Git manual e interfaces
-
-Git es una herramienta humana para versionar estado e instrucciones, separada del Git
-del código. Se registra commit y cambios iniciales/finales solo si el experimento tiene
-repositorio propio; sin `.git` propio se indica ausencia, aunque exista un padre Git.
-No se ejecuta init, add, commit, checkout, reset, push ni creación de ramas.
-Las capturas inicial/final permiten auditar runs realizados con cambios sin commit.
-
-`build_agent(workspace, runs, limits)` permite componer A directamente; los argumentos
-opcionales `experiment` y `run_name` sirven al organizador CLI. La captura utiliza
-siempre el mismo formato propio, también en las construcciones directas de pruebas.
-La operación y los comandos están en [desarrollo](development.md). El
-[baseline](baseline.md) distingue capacidad implementada, resultado observado y
-aceptación semántica pendiente.
-
-## Modo experimental de expedientes
-
-El modo `cases`, `CaseStore`, sus herramientas y su contrato de publicación se retiraron
-al adoptar el estado de archivos. No hay migración automática. Los protocolos y resultados
-históricos de [E001](experiments/README.md#antecedentes-e001-y-e002) y
-[E002](experiments/README.md#antecedentes-e001-y-e002) describen el candidato ejecutado
-entonces. Sus documentos ya no están en el árbol actual; el
-[registro histórico](experiments/README.md#antecedentes-e001-y-e002) indica su recuperación desde Git. La [decisión](decisions/0001-estado-por-experimento.md)
-registra el cambio local, sin elegir la arquitectura final de FinMate.
-
-## Simulación longitudinal opcional
-
-`research_agent.simulation` posee reloj por activación, herramientas históricas,
-cartera local y comunicaciones explícitas. `build_agent(simulation=...)` sustituye
-las lecturas actuales y Extract por las herramientas acotadas; no abre conexión a
-Findata durante las activaciones. Sin ese argumento la composición es la habitual.
-
-`research_campaigns` congela escenario, instrucciones, perfil y dataset
-obtenido en solo lectura; ejecuta procesos nuevos y posee calendario/checkpoints.
-El simulador reside fuera del workspace editable. La memoria no es el registro económico.
-La [decisión](decisions/0002-simulacion-longitudinal.md) y el
-[protocolo](experiments/colaboracion-historica-v1/protocol.md) fijan disponibilidad
-estimada, límites de cartera y recuperación; el [baseline previo](baseline.md) se conserva.
-
-## Condición experimental de intención persistente
-
-`AgentRequest.mandate`, opcional y añadido al final del contrato, activa la condición
-deliberativa. La CLI lo recibe mediante `--mandate PATH`, fuera de estado y ejecuciones.
-`prepare_experiment(deliberative=True)` copia `deliberacion.md` y crea `estado/agenda.md`
-con la plantilla compacta V6. Las continuaciones exigen ambos y el mandato; no migran instrucciones antiguas.
-
-El mandato auténtico se entrega como mensaje de usuario separado; la agenda se entrega
-como `ConversationContext.deliberative_agenda`, memoria revisable sin autoridad.
-Se conservan el índice y las herramientas de recuperación. Mandato no vacío: hasta
-16 KiB UTF-8; agenda: hasta 8 KiB, vacía permitida. Se rechazan ausencias, UTF-8 inválido
-y excesos antes de llamar al modelo, sin truncamiento. El manifiesto registra `condition`
-y `persistent_context` con texto/hash de mandato y agenda inicial. La API directa
-valida el contexto; sin experimento gestionado añade la guía deliberativa del paquete
-si no se proporcionó una copia. En un experimento gestionado exige la copia explícita.
-
-`longitudinal run --condition baseline|deliberative` congela condición y hash.
-En deliberative escribe `agente/mandato.md` con mensajes auténticos hasta la fecha,
-fuera del estado. Cada intento lo reconstruye desde el escenario; al reconocer su
-captura contrasta el manifiesto con el mandato esperado y la agenda del checkpoint.
-Campañas antiguas sin condición se interpretan como baseline, manteniendo los checks
-de identidad. Las dos llamadas de consolidación y la respuesta final no cambian.
-
-El [protocolo](experiments/intencion-persistente-v1/protocol.md) y la
-[decisión experimental](decisions/0003-intencion-persistente.md) delimitan el piloto
-preparado, sin campaña real ni aceptación semántica.
-
-## Metodología financiera y selección de instrucciones — 2026-10-25
-
-Los prompts nuevos por defecto incorporan análisis económico acumulativo y la
-convención `empresas/<simbolo>/modelo.md`, `valoracion.md` y `evaluacion.md`: ubicación
-obligatoria al desarrollar una evaluación con continuidad prevista, contenido progresivo.
-No se crean documentos por anticipado ni se exige un expediente para consultas breves.
-Las hipótesis importantes tienen IDs locales; las referencias entre documentos usan
-ruta e ID. La revisión de dependencias la realiza A mediante lectura y búsqueda, sin
-parser ni propagación automática. Índice, agenda, materiales y recuperación selectiva
-mantienen sus contratos; no se carga automáticamente el conjunto de empresas.
-
-El prompt general conserva el núcleo general y remite a la especialización. El
-financiero permite estimaciones justificadas mediante la aritmética existente con
-resultados conservados, sin atribuir un motor DCF ni capacidades nuevas. La agenda
-relaciona preguntas, fundamentos, bloqueos y siguientes acciones sin imponer workflow.
-
-`prepare_experiment(..., instructions_dir=...)` permite sustituir el conjunto inicial
-completo solo al crear un experimento, sin instrucciones adicionales simultáneas. El
-controlador longitudinal expone `run --instructions-dir`; valida nombres canónicos,
-contenido UTF-8 no vacío y ausencia de entradas adicionales antes de construir clientes.
-Las copias efectivas quedan congeladas con los hashes existentes. Las continuaciones
-manuales conservan sus copias; `resume` rechaza cambios y no acepta otro conjunto.
-
-El [protocolo financiero](experiments/analisis-financiero-v1/protocol.md) prepara control
-e intervención bajo la misma condición deliberativa. Hay verificación mecánica con
-clientes controlados; no campaña ni aceptación semántica. No cambia el baseline histórico.
-
-La revisión coordinada del 2026-10-25 unifica los tres prompts en español y asigna un
-propietario por responsabilidad: el general conserva rigor, recuperación selectiva,
-guardado y límites; deliberación elige investigaciones y mantiene la agenda; el financiero
-define metodología, ubicaciones y revisión de dependencias. Al cambiar una hipótesis
-identificada exige consultar sus dependientes relevantes antes de dar por terminada la
-actualización, revisándolos, justificando ausencia de impacto o marcando revisión pendiente.
-`oportunidades.md` conserva comparaciones y `cartera.md` opcional conserva interpretación
-de la asignación; las herramientas siguen siendo autoridad sobre posiciones y operaciones.
-Son instrucciones al LLM, sin enforcement nuevo del runtime ni validación semántica.
-
-## Modo continuo experimental — 2026-10-26
+## Ciclo continuo y presupuesto de contexto
 
 `AgentRequest.continuous: ContinuousConfig | None` activa el mismo A con un ciclo
 renovable implementado en `research_agent.continuous`. Requiere mandato explícito.
@@ -452,7 +421,7 @@ sin clientes ni bases durante las comprobaciones de `research_campaigns`. Congel
 perfil, fuentes instaladas, dataset y estado nuevo, y comprueba las condiciones antes del lanzamiento integrado. En simulación, `allow_web: false`
 omite `search_web`; su ausencia conserva el comportamiento anterior con web.
 
-## Revisión periódica permanente — 2026-10-27
+## Autorrevisión periódica
 
 Toda ejecución continua realiza una llamada de revisión sin herramientas después de
 cada diez llamadas de investigación, si queda presupuesto ordinario para actuar.
@@ -487,13 +456,13 @@ sin desglose se presentan como desconocidos. El ciclo acotado no cambia.
 
 La [decisión](decisions/0004-revision-periodica.md) conserva la elección permanente;
 el [protocolo](experiments/contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente)
-separa la verificación mecánica de la futura observación semántica.
+separa la verificación mecánica de los [hallazgos reales V1–V4](experiments/contexto-continuo-v1/findings.md).
 
 
-## Evolución V7 — 2026-10-30
+## Revisión externa y escritura conjunta
 
-El ciclo continuo actual incorpora revisión externa adicional a la autorrevisión
-permanente descrita arriba; no es una variante seleccionable. `external_review`
+El continuo sin objetivo incorpora revisión externa adicional a la autorrevisión
+permanente. Con objetivo se usa la evaluación por criterios descrita después. `external_review`
 cuenta en el total real y queda fuera de investigación/consolidación, compartiendo
 el deadline global. Una revisión intermedia ocurre tras consumir la mitad del límite
 ordinario si queda trabajo; sin límite, tras 50 llamadas de investigación. El cierre
@@ -524,7 +493,7 @@ la captura identifican todos los archivos incluso si falla el archivado posterio
 
 La [entrega V7](deliveries/2026-10-30-v7.md) registra alcance y verificación.
 
-## Objetivos y cobertura V8 — 2026-10-31
+## Objetivos y evaluación de cobertura
 
 `AgentRequest.objective: Objective | None` añade un objetivo fijo al continuo. El
 contrato y cálculo viven en `objectives`; el paquete y recuperación en `objective_review`;
@@ -578,3 +547,32 @@ recorta estado previo automáticamente. Para objetivos con evaluación activa se
 reservan 16 KiB de margen de semilla bajo el umbral, además de la reserva de salida.
 El [protocolo de Microsoft](experiments/evaluacion-msft-v1/protocol.md) posee la campaña
 autorizada, cuya pregunta ha fijado literalmente el usuario.
+
+## Simulación longitudinal opcional
+
+`research_agent.simulation` posee reloj por activación, herramientas históricas,
+cartera local y comunicaciones explícitas. `build_agent(simulation=...)` sustituye
+las lecturas actuales y Extract por las herramientas acotadas; no abre conexión a
+Findata durante las activaciones. Sin ese argumento la composición es la habitual.
+
+`research_campaigns` congela escenario, instrucciones, perfil y dataset
+obtenido en solo lectura; ejecuta procesos nuevos y posee calendario/checkpoints.
+El simulador reside fuera del workspace editable. La memoria no es el registro económico.
+La [decisión](decisions/0002-simulacion-longitudinal.md) y el
+[protocolo](experiments/colaboracion-historica-v1/protocol.md) fijan disponibilidad
+estimada, límites de cartera y recuperación; el [baseline previo](baseline.md) se conserva.
+
+## Git manual e interfaces
+
+Git es una herramienta humana para versionar estado e instrucciones, separada del Git
+del código. Se registra commit y cambios iniciales/finales solo si el experimento tiene
+repositorio propio; sin `.git` propio se indica ausencia, aunque exista un padre Git.
+No se ejecuta init, add, commit, checkout, reset, push ni creación de ramas.
+Las capturas inicial/final permiten auditar runs realizados con cambios sin commit.
+
+`build_agent(workspace, runs, limits)` permite componer A directamente; los argumentos
+opcionales `experiment` y `run_name` sirven al organizador CLI. La captura utiliza
+siempre el mismo formato propio, también en las construcciones directas de pruebas.
+La operación y los comandos están en [desarrollo](development.md). El
+[baseline](baseline.md) distingue capacidad implementada, resultado observado y
+aceptación semántica pendiente.

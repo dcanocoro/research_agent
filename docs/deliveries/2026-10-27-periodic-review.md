@@ -15,7 +15,7 @@ El resultado añade desglose por fase, manteniendo el total real; manifiesto,
 presupuesto técnico, captura del proveedor e informe de campañas hacen explícita
 la política y permiten atribuir consumo. Se conserva lectura de resultados antiguos.
 La [decisión](../decisions/0004-revision-periodica.md), la
-[arquitectura](../architecture.md#revisión-periódica-permanente--2026-10-27) y el
+[arquitectura](../architecture.md#autorrevisión-periódica) y el
 [protocolo](../experiments/contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente)
 poseen el diseño y sus límites.
 

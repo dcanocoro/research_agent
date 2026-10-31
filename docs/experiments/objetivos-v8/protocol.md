@@ -108,3 +108,13 @@ Evaluar materialidad de pendientes resueltos, errores, fundamento, fidelidad y u
 del resultado, además de costes y trayectoria de cobertura. Una caída de D o checks
 aprobados no bastan para aceptar la hipótesis. La [campaña real](../inversion-real-v8/findings.md)
 aporta observaciones de ejecución; no sustituye el contraste controlado pendiente.
+
+## Procedencia y disponibilidad
+
+Consolidación del 2026-10-31: se conserva el registro documental fechado y sus
+condiciones; no se repitió la ejecución ni se recuperaron capturas ausentes. La preparación o implementación descrita no demuestra que se haya ejecutado el contraste
+controlado propuesto. Las observaciones reales relacionadas se identifican por separado
+en el [registro experimental](../README.md). Las rutas locales citadas son procedencia
+histórica y pueden no existir en el checkout o quedar en un archivo externo de ubicación
+no fijada. Si no están disponibles los originales, sus cifras y verificaciones son
+afirmaciones del registro previo, no resultados nuevamente comprobados en esta revisión.

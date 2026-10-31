@@ -3,8 +3,11 @@
 Cada entrega conserva qué se cambió y verificó en una fecha, con base Git, alcance,
 limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o decisión
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
-consultar [estrategia](../strategy.md).
+consultar [estrategia](../strategy.md). Los estados «sin campaña» describen el cierre
+de aquella entrega; las ejecuciones posteriores están en el [registro experimental](../experiments/README.md).
 
+- [2026-10-31 — Consolidación documental](2026-10-31-documentation-consolidation.md):
+  guías vigentes, historia reunida y conservación narrativa antes del archivo externo.
 - [2026-10-31 — Dirección decisoria](2026-10-31-decision-objectives.md): juicio activo,
   impedimentos y seguimiento de adaptaciones, agenda prevalidada y campaña Microsoft.
 - [2026-10-31 — V8](2026-10-31-v8.md): objetivo fijo, evaluación por criterios,
@@ -14,11 +17,9 @@ consultar [estrategia](../strategy.md).
 - [2026-10-29 — Continuidad V6](2026-10-29-continuity-v6.md): agenda activa,
   integridad y vista recuperable de expedientes, checkpoints y evaluación offline;
   sin supervisores LLM ni campaña real.
-- [2026-10-28 — Errores de herramienta durante consolidación](2026-10-28-consolidation-tool-errors.md):
-  se devuelven al modelo para corrección dentro del presupuesto, sin cierre automático.
-- [2026-10-28 — Estado y expedientes V5](2026-10-28-state-tools-v5.md): lecturas
-  versionadas, edición exacta, capa mínima de empresa y contratos recuperables;
-  verificación local, sin campaña ni aceptación semántica.
+- [2026-10-28 — Estado y expedientes V5](2026-10-28-state-tools-v5.md):
+  implementación y corrección posterior de errores recuperables en consolidación;
+  conserva las verificaciones separadas de ambos cortes.
 - [2026-10-27 — Operadores Python programables](2026-10-27-python-operators.md):
   cuatro contratos y worker opcional, prompts y pruebas locales; sin campaña con LLM.
 - [2026-10-27 — Revisión deliberativa permanente](2026-10-27-periodic-review.md):
@@ -28,12 +29,9 @@ consultar [estrategia](../strategy.md).
   `README.md`, captura nativa y simplificación de código y resultados.
 - [2026-10-27 — Autorregulación v3](2026-10-27-self-regulation-v3.md): prompts en
   español, umbral mayor y piloto preparado sin ejecutar proveedores.
-- [2026-10-26 — Entrega de resultados al cruzar el umbral](2026-10-26-context-delivery.md):
-  corrección mínima, pruebas de paginación y repetición real autorizada del piloto.
-- [2026-10-26 — Presupuesto en bytes y piloto manual](2026-10-26-continuous-pilot.md):
-  retirada del tokenizer, escenario congelado y preparación offline; proveedor sin ejecutar.
-- [2026-10-26 — Bucle continuo con contexto acotado](2026-10-26-continuous-context.md):
-  modo opcional, conteo local en tokens, reconstrucción y pruebas sin proveedores.
+- [2026-10-26 — Contexto continuo](2026-10-26-continuous-context.md):
+  implementación inicial, sustitución por bytes y preparación offline, corrección
+  de entrega y repetición autorizada; cada corte conserva sus pruebas y límites.
 - [2026-10-25 — Metodología financiera longitudinal](2026-10-25-financial-methodology.md):
   prompts, control congelado y selección de instrucciones; verificación local sin campaña.
 - [2026-10-24 — Simplificación de main sin SQL](2026-10-24-simplification-main.md):

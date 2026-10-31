@@ -1,113 +1,37 @@
 # Documentación de Research Agent
 
-La [campaña decisoria de Microsoft](experiments/evaluacion-msft-v1/findings.md), con
-pregunta literal del usuario, produjo evaluación provisional, escenarios y cálculos
-en 100 llamadas ordinarias. Cerró por presupuesto, sin fallo operativo; el evaluador
-mantuvo impedimentos por recálculo pendiente. La [entrega](deliveries/2026-10-31-decision-objectives.md)
-distingue implementación, captura real y correcciones locales posteriores.
+Research Agent es un laboratorio de autonomía, herramientas y continuidad del
+conocimiento. El código y sus contratos determinan lo implementado; una ejecución
+capturada no demuestra calidad financiera ni resultados de inversión.
 
-La [V8 de objetivos y cobertura](experiments/objetivos-v8/protocol.md) permite un
-objetivo fijo con evaluación periódica separada y distancia determinista dada la
-evaluación. Conserva V7 sin objetivo. La [entrega](deliveries/2026-10-31-v8.md)
-separa pruebas locales de utilidad semántica pendiente. La [campaña real V8](experiments/inversion-real-v8/findings.md)
-se detuvo a las 144 llamadas ordinarias por agenda excesiva, con captura completa;
-sus tres evaluaciones no redujeron la distancia. No es contraste controlado ni aceptación.
+## Elegir una lectura
 
-La [V6 de continuidad](experiments/continuidad-v6/protocol.md) añade foco activo en
-agenda, protección y vista del contenido recuperable, y observación longitudinal
-offline. Mantiene un investigador, sin supervisores LLM. La
-[entrega](deliveries/2026-10-29-continuity-v6.md) separa verificación local y contraste
-semántico pendiente. La [campaña real](experiments/continuidad-v6/findings.md) alcanzó
-100 llamadas ordinarias, con captura completa y progreso semántico parcial: la
-persistencia siguió concentrada en consolidación.
-
-La propuesta [V5: herramientas de estado y expedientes de empresa](experiments/herramientas-estado-v5/design-brief.md)
-conserva el diseño del encargo del 2026-10-28. Su primera implementación añade
-lecturas versionadas, edición exacta, expedientes mínimos y contratos consultables;
-véase la [entrega V5](deliveries/2026-10-28-state-tools-v5.md). La comprobación local
-no demuestra utilidad semántica ni mejora financiera.
-
-La [POC opcional de operadores Python](experiments/python-operators-v1/protocol.md)
-permite cálculos, transformaciones, reglas y modelos mediante procesos locales.
-Incluye contratos recuperables y pruebas deterministas; no es un sandbox ni acredita
-mejora financiera. El contraste controlado con LLM queda pendiente.
-
-La [observación real V4](experiments/python-operators-v1/findings-v4.md), autorizada
-posteriormente, registra dos usos autónomos correctos y resultados incorporados al
-conocimiento. El contraste controlado sigue pendiente.
-
-Research Agent estudia mecanismos de conocimiento, investigación y revisión para el
-futuro FinMate. El [baseline vigente](baseline.md) identifica el estado que se toma
-como referencia para próximos experimentos, su configuración y evidencias disponibles.
-El [modo continuo experimental](experiments/contexto-continuo-v1/protocol.md) añade
-continuación tras respuestas y contexto renovable con presupuesto local en bytes;
-no cambia por defecto el ciclo acotado ni el calendario longitudinal.
-Toda ejecución continua incorpora la
-[revisión periódica permanente](architecture.md#revisión-periódica-permanente--2026-10-27),
-con llamadas adicionales contabilizadas por fase; su utilidad semántica queda pendiente.
-La [estrategia](strategy.md) fija la agenda; la arqueología caracteriza un corte
-histórico de FinMate y E001/E002 son antecedentes recuperables desde Git.
-
-La [entrega V7](deliveries/2026-10-30-v7.md) evoluciona el agente actual con
-resultado de sesión, escritura conjunta recuperable, avisos y revisión externa en
-continuo. La [campaña V7 con datos reales](experiments/inversion-real-v7/findings.md)
-consumió 200 llamadas ordinarias en tres tentativas: seis modelos y progreso económico
-parcial, sin valoración/asignación; no acredita aceptación semántica.
-
-## Referencias principales
-
-| Documento | Qué resuelve |
+| Necesidad | Referencia propietaria |
 |---|---|
-| [Visión y propósito](purpose.md) | Qué producto buscamos y qué hipótesis estudia el laboratorio |
-| [Estrategia](strategy.md) | Qué investigar, en qué orden y con qué criterios de avance |
-| [Arquitectura](architecture.md) | Qué está implementado, quién lo posee y cuáles son sus límites |
-| [Experimentos](experiments.md) | Cómo comparar mecanismos y qué conclusiones permite la evidencia |
-| [Campañas](campaigns.md) | Definir, ejecutar y revisar campañas locales |
-| [Desarrollo](development.md) | Instalar, actualizar dependencias, ejecutar, verificar y entregar |
+| Entender el propósito | [Visión](purpose.md) |
+| Conocer la pregunta vigente y lo pendiente | [Estrategia](strategy.md) |
+| Entender el agente actual y sus fronteras | [Arquitectura](architecture.md) |
+| Instalar, configurar y ejecutar | [Desarrollo](development.md) |
+| Preparar y revisar campañas | [Campañas](campaigns.md) |
+| Diseñar un contraste | [Metodología](experiments.md) |
+| Consultar resultados y sus límites | [Registro experimental](experiments/README.md) |
+| Identificar una referencia histórica para comparar | [Baseline del 18 de octubre](baseline.md) |
+| Consultar elecciones aceptadas | [Decisiones](decisions/README.md) |
+| Recuperar cambios y verificaciones fechados | [Entregas](deliveries/README.md) |
+| Investigar las bibliotecas compartidas y el antecedente FinMate | [Referencias externas](finmate-references.md) |
 
-Para diseñar, empezar por visión y estrategia; para programar, seguir arquitectura,
-productores, consumidores y pruebas del área afectada. [AGENTS.md](../AGENTS.md)
-establece las reglas de colaboración; el [README](../README.md) ofrece el arranque rápido.
-No hace falta releer todo en cada tarea.
+El [README de raíz](../README.md) ofrece el arranque rápido y [AGENTS](../AGENTS.md)
+fija las reglas de trabajo. No es necesario recorrer toda la historia para operar.
 
-## Registros y referencias
+## Vigencia y evidencia
 
-| Registro | Pregunta que conserva |
-|---|---|
-| [Baseline](baseline.md) | ¿Qué implementación y evidencias usamos como referencia? |
-| [Decisiones](decisions/README.md) | ¿Qué elegimos, por qué y qué queda abierto? |
-| [Experimentos y hallazgos](experiments/README.md) | ¿Qué contrastamos y qué aprendimos con qué evidencia? |
-| [Entregas](deliveries/README.md) | ¿Qué se cambió y verificó en un corte concreto? |
-| [Referencias de FinMate](finmate-references.md) | ¿Dónde investigar el producto y las bibliotecas compartidas? |
+Las guías de arquitectura y operación describen capacidades actuales. Protocolos,
+hallazgos y entregas conservan fechas: sus propuestas y verificaciones no son
+órdenes vigentes ni pruebas repetidas hoy. Las decisiones conservan su estado original.
 
-Cada tema tiene una referencia propietaria; los registros enlazan esa referencia sin
-copiarla. Las entregas conservan su fecha: sus siguientes pasos pueden ser históricos.
-La prioridad vigente se consulta en estrategia, no en la última campaña recordada.
-
-## Cómo leer las afirmaciones
-
-- **Visión y propuesta:** dirección a contrastar; no capacidad ni autorización de cambio.
-- **Implementación:** código, schemas y configuración efectiva; no prueba de calidad financiera.
-- **Hallazgo:** observación fechada con base, evidencia y límites; interpretación separada.
-- **Decisión:** elección explícita con estado y justificación; no consecuencia automática de un check.
-
-Hoy existe solo A, con herramientas y estado de archivos por experimento; instrucciones,
-materiales y ejecuciones están separados. CLI permite crear o continuar una prueba.
-Las campañas se ejecutan desde `research_campaigns`, separado del núcleo.
-La CLI carga guía financiera básica. El [entorno longitudinal](experiments/colaboracion-historica-v1/protocol.md)
-añade cartera ficticia y activaciones históricas opcionales; A0–A3 y un motor DCF preimplementado no existen. Los documentos de E001/E002 no están en el árbol
-actual; el registro experimental explica cómo recuperarlos desde Git.
-Las rutas a FinMate suponen repositorios hermanos y no son imports de ejecución.
-La documentación de sus fuentes puede diferir del wheel instalado: verificar antes
-de atribuir capacidades. Estado revisado el 2026-10-24.
-
-La [condición de intención persistente](experiments/intencion-persistente-v1/protocol.md)
-añade opcionalmente mandato protegido y agenda automática al mismo A. La ampliación
-de presupuesto completó seis activaciones por condición, con [hallazgos preliminares](experiments/intencion-persistente-v1/findings-amplio.md).
-El escenario de 18 llamadas sigue sin ejecutar; el baseline conserva su comportamiento.
-
-La [metodología financiera longitudinal](experiments/analisis-financiero-v1/protocol.md)
-evoluciona las instrucciones por defecto y propone tres documentos revisables por empresa,
-sin cambiar el runtime. Incluye control histórico congelado y selección de instrucciones
-para una comparación futura. Verificación local sin proveedores; campaña y aceptación
-semántica pendientes. Los experimentos anteriores mantienen sus copias de instrucciones.
+Los hallazgos narrativos incluyen condiciones, resultados, fallos y procedencia para
+poder entenderlos sin `artifacts/`. Las capturas completas son locales y pueden
+archivarse fuera del checkout; recuperarlas es necesario para repetir una auditoría.
+Las rutas históricas se indican como texto, sin prometer acceso al archivo externo.
+No se versionan capturas privadas ni se convierten conclusiones del agente en hechos
+validados. Las referencias a FinMate requieren su checkout hermano y no son imports.

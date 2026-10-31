@@ -5,11 +5,11 @@ la implementación. **Alcanzó las 100 llamadas ordinarias, con captura completa
 menos errores instrumentales, pero no se observó escritura durante investigación ni
 menor carga de consolidación. La continuidad del conocimiento sigue siendo parcial.**
 
-El [protocolo](protocol.md) y la [rúbrica previa](../../../campaigns/contexto-continuo-v6/rubrica.md)
-delimitan el contraste. Referencia: [repetición V5](../herramientas-estado-v5/findings-repeticion.md).
-La [captura nativa](../../../artifacts/contexto-continuo-v6/piloto-100-llamadas/README.md),
-el [resumen mecánico](../../../artifacts/contexto-continuo-v6/piloto-100-llamadas/resumen-observacion.json)
-y las [comprobaciones posteriores](../../../artifacts/contexto-continuo-v6/piloto-100-llamadas/comprobaciones-locales.json)
+El [protocolo](protocol.md) y la rúbrica previa (`campaigns/contexto-continuo-v6/rubrica.md`; referencia local histórica)
+delimitan el contraste. Referencia: [repetición V5](../herramientas-estado-v5/findings.md).
+La captura nativa (`artifacts/contexto-continuo-v6/piloto-100-llamadas/README.md`; referencia local histórica),
+el resumen mecánico (`artifacts/contexto-continuo-v6/piloto-100-llamadas/resumen-observacion.json`; referencia local histórica)
+y las comprobaciones posteriores (`artifacts/contexto-continuo-v6/piloto-100-llamadas/comprobaciones-locales.json`; referencia local histórica)
 son locales, ignorados por Git y no portables por estar enlazados aquí.
 
 ## 1. Condiciones y cierre
@@ -103,7 +103,7 @@ atribuir la ausencia de ese fallo a una protección que aquí no llegó a dispar
 Las trece ventanas conservan mandato íntegro y agenda. Se guardaron veinte checkpoints:
 inicio, seis revisiones, doce renovaciones y cierre; todos completos y con hashes
 coherentes. Hay investigación posterior a la duodécima renovación. El
-[informe offline](../../../artifacts/contexto-continuo-v6/piloto-100-llamadas/ejecuciones/2026-10-29-piloto/progreso-v6.json)
+informe offline (`artifacts/contexto-continuo-v6/piloto-100-llamadas/ejecuciones/2026-10-29-piloto/progreso-v6.json`; referencia local histórica)
 conserva observaciones mecánicas; sus dimensiones semánticas siguen `not_assessed`.
 La valoración de esta sección es posterior y separada de ese informe.
 
@@ -155,7 +155,7 @@ El comprobador V6 se aplicó a ocho porcentajes narrativos escogidos en agenda/H
 con cita exacta y operandos de los materiales: los ocho coinciden, considerando redondeo
 a dos decimales. Es una comprobación limitada, no certificación de toda la prosa,
 unidades o inferencias. El
-[informe con cifras](../../../artifacts/contexto-continuo-v6/piloto-100-llamadas/ejecuciones/2026-10-29-piloto/progreso-con-cifras.json)
+informe con cifras (`artifacts/contexto-continuo-v6/piloto-100-llamadas/ejecuciones/2026-10-29-piloto/progreso-con-cifras.json`; referencia local histórica)
 conserva especificación y resultados. Las referencias completas comprobadas existen;
 las abreviaturas de citas no se dan por validadas automáticamente.
 
@@ -184,3 +184,20 @@ Una ejecución por versión, con elecciones autónomas diferentes, no establece 
 ni superioridad estadística. El dataset es retrospectivo, su disponibilidad histórica
 parcialmente estimada y el modelo puede conocer el futuro. No es un backtest limpio ni
 evidencia de rendimiento de inversión. Se conservan todos los errores y artefactos.
+
+## Procedencia y disponibilidad
+
+Consolidación documental del 2026-10-31. Carpeta original: `artifacts/contexto-continuo-v6`.
+Se contrastaron manifiestos, resultados, eventos y snapshots finales disponibles;
+los informes locales y los hallazgos anteriores se leyeron como síntesis, sin
+repetir sus replays, comprobaciones exhaustivas o campañas.
+
+| Ejecución original | ID | Total LLM / herramientas | Resultado registrado |
+|---|---|---:|---|
+| `piloto-100-llamadas/ejecuciones/2026-10-29-piloto` | `50fa8107-c8f1-4e92-aa64-a633485068b1` | 106 / 93 | interrupted |
+
+Las capturas completas son locales y pueden archivarse fuera del checkout; no se
+conoce aún su destino externo. Las referencias permiten identificar los originales,
+pero no garantizan acceso. Los resultados narrativos se entienden sin esas carpetas;
+repetir una auditoría de cifras, fuentes o trayectoria requiere recuperarlas. No se
+trasladan payloads privados ni expedientes completos a Git.

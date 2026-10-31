@@ -6,10 +6,10 @@ y la [rúbrica previa](rubrica.md) se fijaron antes de ejecutar. **Se consumiero
 Quedaron seis modelos de empresa y una comparación de cribado; no hay valoración,
 evaluación de inversión completa ni propuesta de asignación.**
 
-La [captura local](../../../artifacts/inversion-real-v7/piloto-200-llamadas/README.md),
-el [resumen mecánico](../../../artifacts/inversion-real-v7/piloto-200-llamadas/resumen-observacion.json),
-las [comprobaciones escogidas](../../../artifacts/inversion-real-v7/piloto-200-llamadas/comprobaciones-locales.json)
-y el [replay de escrituras](../../../artifacts/inversion-real-v7/piloto-200-llamadas/replay-escrituras.json)
+La captura local (`artifacts/inversion-real-v7/piloto-200-llamadas/README.md`; referencia local histórica),
+el resumen mecánico (`artifacts/inversion-real-v7/piloto-200-llamadas/resumen-observacion.json`; referencia local histórica),
+las comprobaciones escogidas (`artifacts/inversion-real-v7/piloto-200-llamadas/comprobaciones-locales.json`; referencia local histórica)
+y el replay de escrituras (`artifacts/inversion-real-v7/piloto-200-llamadas/replay-escrituras.json`; referencia local histórica)
 son locales, ignorados por Git y no portables por sus enlaces. Lanzadores, preflight
 y análisis están en el directorio padre de esa captura. No se sobrescribieron
 los materiales, respuestas ni trazas de las tentativas fallidas.
@@ -160,3 +160,22 @@ Verificación local de correcciones: 73 pruebas de campañas/longitudinal y, des
 offline de replay encontró PermissionError local y la segunda un error del propio
 comprobador (comparaba hashes con texto); ambos constan en su informe. El replay final
 compara hashes de ambos lados y coincide, sin modificar el estado de campaña.
+
+## Procedencia y disponibilidad
+
+Consolidación documental del 2026-10-31. Carpeta original: `artifacts/inversion-real-v7`.
+Se contrastaron manifiestos, resultados, eventos y snapshots finales disponibles;
+los informes locales y los hallazgos anteriores se leyeron como síntesis, sin
+repetir sus replays, comprobaciones exhaustivas o campañas.
+
+| Ejecución original | ID | Total LLM / herramientas | Resultado registrado |
+|---|---|---:|---|
+| `piloto-200-llamadas/ejecuciones/2026-10-30-continuacion-operativa-02` | `25ce871c-3a50-4402-9e6a-627555d3948c` | 8 / 7 | failed / LLMTimeout |
+| `piloto-200-llamadas/ejecuciones/2026-10-30-continuacion-operativa-03` | `56246269-692b-42db-ac4c-6efea796e036` | 168 / 156 | interrupted |
+| `piloto-200-llamadas/ejecuciones/2026-10-30-investigacion-real-200` | `c8e7803c-a2e9-4917-a5ba-9cff5fbe0f58` | 35 / 32 | failed / LLMTimeout |
+
+Las capturas completas son locales y pueden archivarse fuera del checkout; no se
+conoce aún su destino externo. Las referencias permiten identificar los originales,
+pero no garantizan acceso. Los resultados narrativos se entienden sin esas carpetas;
+repetir una auditoría de cifras, fuentes o trayectoria requiere recuperarlas. No se
+trasladan payloads privados ni expedientes completos a Git.

@@ -1,7 +1,9 @@
 # Intención persistente v1
 
-> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
-> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+> Lectura histórica: los comandos `research_benchmarks`, las utilidades de
+> `scripts/` y varias definiciones de campañas se retiraron del checkout. Se
+> conservan como condiciones del corte, no como instrucciones ejecutables actuales.
+> La operación vigente está en la [guía de campañas](../../campaigns.md).
 
 Estado: condición inicial de 18 llamadas preparada sin ejecutar; **ampliación real
 completada en ambas condiciones**, con [hallazgos preliminares](findings-amplio.md). Encargo
@@ -11,7 +13,7 @@ registra la elección; no acredita una mejora semántica.
 ## Ampliación de presupuesto autorizada — 2026-10-24
 
 Después de preparar la condición de 18 llamadas, el usuario autorizó ejecutar ambas
-condiciones con más recursos. El [escenario ampliado](../../../campaigns/intencion-persistente-v1/scenario-amplio.yaml)
+condiciones con más recursos. El escenario ampliado (`campaigns/intencion-persistente-v1/scenario-amplio.yaml`; referencia local histórica)
 conserva universo, mensajes, fechas, datos y restricciones; cambia solo ID y límites:
 60 llamadas al modelo, 90 herramientas, 1200 segundos, reserva temporal de 90 segundos
 y contexto serializado de 1048576 bytes por activación. El perfil permanece OpenAI
@@ -39,7 +41,7 @@ de interpretación; no atribuyen calidad financiera al cierre operativo.
 investigaciones, resolver incertidumbres y revisar prioridades entre procesos?
 Se contrasta el paquete mandato + agenda + instrucciones; no sus contribuciones aisladas.
 
-El [escenario](../../../campaigns/intencion-persistente-v1/scenario.yaml) conserva
+El escenario (`campaigns/intencion-persistente-v1/scenario.yaml`; referencia local histórica) conserva
 las 50 identidades, 100.000 USD, máximo de diez posiciones, disponibilidad anual
 estimada de 120 días y restricciones del escenario histórico revisado. Se acorta a
 enero–junio de 2023: seis activaciones mensuales; mensajes auténticos en enero y abril,
@@ -145,3 +147,11 @@ No afirmar causalidad aislada, calidad inversora, alfa ni mejora estable. La ace
 técnica y la revisión semántica se informan por separado. No hay hallazgos del piloto
 hasta ejecutarlo. La condición de 18 llamadas sigue sin ejecutarse; la ampliación tiene
 su [registro de hallazgos](findings-amplio.md). Los tests controlados solo acreditan contratos técnicos.
+
+## Procedencia y disponibilidad
+
+Consolidación del 2026-10-31: se conserva el registro documental fechado y sus
+condiciones; no se repitió la ejecución ni se recuperaron capturas ausentes. Las rutas locales citadas son procedencia
+histórica y pueden no existir en el checkout o quedar en un archivo externo de ubicación
+no fijada. Si no están disponibles los originales, sus cifras y verificaciones son
+afirmaciones del registro previo, no resultados nuevamente comprobados en esta revisión.

@@ -12,7 +12,7 @@ corrección de afirmaciones obsoletas. La consolidación guarda solo lo pendient
 terminar antes de consumir sus cuatro llamadas. Son instrucciones al mismo A, sin
 activación obligatoria del harness ni herramientas nuevas.
 
-Las [definiciones v3](../../campaigns/contexto-continuo-v3/scenario.json) elevan el
+Las definiciones v3 (`campaigns/contexto-continuo-v3/scenario.json`; referencia local histórica) elevan el
 umbral de 196608 a 262144 bytes, manteniendo máximo de 524288 y presupuestos de 60
 llamadas, 90 herramientas y 1200 segundos. Mandato, petición, perfil y dataset permanecen
 iguales; la rúbrica añade autorregulación. Los intentos anteriores conservan sus copias.

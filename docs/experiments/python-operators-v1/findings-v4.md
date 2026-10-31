@@ -30,8 +30,8 @@ La activación queda comprobada en el manifiesto: `python_operators.enabled=true
 y schemas de `run_python` y `describe_python_operator` presentes.
 
 Run: `b8f18e55-d63c-454f-bb0b-0a1e02916427`. La
-[captura local](../../../artifacts/contexto-continuo-v4/piloto-python-v1/README.md)
-y el [resumen verificable](../../../artifacts/contexto-continuo-v4/piloto-python-v1/resumen-uso-python.json)
+captura local (`artifacts/contexto-continuo-v4/piloto-python-v1/README.md`; referencia local histórica)
+y el resumen verificable (`artifacts/contexto-continuo-v4/piloto-python-v1/resumen-uso-python.json`; referencia local histórica)
 requieren conservar los artefactos: son evidencia local, no portable por estar enlazada.
 El lanzador local `artifacts/contexto-continuo-v4/ejecutar-python-v1.py` conserva la
 composición usada; añadió `--python` sin modificar el controlador ni el ciclo de A.
@@ -88,3 +88,20 @@ en este intento. No demuestra utilidad de NumPy/pandas/SciPy, reutilización de 
 modelado cuantitativo avanzado, mejora causal frente a V4 anterior ni resultados de
 inversión. Es una observación real favorable al funcionamiento y adopción inicial;
 el contraste controlado del protocolo sigue pendiente.
+
+## Procedencia y disponibilidad
+
+Consolidación documental del 2026-10-31. Carpeta original: `artifacts/contexto-continuo-v4/piloto-python-v1`.
+Se contrastaron manifiestos, resultados, eventos y snapshots finales disponibles;
+los informes locales y los hallazgos anteriores se leyeron como síntesis, sin
+repetir sus replays, comprobaciones exhaustivas o campañas.
+
+| Ejecución original | ID | Total LLM / herramientas | Resultado registrado |
+|---|---|---:|---|
+| `ejecuciones/2026-10-27-piloto` | `b8f18e55-d63c-454f-bb0b-0a1e02916427` | 63 / 58 | interrupted |
+
+Las capturas completas son locales y pueden archivarse fuera del checkout; no se
+conoce aún su destino externo. Las referencias permiten identificar los originales,
+pero no garantizan acceso. Los resultados narrativos se entienden sin esas carpetas;
+repetir una auditoría de cifras, fuentes o trayectoria requiere recuperarlas. No se
+trasladan payloads privados ni expedientes completos a Git.

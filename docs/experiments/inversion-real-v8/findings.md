@@ -6,11 +6,11 @@ antes de lanzar. **La ejecución consumió 144 de un máximo de 200 llamadas ord
 y se detuvo porque la agenda excedió su límite al renovar contexto.** Captura nativa
 completa según el inspector; ese resultado no significa objetivo cumplido.
 
-La [campaña local](../../../artifacts/inversion-real-v8/piloto-200-llamadas/README.md),
-el [resumen](../../../artifacts/inversion-real-v8/piloto-200-llamadas/resumen-observacion.json),
-la [trayectoria de cobertura](../../../artifacts/inversion-real-v8/piloto-200-llamadas/trayectoria-cobertura.json),
-el [diagnóstico](../../../artifacts/inversion-real-v8/piloto-200-llamadas/diagnostico-interrupcion.json)
-y el [replay de escrituras](../../../artifacts/inversion-real-v8/piloto-200-llamadas/replay-escrituras.json)
+La campaña local (`artifacts/inversion-real-v8/piloto-200-llamadas/README.md`; referencia local histórica),
+el resumen (`artifacts/inversion-real-v8/piloto-200-llamadas/resumen-observacion.json`; referencia local histórica),
+la trayectoria de cobertura (`artifacts/inversion-real-v8/piloto-200-llamadas/trayectoria-cobertura.json`; referencia local histórica),
+el diagnóstico (`artifacts/inversion-real-v8/piloto-200-llamadas/diagnostico-interrupcion.json`; referencia local histórica)
+y el replay de escrituras (`artifacts/inversion-real-v8/piloto-200-llamadas/replay-escrituras.json`; referencia local histórica)
 son artefactos locales e ignorados; sus enlaces no los convierten en evidencia portable.
 Se conserva además una copia de las fuentes propias del laboratorio con hashes;
 el wheel compartido se identifica sin copiar sus implementaciones.
@@ -107,3 +107,20 @@ superioridad o inferioridad frente a V7.
 **Siguiente pregunta:** estudiar la compatibilidad entre escritura de agenda,
 consolidación y semilla protegida, y la suficiencia del paquete evaluador. Este informe
 no modifica esos mecanismos ni autoriza otra campaña, migración o cambio en FinMate.
+
+## Procedencia y disponibilidad
+
+Consolidación documental del 2026-10-31. Carpeta original: `artifacts/inversion-real-v8`.
+Se contrastaron manifiestos, resultados, eventos y snapshots finales disponibles;
+los informes locales y los hallazgos anteriores se leyeron como síntesis, sin
+repetir sus replays, comprobaciones exhaustivas o campañas.
+
+| Ejecución original | ID | Total LLM / herramientas | Resultado registrado |
+|---|---|---:|---|
+| `piloto-200-llamadas/ejecuciones/2026-10-31-investigacion-real-200` | `81472841-1a03-42d3-829a-f67588c4ea06` | 154 / 140 | failed / ValueError |
+
+Las capturas completas son locales y pueden archivarse fuera del checkout; no se
+conoce aún su destino externo. Las referencias permiten identificar los originales,
+pero no garantizan acceso. Los resultados narrativos se entienden sin esas carpetas;
+repetir una auditoría de cifras, fuentes o trayectoria requiere recuperarlas. No se
+trasladan payloads privados ni expedientes completos a Git.

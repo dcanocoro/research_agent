@@ -1,7 +1,9 @@
 # Colaboración histórica v1
 
-> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
-> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+> Lectura histórica: los comandos `research_benchmarks`, las utilidades de
+> `scripts/` y varias definiciones de campañas se retiraron del checkout. Se
+> conservan como condiciones del corte, no como instrucciones ejecutables actuales.
+> La operación vigente está en la [guía de campañas](../../campaigns.md).
 
 Estado: infraestructura implementada; aceptación corta y preflight registrados en la
 [entrega](../../deliveries/2026-10-24-longitudinal.md). No es una evaluación de alfa.
@@ -23,7 +25,7 @@ Observar continuidad, investigación, revisión, iniciativa y gestión de una ca
 ficticia durante ejecuciones independientes de A. Se conserva el ciclo y los prompts
 vigentes; no se añade evaluador ni planificación cognitiva.
 
-El [escenario](../../../campaigns/colaboracion-historica-v1/scenario.yaml) fija
+El escenario (`campaigns/colaboracion-historica-v1/scenario.yaml`; referencia local histórica) fija
 2023–2024, 50 empresas, 100.000 USD, máximo de 10 posiciones, 24 oportunidades
 mensuales y ocho mensajes trimestrales. Mensaje y revisión coincidentes se fusionan.
 Las otras 16 activaciones no incluyen un mensaje humano nuevo. Se mantienen los
@@ -131,3 +133,21 @@ La prueba corta se prepara y ejecuta explícitamente con:
 
 Usa cifras y precios sintéticos identificados y LLM/Tavily reales; la compra inicial
 solicitada comprueba integración, no iniciativa ni calidad de inversión.
+
+## Procedencia y disponibilidad
+
+Consolidación del 2026-10-31: se conserva el registro documental fechado y sus
+condiciones; no se repitió la ejecución ni se recuperaron capturas ausentes. Las rutas locales citadas son procedencia
+histórica y pueden no existir en el checkout o quedar en un archivo externo de ubicación
+no fijada. Si no están disponibles los originales, sus cifras y verificaciones son
+afirmaciones del registro previo, no resultados nuevamente comprobados en esta revisión.
+
+## Campaña larga posterior y límites conservados
+
+El registro previo de estrategia (corte del 2026-10-31) declara completadas las
+24 activaciones de dos años. El informe original estaba en
+`artifacts/campana-historica-completa-v1/informe-ejecucion.md`, ausente en este checkout.
+Aquel registro describe continuidad, pérdida parcial del mandato y contaminación
+temporal de la web. No acredita alfa ni incorpora evaluador cognitivo. Estas
+observaciones se conservan como testimonio documental; no se verificaron de nuevo
+las 24 capturas. La prueba corta de tres activaciones tiene su [registro propio](historical-smoke.md).

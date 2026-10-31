@@ -13,11 +13,11 @@ Los escenarios no se actualizaron por completo con los últimos datos recuperado
 
 ## Captura y condiciones
 
-[Campaña local](../../../artifacts/evaluacion-msft-v1/campana-100-llamadas/README.md),
-[resumen mecánico](../../../artifacts/evaluacion-msft-v1/campana-100-llamadas/resumen-observacion.json),
-[trayectoria](../../../artifacts/evaluacion-msft-v1/campana-100-llamadas/trayectoria-cobertura.json),
-[comprobaciones escogidas](../../../artifacts/evaluacion-msft-v1/campana-100-llamadas/comprobaciones-locales.json)
-y [replay](../../../artifacts/evaluacion-msft-v1/campana-100-llamadas/replay-escrituras.json)
+Campaña local (`artifacts/evaluacion-msft-v1/campana-100-llamadas/README.md`; referencia local histórica),
+resumen mecánico (`artifacts/evaluacion-msft-v1/campana-100-llamadas/resumen-observacion.json`; referencia local histórica),
+trayectoria (`artifacts/evaluacion-msft-v1/campana-100-llamadas/trayectoria-cobertura.json`; referencia local histórica),
+comprobaciones escogidas (`artifacts/evaluacion-msft-v1/campana-100-llamadas/comprobaciones-locales.json`; referencia local histórica)
+y replay (`artifacts/evaluacion-msft-v1/campana-100-llamadas/replay-escrituras.json`; referencia local histórica)
 son locales e ignorados; no son portables por enlazarlos. La carpeta conserva definición,
 instrucciones, código propio, perfil/wheel identificado, materiales, eventos, snapshots,
 conversación y payloads originales. No se copian implementaciones compartidas de FinMate.
@@ -102,3 +102,20 @@ consolidación costosa y falta de actualización coherente de la conclusión.
 **Interpretación:** hay señales de orientación al resultado, sin aceptación de utilidad
 decisoria completa. Cambian empresa, alcance, criterios e instrucciones frente a V8 real:
 no es prueba causal de superioridad, backtest ni evidencia de resultados de inversión.
+
+## Procedencia y disponibilidad
+
+Consolidación documental del 2026-10-31. Carpeta original: `artifacts/evaluacion-msft-v1`.
+Se contrastaron manifiestos, resultados, eventos y snapshots finales disponibles;
+los informes locales y los hallazgos anteriores se leyeron como síntesis, sin
+repetir sus replays, comprobaciones exhaustivas o campañas.
+
+| Ejecución original | ID | Total LLM / herramientas | Resultado registrado |
+|---|---|---:|---|
+| `campana-100-llamadas/ejecuciones/2026-10-31-evaluacion-msft-100` | `c91ceb5f-87ea-487d-b411-a7d52d07a069` | 108 / 95 | interrupted |
+
+Las capturas completas son locales y pueden archivarse fuera del checkout; no se
+conoce aún su destino externo. Las referencias permiten identificar los originales,
+pero no garantizan acceso. Los resultados narrativos se entienden sin esas carpetas;
+repetir una auditoría de cifras, fuentes o trayectoria requiere recuperarlas. No se
+trasladan payloads privados ni expedientes completos a Git.

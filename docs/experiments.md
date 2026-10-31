@@ -99,7 +99,7 @@ conocimiento: son factores distintos, que conviene estudiar por separado.
 ## Ejemplo de representación por contrastar
 
 El estado actual no exige schema financiero ni carpeta de casos. El modo `cases` fue
-retirado; sus antecedentes se describen en [arquitectura](architecture.md#modo-experimental-de-expedientes).
+retirado; sus antecedentes se describen en [arquitectura](baseline.md#antecedente-retirado-modo-de-expedientes).
 La siguiente convención histórica es una alternativa textual, no el mapa físico actual:
 
 ```text

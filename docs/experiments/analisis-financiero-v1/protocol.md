@@ -1,7 +1,9 @@
 # Análisis financiero longitudinal v1
 
-> Operación vigente: [guía de campañas](../../campaigns.md). Los comandos de
-> `research_benchmarks` conservados abajo corresponden al corte histórico y se retiraron el 2026-10-27.
+> Lectura histórica: los comandos `research_benchmarks`, las utilidades de
+> `scripts/` y varias definiciones de campañas se retiraron del checkout. Se
+> conservan como condiciones del corte, no como instrucciones ejecutables actuales.
+> La operación vigente está en la [guía de campañas](../../campaigns.md).
 
 Estado: implementación y verificaciones locales; contraste y aceptación semántica
 **sin ejecutar**. Encargo aprobado el 2026-10-25. No acredita calidad financiera ni
@@ -27,13 +29,13 @@ son referencias textuales con ruta e ID, sin grafo, parser ni propagación autom
 ## Condiciones congeladas
 
 - **Control:** los tres textos efectivos de la campaña deliberativa ampliada, preservados
-  en [control](../../../campaigns/analisis-financiero-v1/control).
+  en control (`campaigns/analisis-financiero-v1/control`; referencia local histórica).
 - **Intervención:** los tres prompts nuevos por defecto del paquete, copiados al crear
   una campaña nueva. Congelar revisión de código y sus hashes antes de ejecutar ambos brazos.
 - Ambos usan `--condition deliberative`, empiezan con estados y carteras nuevos y no
   comparten memoria. La campaña anterior es antecedente, no el brazo control futuro.
 
-La [procedencia](../../../campaigns/analisis-financiero-v1/control-provenance.json)
+La procedencia (`campaigns/analisis-financiero-v1/control-provenance.json`; referencia local histórica)
 registra hashes y seis manifiestos locales verificados: todos contienen el mismo texto
 efectivo y coinciden con los archivos históricos leídos como UTF-8. Las diferencias de
 hash inicialmente observadas entre algunas plantillas y copias eran de finales de línea,
@@ -41,7 +43,7 @@ no de contenido efectivo. Las copias versionadas contienen el texto exacto de lo
 codificado UTF-8/LF, sin payloads privados. La evidencia original completa sigue local e
 ignorada; los textos de control y sus hashes sí son portables.
 
-El [escenario](../../../campaigns/analisis-financiero-v1/scenario.yaml) deriva del
+El escenario (`campaigns/analisis-financiero-v1/scenario.yaml`; referencia local histórica) deriva del
 ampliado anterior cambiando únicamente su ID: enero–junio de 2023, seis activaciones,
 mismos mensajes, 50 empresas, 100.000 USD ficticios, máximo diez posiciones y lag anual
 estimado de 120 días. Límites por activación: 60 llamadas, 90 herramientas, 1200 segundos,
@@ -90,7 +92,7 @@ local; la web sigue viva y sus resultados pueden diferir entre condiciones.
 
 ## Pruebas pequeñas y aceptación semántica pendiente
 
-Los [casos preparados](../../../campaigns/analisis-financiero-v1/semantic-cases.json)
+Los casos preparados (`campaigns/analisis-financiero-v1/semantic-cases.json`; referencia local histórica)
 son un corpus sintético por etapas, no un schema ejecutable del controlador. No se ha
 implementado otro runner. Una prueba posterior requerirá un transporte controlado:
 publicar exclusivamente las fuentes de la etapa actual, impedir web y datos externos,
@@ -132,3 +134,13 @@ conocimiento previo del modelo y web viva: `published_at` no garantiza contenido
 históricamente válido. El simulador no ofrece lectura de documentos web completos.
 No se incorpora DCF, motor de reglas, base de datos ni modificación de herramientas.
 No confundir checks locales con aceptación semántica o resultados de inversión.
+
+## Procedencia y disponibilidad
+
+Consolidación del 2026-10-31: se conserva el registro documental fechado y sus
+condiciones; no se repitió la ejecución ni se recuperaron capturas ausentes. La preparación o implementación descrita no demuestra que se haya ejecutado el contraste
+controlado propuesto. Las observaciones reales relacionadas se identifican por separado
+en el [registro experimental](../README.md). Las rutas locales citadas son procedencia
+histórica y pueden no existir en el checkout o quedar en un archivo externo de ubicación
+no fijada. Si no están disponibles los originales, sus cifras y verificaciones son
+afirmaciones del registro previo, no resultados nuevamente comprobados en esta revisión.

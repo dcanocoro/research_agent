@@ -61,3 +61,11 @@ La inferencia de que mejorarían instrucciones de investigación o representaci�
 conocimiento es una hipótesis. No puede atribuirse este resultado al modelo, al presupuesto
 o a un mecanismo individual con una tentativa sin control. Conservar los materiales
 antes de usar este run como entrada de un contraste nuevo.
+
+## Procedencia y disponibilidad
+
+Consolidación del 2026-10-31: se conserva el registro documental fechado y sus
+condiciones; no se repitió la ejecución ni se recuperaron capturas ausentes. Las rutas locales citadas son procedencia
+histórica y pueden no existir en el checkout o quedar en un archivo externo de ubicación
+no fijada. Si no están disponibles los originales, sus cifras y verificaciones son
+afirmaciones del registro previo, no resultados nuevamente comprobados en esta revisión.

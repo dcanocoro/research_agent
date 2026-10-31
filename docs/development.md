@@ -1,6 +1,6 @@
 # Desarrollo y operación
 
-> Operación y dependencias del proyecto externo. Revisión: 2026-10-24.
+> Operación y dependencias del proyecto externo. Consolidación documental: 2026-10-31.
 > Los detalles del wheel corresponden al corte del 2026-10-16; verificar el entorno efectivo.
 
 ## Dependencias y frontera de instalación
@@ -215,8 +215,8 @@ resultados y límites de recuperación. El paquete `research_campaigns` prepara 
 lanza A; no se importa desde el núcleo.
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_campaigns validate campaigns/longitudinal-v1
-.\.venv\Scripts\python.exe -m research_campaigns run campaigns/longitudinal-v1 --case S2 --output artifacts/nueva-campana
+.\.venv\Scripts\python.exe -m research_campaigns validate RUTA_DEFINICION_SUITE
+.\.venv\Scripts\python.exe -m research_campaigns run RUTA_DEFINICION_SUITE --case S2 --output artifacts/nueva-campana
 .\.venv\Scripts\python.exe -m research_campaigns report artifacts/nueva-campana
 ```
 
@@ -278,11 +278,11 @@ adoptar instrucciones nuevas exige editarlas explícitamente y conservar la vers
 anterior. Los contratos efectivos `state-tools-v6.1` se congelan por run; una campaña
 preparada con otro runtime no puede reanudarse silenciosamente.
 
-La definición `campaigns/contexto-continuo-v6` está preparada sin ejecución. Validación
-offline, sin proveedores ni datos remotos:
+Las definiciones históricas se retiraron del checkout. Para una definición continua
+existente y compatible, validación offline sin proveedores ni datos remotos:
 
 ```powershell
-.\.venv\Scripts\python.exe -m research_campaigns validate campaigns/contexto-continuo-v6
+.\.venv\Scripts\python.exe -m research_campaigns validate RUTA_DEFINICION_CONTINUA
 .\.venv\Scripts\python.exe -m pytest -q tests/test_v6.py
 ```
 
@@ -332,9 +332,12 @@ git diff --check
 
 La suite incluye subprocess que bloquea imports de `finmate`, `engine` y `api`. El núcleo tampoco importa `experience_audit` ni
 `research_campaigns`; Audit puede permanecer instalado sin ser usado.
-El comprobador local de enlaces y anclas se ejecuta con
-`.\.venv\Scripts\python.exe scripts/check_docs.py`; no necesita servicios remotos.
-No utiliza el catálogo documental de FinMate. Si también cambia documentación de FinMate,
+El comprobador histórico de enlaces y anclas (`scripts/check_docs.py`) se retiró
+en `3c1d481`; no es un comando disponible del checkout. Puede consultarse mediante
+`git show d2600fb:scripts/check_docs.py` y ejecutarse temporalmente apuntando a la raíz
+actual, sin restaurarlo. Comprobar enlaces y anclas internos; informar aparte las
+referencias externas a FinMate y la disponibilidad de capturas locales. No consultar
+servicios ni ocultar errores internos con exclusiones generales. Si también cambia documentación de FinMate,
 ejecutar allí su propio flujo documental; no copiar el catálogo al laboratorio.
 
 Un cambio documental no necesita llamadas a modelos o PostgreSQL. Tampoco acredita
@@ -397,7 +400,7 @@ desglose siguen siendo legibles. `manifiesto.json → review_policy` fija la pol
 efectiva; fase e índice de llamada en eventos y trazas permiten atribuir duración y
 consumo reportado por el proveedor, incluidos sus reintentos. La reflexión no se guarda
 como entrega ni modifica archivos automáticamente. Véase la
-[arquitectura](architecture.md#revisión-periódica-permanente--2026-10-27).
+[arquitectura](architecture.md#autorrevisión-periódica).
 
 ## Baseline y comparabilidad
 
@@ -421,18 +424,19 @@ No realizar commit, push o despliegue sin autorización del usuario.
 
 ## Laboratorio longitudinal
 
-La [guía del experimento](experiments/colaboracion-historica-v1/protocol.md) documenta
-`longitudinal validate`, `preflight`, `run` y `resume`, y separa prueba sintética y
-campaña histórica. Requiere el wheel experimental de la
-[entrega](deliveries/2026-10-24-longitudinal.md). No reutilizar el wheel anterior para
-este modo ni editar `site-packages`. Los artefactos existentes se conservan sin compatibilidad de comandos; ver [campañas](campaigns.md).
+La [guía experimental histórica](experiments/colaboracion-historica-v1/protocol.md)
+conserva condiciones y comandos de su corte. La interfaz vigente es
+`research_campaigns validate|run|resume|report`, descrita en [campañas](campaigns.md).
+No existe un subcomando público `preflight`: usar `validate --data` para datos locales;
+`run` histórico sin `--data` puede exportar Findata y requiere autorización de ejecución.
+Las definiciones y utilidades de `scripts/` se retiraron del checkout; las capturas
+anteriores se conservan sin compatibilidad automática de comandos o formatos.
 
 ### Intención persistente opcional
 
 El [piloto de seis activaciones](experiments/intencion-persistente-v1/protocol.md)
-incluye comandos para comprobar perfil/dataset sin red y ejecutar después dos campañas
-independientes con `--condition baseline` y `--condition deliberative`. Está preparado,
-sin ejecutar. Usar `validate --data` para comprobar un dataset local sin consultar Findata.
+conserva comandos históricos para comprobar perfil/dataset y ejecutar dos campañas
+independientes con `--condition baseline` y `--condition deliberative`. La condición ampliada sí se ejecutó: véanse sus [hallazgos](experiments/intencion-persistente-v1/findings-amplio.md). Usar `validate --data` para comprobar un dataset local sin consultar Findata.
 
 En CLI manual, `--mandate PATH` activa la condición y debe suministrarse en cada
 continuación. El archivo UTF-8 auténtico lo mantiene la persona fuera de `estado/` y
@@ -455,8 +459,9 @@ El control longitudinal genera el archivo desde los mensajes congelados por fech
 
 Los experimentos nuevos copian la metodología financiera y la convención Markdown
 vigentes. Los existentes conservan sus instrucciones; no se migran automáticamente.
-El [nuevo contraste](experiments/analisis-financiero-v1/protocol.md) conserva el control
-histórico y documenta los comandos preparados, sin campaña ejecutada.
+El [contraste específico](experiments/analisis-financiero-v1/protocol.md) conserva el control
+histórico y comandos de aquel corte. El uso de estas instrucciones en campañas posteriores
+no acredita ejecución de esa comparación controlada.
 
 `research_campaigns run DEFINICION --instructions-dir DIRECTORIO` sustituye las plantillas por un
 conjunto completo de instrucciones al crear una campaña. Para `--condition deliberative`
@@ -470,7 +475,6 @@ La verificación de implementación usa clientes controlados sin proveedores ni 
 remotas. Los casos y rúbrica semánticos quedan preparados sin ejecutar: su futura
 aplicación requiere corpus por etapas y captura, según el protocolo. Los tests prescritos
 no demuestran elección autónoma de acciones ni razonamiento financiero superior.
-
 
 ## Operación V7
 

@@ -8,11 +8,11 @@ No implementa M1/M2, variantes A0–A3, nuevos agentes, cambios de herramientas 
 
 | Escenario | Definición | Rúbrica | Secuencia de seis sesiones |
 |---|---|---|---|
-| S1 ASML | [YAML](../../../campaigns/longitudinal-v1/S1/case.yaml) | [Revisión](../../../campaigns/longitudinal-v1/S1/rubric.md) | Inicio, priorización, dos consultas, contradicción, precio, recuperación. |
-| S2 NVIDIA | [YAML](../../../campaigns/longitudinal-v1/S2/case.yaml) | [Revisión](../../../campaigns/longitudinal-v1/S2/rubric.md) | Inicio, ruido, hipótesis, deterioro, evidencia mixta, historia. |
-| S3 Ford | [YAML](../../../campaigns/longitudinal-v1/S3/case.yaml) | [Revisión](../../../campaigns/longitudinal-v1/S3/rubric.md) | Inicio, perímetro, ausencia documental, nueva fecha, premisa falsa, cierre. |
+| S1 ASML | YAML (`campaigns/longitudinal-v1/S1/case.yaml`; referencia local histórica) | Revisión (`campaigns/longitudinal-v1/S1/rubric.md`; referencia local histórica) | Inicio, priorización, dos consultas, contradicción, precio, recuperación. |
+| S2 NVIDIA | YAML (`campaigns/longitudinal-v1/S2/case.yaml`; referencia local histórica) | Revisión (`campaigns/longitudinal-v1/S2/rubric.md`; referencia local histórica) | Inicio, ruido, hipótesis, deterioro, evidencia mixta, historia. |
+| S3 Ford | YAML (`campaigns/longitudinal-v1/S3/case.yaml`; referencia local histórica) | Revisión (`campaigns/longitudinal-v1/S3/rubric.md`; referencia local histórica) | Inicio, perímetro, ausencia documental, nueva fecha, premisa falsa, cierre. |
 
-La [suite](../../../campaigns/longitudinal-v1/suite.yaml) declara S1→S2→S3:
+La suite (`campaigns/longitudinal-v1/suite.yaml`; referencia local histórica) declara S1→S2→S3:
 18 sesiones. El piloto anterior se conserva como antecedente separado; no se cambian
 su catálogo ni sus capturas. Esta suite es la nueva propuesta para el encargo, sin
 alterar por ello la estrategia general o aceptar mecanismos.
@@ -85,3 +85,13 @@ Revisión estructural offline del catálogo, referencias locales y `git diff --c
 No ejecutar `run`, la CLI del agente, modelos, web ni bases de datos para esta tarea.
 La validación estructural no acredita que los escenarios discriminen mecanismos:
 esa cuestión requiere una ejecución futura autorizada y revisión de evidencia.
+
+## Procedencia y disponibilidad
+
+Consolidación del 2026-10-31: se conserva el registro documental fechado y sus
+condiciones; no se repitió la ejecución ni se recuperaron capturas ausentes. La preparación o implementación descrita no demuestra que se haya ejecutado el contraste
+controlado propuesto. Las observaciones reales relacionadas se identifican por separado
+en el [registro experimental](../README.md). Las rutas locales citadas son procedencia
+histórica y pueden no existir en el checkout o quedar en un archivo externo de ubicación
+no fijada. Si no están disponibles los originales, sus cifras y verificaciones son
+afirmaciones del registro previo, no resultados nuevamente comprobados en esta revisión.

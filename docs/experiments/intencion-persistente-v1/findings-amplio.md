@@ -105,13 +105,13 @@ No se ha realizado una revisión semántica exhaustiva ni una réplica independi
 
 ## Referencias y reproducción del resumen
 
-- [Observaciones por sesión](../../../artifacts/intencion-amplia-comparacion-v1/observaciones.json):
+- Observaciones por sesión (`artifacts/intencion-amplia-comparacion-v1/observaciones.json`; referencia local histórica):
   consumos, errores, símbolos, escrituras, hashes y rutas a cada run nativo.
-- [Comprobaciones de continuidad](../../../artifacts/intencion-amplia-comparacion-v1/continuidad.json):
+- Comprobaciones de continuidad (`artifacts/intencion-amplia-comparacion-v1/continuidad.json`; referencia local histórica):
   contexto en entradas del proveedor y enlace entre agendas guardadas y recibidas.
-- [Respuesta final baseline](../../../artifacts/intencion-amplia-baseline-v1/agente/ejecuciones/2026-10-24-activation-0006-attempt-0006/respuesta.md).
-- [Respuesta final deliberativa](../../../artifacts/intencion-amplia-deliberative-v1/agente/ejecuciones/2026-10-24-activation-0006-attempt-0006/respuesta.md)
-  y [agenda final](../../../artifacts/intencion-amplia-deliberative-v1/agente/estado/agenda.md).
+- Respuesta final baseline (`artifacts/intencion-amplia-baseline-v1/agente/ejecuciones/2026-10-24-activation-0006-attempt-0006/respuesta.md`; referencia local histórica).
+- Respuesta final deliberativa (`artifacts/intencion-amplia-deliberative-v1/agente/ejecuciones/2026-10-24-activation-0006-attempt-0006/respuesta.md`; referencia local histórica)
+  y agenda final (`artifacts/intencion-amplia-deliberative-v1/agente/estado/agenda.md`; referencia local histórica).
 
 El resumen numérico se regenera sin proveedores desde la raíz con:
 

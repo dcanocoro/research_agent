@@ -40,15 +40,21 @@ actualización deliberada del wheel, según [dependencias](development.md).
 
 ## Extracción y evidencia histórica
 
-- [Guía de extracción](../../FinMate/docs/development/research-agent.md): ubicación,
-  instalación y frontera entre proyectos.
-- [Entrega de implementación de A, 2026-10-15](../../FinMate/artifacts/research-lab/2026-10-15/delivery.md):
-  implementación, verificaciones y límites del corte original.
-- [Entrega de extracción, 2026-10-16](../../FinMate/artifacts/research-agent/2026-10-16/delivery.md):
-  renombrado, instalación y verificaciones del traslado.
-- [Flujo de desarrollo de FinMate](../../FinMate/docs/development/workflow.md):
-  antecedente del criterio de documentación y entrega adaptado aquí.
+La [entrega local de extracción documental](deliveries/2026-10-16-documentation.md)
+conserva procedencia y verificaciones del traslado. Los originales externos estaban en
+`FinMate/artifacts/research-lab/2026-10-15/delivery.md` y
+`FinMate/artifacts/research-agent/2026-10-16/delivery.md`; son referencias históricas,
+no evidencia distribuida aquí.
 
-Estos informes son históricos, no contrato vigente ni pruebas repetidas hoy. Los
-artefactos privados e ignorados a los que aludan pueden no estar presentes en otra máquina.
-La [entrega local](deliveries/2026-10-16-documentation.md) registra este cambio documental.
+La [arqueología conceptual](finmate-concept-model/modelo-conocimiento-actual.md)
+explica conceptos, ciclos y consumidores del corte del 17 de octubre. Su
+[anexo de estructuras](finmate-concept-model/estructuras-y-campos.md) conserva campos
+y restricciones declaradas; se mantiene separado porque permite descender al detalle
+sin repetirlo en el mapa conceptual. Ninguno define el runtime vigente de A.
+
+Las rutas navegables de esta página y de la arqueología son **referencias externas**
+al checkout hermano de FinMate. Su ausencia se informa por separado de errores
+internos del laboratorio; no se reconstruye su contenido ni se cambia la referencia
+histórica para hacer pasar una comprobación. Los informes externos pueden depender
+de capturas privadas ausentes. No se consultaron datos privados ni servicios para
+esta consolidación.
