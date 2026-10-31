@@ -5,6 +5,40 @@ vive en `src/research_campaigns/`. Una definición es la receta; una campaña es
 ejecución concreta en una carpeta nueva. Solo A investiga: el controlador prepara
 entradas, lanza su CLI y conserva evidencia. El núcleo no importa el controlador.
 
+## Tres casos fijos en paralelo
+
+El [protocolo de casos fijos](experiments/casos-fijos/protocol.md) define tres prompts
+estables: analista abierto, Microsoft y sector de infraestructura de IA. Para lanzar
+una ejecución de cada caso, desde la raíz y con el entorno instalado:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/run_fixed_cases.py --output artifacts/mi-experimento
+```
+
+El destino debe ser nuevo. Se lanzan tres procesos simultáneos de la CLI nativa,
+cada uno con su propio directorio: `analista/`, `microsoft/` y `sector-ia/`.
+Cada ejecución tiene 100 llamadas ordinarias (investigación más consolidación),
+200 herramientas como máximo y las revisiones LLM adicionales del runtime.
+No se fija timeout global adicional. Se requiere el extra Python ya instalado;
+el lanzador no instala dependencias ni sustituye perfiles. Usa Findata de solo
+lectura y web reales, sin simulador ni objetivo JSON.
+
+`entradas/` conserva los tres prompts y el mandato efectivos; `logs/` conserva stdout
+y stderr por caso. Los resultados nativos están bajo `CASO/ejecuciones/`; consultar
+`resultado.json`, `respuesta.md` cuando exista, snapshots, eventos y revisiones.
+El conocimiento editable de cada caso vive en `CASO/estado/`. No se comparte estado.
+No modificar configuración, código, instrucciones ni prompts mientras corre el lote.
+
+Un fallo no detiene los otros casos y no se reintenta. Ctrl+C detiene y recoge los
+procesos lanzados; las capturas parciales disponibles se conservan, sin garantizar
+un cierre nativo completo. El retorno del lanzador es 0 si los tres procesos retornan
+0, 1 ante fallo de un proceso o de lanzamiento, 2 ante entrada inválida y 130 ante
+cancelación. `call_limit` se anuncia como presupuesto agotado, no como cumplimiento.
+
+Este lote es un script mínimo, sin `campaign.json` ni informe agregado. La carpeta
+`campaigns/casos-fijos/` contiene prompts; no es una definición para los comandos
+`research_campaigns validate/run/report` descritos a continuación.
+
 ## Definir una campaña
 
 Crear `campaigns/nombre/` con exactamente una entrada:

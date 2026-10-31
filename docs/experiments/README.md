@@ -8,6 +8,7 @@ Una campaña exploratoria real no completa automáticamente un contraste control
 
 | Pregunta / intervención | Implementación o preparación | Ejecución y resultado | Límites y registro |
 |---|---|---|---|
+| Tres casos fijos reutilizables | Prompts estables y lanzador paralelo con estados separados | Sin ejecuciones reales; comprobación local con procesos simulados | [Protocolo](casos-fijos/protocol.md). Tres casos de 100 llamadas ordinarias cada uno; sin controles adicionales ni atribución causal automática. |
 | Evaluación decisoria Microsoft | Objetivo V8 con evaluación activa e impedimentos | 100 ordinarias, 108 LLM; evaluación provisional y escenarios, actualización incompleta | [Protocolo](evaluacion-msft-v1/protocol.md) y [hallazgos](evaluacion-msft-v1/findings.md). Correcciones posteriores solo locales; sin recomendación validada. |
 | Objetivos y cobertura V8 | Objetivo fijo y evaluador por criterios implementados | Contraste controlado propuesto pendiente; mecanismo ejercitado en campañas posteriores | [Protocolo](objetivos-v8/protocol.md). Distancia condicionada por juicio y fuentes del evaluador. |
 | Investigación real V8 | Continuo con objetivo | 144/200 ordinarias, 154 LLM; parada por agenda excesiva; tres evaluaciones sin reducción | [Protocolo](inversion-real-v8/protocol.md) y [hallazgos](inversion-real-v8/findings.md). Sin valoración ni asignación; no contraste causal V7/V8. |

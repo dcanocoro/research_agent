@@ -6,6 +6,8 @@ correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda v
 consultar [estrategia](../strategy.md). Los estados «sin campaña» describen el cierre
 de aquella entrega; las ejecuciones posteriores están en el [registro experimental](../experiments/README.md).
 
+- [2026-10-31 — Tres casos fijos](2026-10-31-fixed-cases.md): prompts reutilizables,
+  lanzamiento paralelo en estados separados y comprobaciones locales sin proveedores.
 - [2026-10-31 — Consolidación documental](2026-10-31-documentation-consolidation.md):
   guías vigentes, historia reunida y conservación narrativa antes del archivo externo.
 - [2026-10-31 — Dirección decisoria](2026-10-31-decision-objectives.md): juicio activo,
