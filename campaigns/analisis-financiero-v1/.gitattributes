@@ -1,2 +1,0 @@
-# Keep frozen effective instruction bytes and provenance hashes portable on Windows.
-control/*.md text eol=lf
