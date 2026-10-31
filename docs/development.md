@@ -486,3 +486,55 @@ sortear conflictos: el diagnóstico de recuperación identifica el archivo que e
 revisión. No existe aislamiento frente a editores externos durante una escritura conjunta.
 Las copias de instrucciones antiguas no se actualizan automáticamente. La nueva política
 continua sí queda registrada junto a contratos y fingerprints efectivos.
+
+## Operación V8
+
+El objetivo admite opcionalmente `assessment_path`, por ejemplo
+`empresas/MSFT/evaluacion.md`. Es una ruta Markdown editable, relativa y sin escapes;
+el runtime muestra el juicio activo sin crearlo. Para estos objetivos el evaluador
+debe devolver también `decision_review` y la semilla requiere 16 KiB de margen bajo
+el umbral de consolidación. Las definiciones e informes V8 anteriores siguen siendo
+legibles. La pregunta no se genera automáticamente ni se modifica durante el run.
+Una revisión parcial puede conservar impedimentos y servir de antecedente, pero no
+publica distancia global. El paquete evaluador puede incluir hasta 16 KiB de la
+evaluación activa, sin ampliar el máximo de 64 KiB ni su vista de contexto de 4 KiB.
+
+`agenda.md` rechaza escrituras mayores de 8192 bytes antes de publicar. El error
+permite compactar o mover detalle usando las herramientas, sin pérdida silenciosa;
+no se migran agendas antiguas excesivas. Véase el [protocolo decisorio](experiments/evaluacion-msft-v1/protocol.md).
+
+`--objective PATH` requiere `--continuous` y su mandato. El JSON UTF-8 de hasta 16 KiB
+vive fuera de `estado/` y `ejecuciones/`; se valida antes de crear clientes. Ejemplo
+de definición general (criterios y especialización pertenecen al caso):
+
+```json
+{
+  "id": "modelo-negocio",
+  "description": "Explicar el modelo de negocio de la empresa estudiada",
+  "criteria": {
+    "productos": "Explicar productos y servicios principales",
+    "ingresos": "Explicar fuentes de ingresos y sus fundamentos"
+  }
+}
+```
+
+Ejemplo de ejecución real, **no necesario para verificar la implementación**:
+
+```powershell
+.\.venv\Scripts\python.exe -m research_agent "Investiga el objetivo" --experiment artifacts/objetivo-v8 --new --run-name inicial --mandate C:/ruta/mandato.md --continuous --objective C:/ruta/objective.json --max-calls 60 --max-tools 100 --continuous-timeout-seconds 1800
+```
+
+Repetir explícitamente `--objective` al continuar, usando `--continue` y otro nombre
+de run. La definición y hash quedan en manifiesto; solo el mismo objetivo/workspace
+recupera cobertura histórica. Otro objetivo inicia una serie sin comparación con
+criterios distintos. Omitir la opción conserva el continuo V7.
+
+Las llamadas `objective_evaluation` son adicionales al máximo ordinario; comparten
+deadline. Capturas en `evaluacion-objetivo/`, separadas de `respuesta.md` y del estado.
+`final.json` puede reutilizar una evaluación previa cuando no cambió el contenido;
+una evaluación final no concede presupuesto extra al investigador para redactar cierre.
+No interpretar evaluación parcial, fallo o ausencia de métrica como distancia uno.
+
+Verificación local sin servicios: `python -m pytest -q tests/test_v8.py`, seguida de
+los checks de [verificación](#verificación-proporcionada-al-cambio). El
+[protocolo V8](experiments/objetivos-v8/protocol.md) explica política y contraste pendiente.

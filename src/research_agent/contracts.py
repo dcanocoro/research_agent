@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from math import isfinite
 from typing import Any, Literal
+from .objectives import Objective
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,11 @@ class AgentRequest:
     metadata: dict[str, str] = field(default_factory=dict)
     mandate: str | None = None
     continuous: ContinuousConfig | None = None
+    objective: Objective | None = None
+
+    def __post_init__(self) -> None:
+        if self.objective is not None and (not isinstance(self.objective, Objective) or self.continuous is None):
+            raise ValueError("An objective requires continuous mode and an Objective value.")
 
 
 @dataclass(frozen=True)

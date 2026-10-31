@@ -523,3 +523,58 @@ Un fallo de recuperación es fatal, no un error de herramienta ordinario. Los re
 la captura identifican todos los archivos incluso si falla el archivado posterior.
 
 La [entrega V7](deliveries/2026-10-30-v7.md) registra alcance y verificación.
+
+## Objetivos y cobertura V8 — 2026-10-31
+
+`AgentRequest.objective: Objective | None` añade un objetivo fijo al continuo. El
+contrato y cálculo viven en `objectives`; el paquete y recuperación en `objective_review`;
+la programación pertenece al continuo existente. El objetivo es externo al estado,
+inmutable durante el run y congelado con hash en manifiesto. Sin objetivo se mantiene
+V7; con objetivo se sustituye su revisión externa por `objective_evaluation` cada
+20 llamadas de investigación, tras consolidación y autorrevisión pendientes.
+
+El evaluador comparte cliente/perfil y deadline, con contexto separado y sin herramientas.
+Sus llamadas son adicionales al máximo ordinario y cuentan en el total real. Un paquete
+de 64 KiB reserva espacio para fuentes antes de acciones; recortes, versiones y omisiones
+quedan explícitos. No es una garantía de suficiencia de fuentes ni validación económica.
+La respuesta por criterios distingue cubierto, no cubierto y no evaluable. Solo una
+evaluación completa actualiza distancia y variación frente a la última completa válida.
+
+El feedback acotado orienta pendientes, reaperturas, reconsideración tras tres evaluaciones
+no decrecientes y síntesis al alcanzar cero, sin imponer acciones ni terminar el continuo.
+Fallos, parcialidad y omisiones interrumpen estancamiento; se conserva la última cobertura
+completa por separado. El cierre por recursos puede evaluar o reutilizar una evaluación
+si conocimiento y fuentes no cambiaron, sin llamadas tras fallo, cancelación o deadline.
+
+`evaluacion-objetivo/` conserva inputs, respuestas, métricas y referencias por run fuera
+del workspace editable. Renovaciones recuperan feedback; continuaciones gestionadas
+solo recuperan cobertura histórica del mismo workspace y hash. Cambiar criterios inicia
+otra serie. La [operación](development.md#operación-v8) y el
+[protocolo](experiments/objetivos-v8/protocol.md) detallan contratos, captura y límites.
+
+### Dirección hacia una evaluación decisoria
+
+El encargo posterior del 2026-10-31 añade `Objective.assessment_path`, opcional y
+externo al estado: ruta Markdown relativa del resultado revisable. Sin ese campo
+se conserva el hash de definiciones anteriores. La semilla incluye una vista actual
+versionada de hasta 4 KiB; se actualiza cuando cambia el documento y se recupera tras
+renovar. Su ausencia es explícita: el runtime no crea una plantilla ni escribe juicios.
+La instrucción por llamada con objetivo orienta a resolver impedimentos materiales
+para decidir, distinguiendo evidencia, cálculo e interpretación con lo disponible.
+
+El evaluador añade `decision_review`: utilidad para decidir, impedimentos identificados
+y clasificados con impacto y referencias, IDs resueltos y revisión de la adaptación.
+Se exige para objetivos con `assessment_path`; los informes anteriores siguen siendo
+legibles. La distancia binaria permanece auxiliar. El investigador elige el método;
+ante estancamiento explicita qué cambió y qué resultado espera, y se revisa después.
+La última revisión estructuralmente válida, incluso parcial, se conserva separada de
+la última distancia completa, también tras fallos y continuaciones. El paquete del
+evaluador prioriza hasta 16 KiB de la evaluación activa dentro del máximo de 64 KiB;
+las vistas del contexto investigador siguen acotadas a 4 KiB.
+
+Todas las escrituras de `agenda.md` se prevalidan con máximo de 8192 bytes UTF-8,
+también en operaciones conjuntas: se rechaza antes de publicar ningún cambio. No se
+recorta estado previo automáticamente. Para objetivos con evaluación activa se
+reservan 16 KiB de margen de semilla bajo el umbral, además de la reserva de salida.
+El [protocolo de Microsoft](experiments/evaluacion-msft-v1/protocol.md) posee la campaña
+autorizada, cuya pregunta ha fijado literalmente el usuario.

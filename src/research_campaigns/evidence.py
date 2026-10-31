@@ -11,7 +11,8 @@ from typing import Any
 from research_agent.workspace import Workspace
 
 
-def inspect_run(campaign: Path, run: Path, runtime: dict[str, Any] | None = None) -> dict[str, Any]:
+def inspect_run(campaign: Path, run: Path, runtime: dict[str, Any] | None = None,
+                objective_sha256: str | None = None) -> dict[str, Any]:
     errors: list[dict[str, Any]] = []
 
     def ref(path: Path) -> str:
@@ -36,6 +37,8 @@ def inspect_run(campaign: Path, run: Path, runtime: dict[str, Any] | None = None
             return kind() if kind is not None else None
 
     manifest = read(run / "manifiesto.json")
+    if objective_sha256 is not None and (manifest.get("objective") or {}).get("sha256") != objective_sha256:
+        issue(run / "manifiesto.json", "Child objective differs from frozen campaign")
     runtime = runtime or {}
     if "profile" in runtime:
         effective = manifest.get("configuration", {})
@@ -172,9 +175,22 @@ def inspect_run(campaign: Path, run: Path, runtime: dict[str, Any] | None = None
         duration = (datetime.fromisoformat(terminal[-1]["occurred_at"]) - datetime.fromisoformat(native[0][1]["occurred_at"])).total_seconds()
     except (ValueError, KeyError, IndexError, TypeError):
         pass
+    objective_summary: dict[str, Any] = {}
+    if manifest.get("objective"):
+        evaluations = [read(path) for path in sorted((run / "evaluacion-objetivo").glob("evaluation-*.json"))
+                       if not path.name.endswith("-input.json")]
+        valid = [e for e in evaluations if e.get("status") == "complete"]
+        objective_summary = {"objective_sha256": manifest["objective"]["sha256"],
+            "evaluations": len(evaluations), "failures": sum(e.get("status") == "failed" for e in evaluations),
+            "partial": sum(e.get("status") == "partial" for e in evaluations),
+            "skipped": sum(e.get("status") == "skipped" for e in evaluations),
+            "last_valid_metrics": valid[-1].get("metrics") if valid else None,
+            "decision_useful": (valid[-1].get("report", {}).get("decision_review") or {}).get("decision_useful") if valid else None,
+            "latest_status": evaluations[-1].get("status") if evaluations else None}
     return {"run_id": run_id, "run_directory": ref(run), "agent_status": result.get("status"),
             "stop_reason": result.get("stop_reason"), "llm_calls": llm_calls, "tool_calls": tool_calls,
             "llm_calls_by_phase": result.get("llm_calls_by_phase", {}),
+            "objective_summary": objective_summary,
             "duration_seconds": duration, "capture_errors": errors, "capture_complete": not errors,
             "document_tool_failure_observed": failed_document}
 

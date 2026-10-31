@@ -9,6 +9,7 @@ from .contracts import AgentRequest, AgentLimits, AgentResult, ContinuousConfig
 from .experiments import prepare_experiment, experiment_lock, human_name, disjoint, validate_mandate, deliberative_context
 from .workspace import Workspace
 from .state_profiles import state_profile
+from .objectives import Objective
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -33,6 +34,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
     parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON or campaign record containing limits")
     parser.add_argument("--continuous", action="store_true", help="Keep A running with bounded renewable context; requires --mandate")
+    parser.add_argument("--objective", type=Path, help="Fixed objective JSON outside state/recordings; requires --continuous")
     parser.add_argument("--context-bytes", type=int, default=None, help="Continuous local byte budget including reserves (default 524288)")
     parser.add_argument("--consolidation-bytes", type=int, default=None, help="Continuous byte consolidation threshold including reserves (default 262144)")
     parser.add_argument("--max-calls", type=int, default=None, help="Optional research + consolidation call limit in continuous mode; periodic and external reviews are additional")
@@ -46,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--continuous requires --mandate and cannot use bounded --limits; use --max-calls/--max-tools instead.")
     if not args.continuous and any(value is not None for value in continuous_options):
         parser.error("Continuous budget options require --continuous.")
+    if args.objective is not None and not args.continuous:
+        parser.error("--objective requires --continuous.")
     run_directory: Path | None = None
 
     async def execute(root: Path, prompts: tuple[Path, ...], limits: AgentLimits) -> AgentResult:
@@ -64,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
                 simulator = Simulator(args.simulation)
                 message = activation_message(simulator, message, args.activation_kind)
                 metadata = {"simulated_date": str(simulator.today), "activation_kind": args.activation_kind}
-            result = await agent.run(AgentRequest(message, root.name, args.conversation, prompts, metadata, mandate, continuous))
+            result = await agent.run(AgentRequest(message, root.name, args.conversation, prompts, metadata, mandate, continuous, objective))
             run_directory = agent.recorder.current
             return result
     try:
@@ -80,6 +84,12 @@ def main(argv: list[str] | None = None) -> int:
         limits_data = json.loads(args.limits.read_text(encoding="utf-8")) if args.limits else {"timeout_seconds": args.timeout_seconds}
         limits = AgentLimits(**limits_data.get("limits", limits_data))
         root = args.experiment.absolute()
+        objective = None
+        if args.objective is not None:
+            Workspace._check_links(args.objective)
+            for protected in (root / "estado", root / "ejecuciones"):
+                disjoint(args.objective, protected)
+            objective = Objective.load(args.objective)
         mandate = None
         if args.mandate is not None:
             Workspace._check_links(args.mandate)

@@ -100,6 +100,17 @@ vacíos se omiten; los diagnósticos no vacíos se conservan.
 
 ## Límites y formatos retirados
 
+Los pilotos continuos admiten `objective.json` opcional junto a `scenario.json`.
+Se valida y congela en `definicion/`, se entrega mediante `--objective` y se incluye
+en la comprobación de contexto inicial. `campaign.json` conserva definición, hash y
+política V8. La comprobación rechaza inputs alterados y la inspección detecta un run
+con otro objetivo. No se añade `resume` al piloto continuo: una continuación manual
+es otro run; después de una tentativa `check` sigue exigiendo un piloto nuevo.
+
+Los informes muestran llamadas del evaluador, última cobertura completa y estado de
+la evaluación actual, además de fallos, parciales y omisiones. Su lectura estructural
+no evalúa calidad semántica. Véase el [protocolo V8](experiments/objetivos-v8/protocol.md).
+
 La reorganización del 2026-10-27 no modifica los artefactos anteriores y no ofrece
 compatibilidad de comandos, lectura compacta ni reanudación de campañas antiguas.
 Los ejemplos fechados de protocolos y entregas conservan su sintaxis histórica;

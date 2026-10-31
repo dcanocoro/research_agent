@@ -84,3 +84,8 @@ Cada cambio usa path/action/content/expected_sha256/operations; create requiere 
 y versión/operaciones null; edit requiere versión/operaciones y content null.
 
 Los recibos files conservan versiones y vistas parciales; no certifican significado.
+
+`agenda.md` tiene un máximo publicable de 8192 bytes UTF-8, incluidas las ediciones
+y operaciones conjuntas. Si se supera, la operación se rechaza antes de publicar;
+compacta foco/bloqueo/siguiente acción y mueve detalles a documentos referenciados.
+En una operación conjunta ningún archivo se publica si la agenda no pasa el límite.

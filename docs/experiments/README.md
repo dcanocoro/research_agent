@@ -4,6 +4,12 @@ La [metodología](../experiments.md) define cómo comparar y la
 [estrategia](../strategy.md) establece la prioridad. Las definiciones ejecutables de [benchmarks](../../campaigns)
 son estímulos y rúbricas, no campañas realizadas ni resultados semánticos.
 
+[Evaluación decisoria de Microsoft](evaluacion-msft-v1/protocol.md): encargo autorizado
+el 2026-10-31 con pregunta literal del usuario, juicio provisional activo, revisión de
+impedimentos y campaña real de una empresa con estado nuevo.
+Los [hallazgos](evaluacion-msft-v1/findings.md) distinguen producto provisional,
+impedimentos pendientes y correcciones instrumentales posteriores a la captura.
+
 Crear una carpeta `E001-nombre-breve/` cuando exista un contraste concreto:
 
 - `protocol.md`: estado (propuesto, en curso o concluido), pregunta, hipótesis,
@@ -19,6 +25,16 @@ fallidos y revisiones anteriores. Identificar revisión de código, configuraci�
 wheel, entradas y artefactos con hashes o referencias recuperables. Una ruta local en
 `artifacts/` no constituye evidencia portable: declarar disponibilidad y restricciones
 si las capturas no pueden compartirse. No incorporar secretos o payloads privados.
+
+[V8 — objetivos explícitos y cobertura](objetivos-v8/protocol.md): mecanismo con
+verificación local; contraste semántico propuesto y sin ejecutar. La distancia refleja
+el juicio del evaluador y no sustituye una rúbrica independiente de calidad.
+
+[V8 real — repetición de investigación con objetivo](inversion-real-v8/protocol.md):
+campaña autorizada el 2026-10-31 con datos vivos y estado nuevo, bajo condiciones V7
+y evaluador V8. Los [hallazgos](inversion-real-v8/findings.md) registran 144 llamadas
+ordinarias, parada por agenda excesiva y cobertura sin reducción. Definición y captura
+separadas; no es contraste causal V7/V8.
 
 [V5 — herramientas de estado y expedientes de empresa](herramientas-estado-v5/design-brief.md)
 conserva el diseño y enlaza la [implementación local](../deliveries/2026-10-28-state-tools-v5.md).

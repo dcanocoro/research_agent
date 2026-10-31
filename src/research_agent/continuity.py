@@ -91,6 +91,25 @@ def active_foundations(workspace: Workspace, agenda: str) -> list[dict[str, Any]
     return result
 
 
+def assessment_context(workspace: Workspace, path: str) -> dict[str, Any]:
+    """Bounded current judgment; absence is explicit and never creates a document."""
+    result: dict[str, Any] = {"path": path, "exists": False}
+    try:
+        raw, sha = workspace.read_version(path)
+        content = raw.decode("utf-8")
+        result.update(exists=True, sha256=sha, text=utf8_excerpt(content, 3500), partial=len(raw) > 3500)
+        while len(json.dumps(result, ensure_ascii=False).encode("utf-8")) > 4096:
+            result["text"] = utf8_excerpt(result["text"], max(0, len(result["text"].encode("utf-8")) - 256))
+            result["partial"] = True
+            if not result["text"]:
+                raise ValueError("assessment_reference_too_large")
+    except FileNotFoundError:
+        pass
+    except (OSError, ValueError) as exc:
+        result = {"exists": False, "error": type(exc).__name__}
+    return result
+
+
 class OperationalObserver:
     """Advisory signals only; no semantic inference or control permissions."""
     def __init__(self) -> None:

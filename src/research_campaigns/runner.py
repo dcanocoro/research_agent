@@ -51,7 +51,7 @@ def execute(root: Path, experiment: Path, record: dict[str, Any], session: dict[
         runs = [p for p in logs.iterdir()
                 if p.is_dir() and (p / "manifiesto.json").is_file() and p.name not in before]
         if len(runs) == 1:
-            details = inspect_run(root, runs[0], record["runtime"])
+            details = inspect_run(root, runs[0], record["runtime"], (record.get("objective") or {}).get("sha256"))
             session.update(details)
         else:
             session.update(capture_complete=False, capture_errors=[{"error": "Expected exactly one native run", "found": len(runs)}])

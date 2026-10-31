@@ -111,6 +111,8 @@ class Workspace:
         target = self.path(path)
         if target.suffix.lower() not in self.extensions:
             raise ValueError("Allowed formats: Markdown, JSON, TXT and CSV.")
+        if target == self.root / "agenda.md" and len(raw) > 8192:
+            raise ValueError(f"agenda_limit: {len(raw)} bytes exceeds 8192; compact the agenda and move detail to referenced documents before retrying. Nothing published.")
         if Path(path).parts[0].casefold() == "materiales":
             raise ValueError("Original materials are read-only for the agent.")
         if len(raw) > 128 * 1024:

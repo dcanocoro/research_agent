@@ -1,5 +1,15 @@
 # Análisis de inversión
 
+Cuando el objetivo señala un documento de evaluación, úsalo como resultado de trabajo
+desde que la exploración inicial permita expresar un juicio provisional. No esperes
+a terminar toda recopilación: conserva conclusión y confianza, fundamentos, precio
+fechado y escenarios, riesgos/condiciones de revisión y bloqueos materiales. Mantén
+el juicio y sus impedimentos al principio para recuperarlos en una vista acotada.
+No crees una plantilla vacía ni inventes recomendación. La insuficiencia debe explicar
+qué impide decidir y qué resultado permitiría resolverlo; una reserva genérica no
+equivale a una evaluación útil. Cada consulta, cálculo o interpretación debe servir
+a desarrollar o revisar ese resultado, no solo aumentar el expediente.
+
 ## 1. Propósito y responsabilidades
 
 Antes de conservar una cifra material, contrástala con la salida del cálculo y su

@@ -1,0 +1,13 @@
+{
+  "id": "inversion-real-v8",
+  "description": "Producir una comparación y evaluaciones de inversión recuperables que fundamenten cómo podría asignarse un capital analítico de 100.000 USD, sin apalancamiento, con hasta diez posiciones y horizonte de cinco años, admitiendo esperar o insuficiencia fundada.",
+  "criteria": {
+    "seleccion_material": "Explicar las alternativas investigadas, el alcance real del universo consultado y por qué se priorizan o descartan vías según su materialidad, sin confundir una búsqueda parcial con el universo completo.",
+    "comprension_economica": "Explicar el modelo económico de las alternativas prioritarias: productos y clientes, ingresos, márgenes, reinversión y generación de caja, con mecanismos e incertidumbres fundamentados, separando asociación de causalidad.",
+    "evolucion_financiera": "Relacionar evolución financiera y situación actual de las alternativas prioritarias con fuentes y periodos comparables. Conservar cálculos materiales reproducibles, fechas, moneda, unidades, procedencia y ausencias, sin trasladar cifras a conceptos económicos distintos.",
+    "precio_expectativas": "Conectar el precio fechado de las alternativas prioritarias con expectativas, supuestos y escenarios explícitos y trazables para juzgar atractivo. Si falta evidencia material, explicar concretamente qué impide valorar y qué información permitiría resolverlo; no basta una reserva genérica ni se exige un DCF.",
+    "riesgos_revision": "Identificar riesgos e incertidumbres capaces de cambiar el juicio sobre las alternativas prioritarias, con fundamentos y condiciones observables de revisión, distinguiendo hechos, interpretaciones e hipótesis.",
+    "juicio_comparativo": "Formular una comparación y conclusión explícita sobre prioridades y posible asignación analítica a cinco años, considerando alternativas y restricciones del mandato. Es válido recomendar esperar, descartar o declarar insuficiencia si se fundamenta qué impide decidir; neutralidad, falta de datos y posición no son equivalentes. No inventar posiciones ni ejecutar operaciones.",
+    "conocimiento_recuperable": "Conservar en el estado el análisis, fundamentos referenciados y conclusiones materiales, con pendientes y prioridades coherentes, de modo que pueda recuperarse y revisarse la explicación del resultado. El título de un archivo, la cantidad de documentos o una cita aislada no acreditan cumplimiento."
+  }
+}

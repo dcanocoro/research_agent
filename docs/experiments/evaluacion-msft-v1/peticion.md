@@ -1,0 +1,1 @@
+Evaluar si Microsoft merece una inversión a cinco años al precio de referencia, frente a esperar, con fundamentos, escenarios, riesgos y condiciones de revisión

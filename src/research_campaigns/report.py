@@ -50,7 +50,7 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
         if path.is_file():
             lines.append(f"- {link(path.relative_to(root).as_posix())}")
     lines += ["", "## Sesiones e intentos", "",
-              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM total / herramientas | LLM investigación / consolidación / revisión / externa | Segundos | Evidencia |",
+              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM total / herramientas | LLM investigación / consolidación / revisión / externa / objetivo | Segundos | Evidencia |",
               "|---|---|---|---|---|---|---|---|"]
     diagnostics = []
     for session in record["sessions"]:
@@ -60,15 +60,19 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
         if session.get("run_directory"):
             name = session["run_directory"]
             link(name)  # Validate before reading any capture.
+            objective_options = {"objective_sha256": record["objective"]["sha256"]} if record.get("objective") else {}
             capture = inspect_run(root, root / name,
-                                  record.get("runtime_by_attempt", {}).get(session["id"], record["runtime"]))
+                                  record.get("runtime_by_attempt", {}).get(session["id"], record["runtime"]),
+                                  **objective_options)
             details.update(capture)
             details["capture_errors"] = [*session.get("capture_errors", []), *[e for e in capture["capture_errors"] if e not in session.get("capture_errors", [])]]
             refs = [link(f"{name}/{file}", label) for file, label in
                     (("respuesta.md", "Respuesta"), ("manifiesto.json", "Configuración"), ("estado-inicial.json", "Estado inicial"),
                      ("estado-final.json", "Estado final"), ("eventos.jsonl", "Eventos"), ("trazas", "Trazas"))]
             for file, label in (("continuidad/indice.json", "Continuidad"), ("progreso-v6.json", "Observación V6"),
-                                ("revision-externa/final.json", "Revisión externa final")):
+                                ("revision-externa/final.json", "Revisión externa final"),
+                                ("evaluacion-objetivo/summary.json", "Cobertura V8"),
+                                ("evaluacion-objetivo/final.json", "Evaluación final V8")):
                 if (root / name / file).exists():
                     refs.append(link(f"{name}/{file}", label))
         else:
@@ -85,8 +89,16 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
             cell(session.get("message", activation.get("message"))),
             cell(session["status"]) + " / " + cell(details.get("stop_reason", session.get("reason"))),
             f"{cell(details.get('llm_calls'))} / {cell(details.get('tool_calls'))}",
-            " / ".join(cell(phases.get(p)) for p in ("research", "consolidation", "review", "external_review")),
+            " / ".join(cell(phases.get(p)) for p in ("research", "consolidation", "review", "external_review", "objective_evaluation")),
             cell(session.get("elapsed_seconds", details.get("duration_seconds"))), " · ".join(refs)]) + " |")
+        objective = details.get("objective_summary")
+        if objective:
+            diagnostics.append(f"- {cell(session['id'])}: cobertura V8 (última evaluación completa válida): "
+                               f"{cell(objective.get('last_valid_metrics'))}; estado actual: {cell(objective.get('latest_status'))}; "
+                               f"fallidas: {cell(objective.get('failures'))}; parciales: {cell(objective.get('partial'))}; "
+                               f"omitidas: {cell(objective.get('skipped'))}. Llamadas: {cell(phases.get('objective_evaluation'))}.")
+            if objective.get("decision_useful") is not None:
+                diagnostics.append(f"- {cell(session['id'])}: utilidad para decidir según el evaluador: {cell(objective['decision_useful'])}; no es aceptación financiera independiente.")
     lines += ["", "## Diagnósticos", "", *(diagnostics or ["Sin errores de captura observados."]),
               "", "## Instrucciones y conocimiento vigente", ""]
     experiments = [root] if record["mode"] != "suite" else sorted((root / "casos").glob("*"))

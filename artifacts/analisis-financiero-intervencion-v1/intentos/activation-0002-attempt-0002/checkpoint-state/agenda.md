@@ -1,9 +1,0 @@
-# Agenda de inversión
-
-## Activo — resolver valoración y decisión de ampliar
-1. **AAPL** — ¿justifican los flujos de caja el precio de entrada y cuándo ampliar? Importa porque solo existe una orden inicial de $15k y la tesis depende de precio. Fundamentación: `empresas/AAPL/modelo.md#H1`, riesgos `#H2`, valoración no resuelta `empresas/AAPL/valoracion.md#V1`, decisión `empresas/AAPL/evaluacion.md#E1`. Avance: 10-K FY22 revisado; FCF derivado ~$111.4B; la serie de precio normalizada impide P/FCF y margen de seguridad. Siguiente acción: obtener acciones/capitalización/precio compatibles; proyectar escenarios vinculados a hardware/servicios y contrastar caja/risgos. Verificar antes el estado real de orden.
-2. **ADP** — ¿la recurrencia compensa su precio y qué explica la caída de FCF FY22? Relevancia: orden inicial $10k, FCF FY22 $2.546B vs FY21 $2.587B; la calidad de negocio no basta para comprar más. Fundamentos: `empresas/ADP/modelo.md#H1`, `#H2`, valoración incompleta `empresas/ADP/valoracion.md#V1`, decisión `empresas/ADP/evaluacion.md#E1`. Siguiente acción: misma reconciliación de precio/capitalización/acciones, retención, tasas y conversión de caja; verificar orden.
-3. **Ampliar universo y diversificar** — La primera selección no fue un cribado completo de las 50 firmas; faltan oportunidades sectoriales comparables y coste de oportunidad del efectivo. Referencias: `oportunidades.md#O1`, cartera `cartera.md#C1`. Siguiente acción: priorizar alternativas según datos disponibles y valorabilidad, sin tratar un listado de calidad como decisión de compra.
-
-## En espera
-- AMGN observada como alternativa, no investigada suficientemente para valoración; pendiente de analizar impacto de la adquisición de Horizon, patentes/productos y deuda antes de comparación (`oportunidades.md#O1`).

@@ -240,7 +240,9 @@ class AgentA:
             "condition": "deliberative" if persistent is not None else "baseline",
             "continuous": asdict(request.continuous) if request.continuous is not None else None,
             "review_policy": review_policy,
-            "external_review_policy": {"version": "v7", "midpoint": "half ordinary limit or 50 research calls", "final": "controlled budget stop with time available", "same_profile": True, "tools": False} if request.continuous else None,
+            "external_review_policy": {"version": "v7", "midpoint": "half ordinary limit or 50 research calls", "final": "controlled budget stop with time available", "same_profile": True, "tools": False} if request.continuous and request.objective is None else None,
+            "objective": {"definition": request.objective.definition(), "sha256": request.objective.sha256} if request.objective else None,
+            "objective_evaluation_policy": self._objective_policy(request),
             "knowledge_checkpoint_policy": checkpoint_policy,
             "persistent_context": persistent,
             "closing_policy": {"consolidation_calls": 2, "response_calls": 1,
@@ -258,6 +260,13 @@ class AgentA:
             system += "\n\n" + notice + ". Consult current contracts before relying on prior instrumental knowledge."
             self.recorder.event("lab.state_contracts.changed", tools=self.recorder.contract_changes)
         return system
+
+    @staticmethod
+    def _objective_policy(request: AgentRequest) -> dict[str, Any] | None:
+        from .objective_review import POLICY
+        from .continuous import DECISION_DIRECTION
+        return {**POLICY, "direction": DECISION_DIRECTION,
+                "protected_seed_headroom_bytes": 16384 if request.objective and request.objective.assessment_path else 0} if request.objective is not None else None
 
     def _finish(self, result: AgentResult, captured: list[dict[str, Any]]) -> AgentResult:
         def save(name: str, value: Any) -> str | None:

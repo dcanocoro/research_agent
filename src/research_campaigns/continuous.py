@@ -11,7 +11,7 @@ from typing import Any, cast
 
 from research_agent.agent import AgentA
 from research_agent.context_budget import ByteCounter
-from research_agent.continuous import CHECKPOINT_POLICY, POLICY, REVIEW_POLICY, context_seed
+from research_agent.continuous import CHECKPOINT_POLICY, POLICY, REVIEW_POLICY, DECISION_DIRECTION, context_seed
 from research_agent.contracts import AgentRequest, ContinuousConfig
 from research_agent.experiments import disjoint, validate_mandate
 from research_agent.integrations.file_tools import register_files
@@ -21,6 +21,8 @@ from research_agent.simulation.tools import activation_message, register_simulat
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
 from research_agent.state_profiles import state_profile
+from research_agent.objectives import Objective
+from research_agent.objective_review import POLICY as OBJECTIVE_POLICY
 from .longitudinal import preflight, runtime_identity
 from .storage import create, load, digest, freeze_files
 from .report import persist
@@ -46,9 +48,13 @@ def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
                    configuration={**profile, "simulated_date": str(simulator.today)})
     message = activation_message(simulator, (root / "definicion/peticion.md").read_text(encoding="utf-8"), "usuario")
     request = AgentRequest(message, "agente", "cli", mandate=(root / "definicion/mandato.md").read_text(encoding="utf-8"),
-                           metadata={"simulated_date": str(simulator.today), "activation_kind": "usuario"})
+                           metadata={"simulated_date": str(simulator.today), "activation_kind": "usuario"},
+                           continuous=ContinuousConfig(**read(root / "definicion/scenario.json")["continuous"]),
+                           objective=Objective.load(root / "definicion/objective.json") if (root / "definicion/objective.json").exists() else None)
     paths = sorted((root / "instrucciones").glob("*.md"), key=lambda p: (p.name != "agente.md", p.name))
     system = "\n\n".join(p.read_text(encoding="utf-8") for p in paths) + "\n\n" + POLICY
+    if request.objective:
+        system += "\n\n" + DECISION_DIRECTION
     return ByteCounter().measure(system, context_seed(agent, request, "initial"), registry.specs(), profile["max_output_tokens"])
 
 
@@ -61,6 +67,10 @@ def validate(definition: Path) -> dict[str, Any]:
     if any(value is None for value in (continuous.max_llm_calls, continuous.max_tool_calls, continuous.timeout_seconds)):
         raise ValueError("The pilot requires finite global call, tool and time limits.")
     validate_mandate((definition / "mandato.md").read_text(encoding="utf-8"))
+    objective_path = definition / "objective.json"
+    if objective_path.exists():
+        Workspace._check_links(objective_path)
+        Objective.load(objective_path)
     for name in ("peticion.md", "rubrica.md"):
         if not (definition / name).read_text(encoding="utf-8").strip():
             raise ValueError(f"Nonempty {name} required.")
@@ -84,20 +94,27 @@ def prepare(root: Path, definition: Path, source_data: Path, *, state_tools: str
     if any(identity["profile"].get(k) != v for k, v in config["expected_profile"].items()):
         raise ValueError("Configured model/profile differs from scenario; no automatic substitution.")
     validate_mandate((definition / "mandato.md").read_text(encoding="utf-8"))
-    record = create(root, definition, "continuous", config["id"],
-                    [definition / name for name in ("scenario.json", "mandato.md", "peticion.md", "rubrica.md")],
+    definition_files = [definition / name for name in ("scenario.json", "mandato.md", "peticion.md", "rubrica.md")]
+    objective = Objective.load(definition / "objective.json") if (definition / "objective.json").exists() else None
+    if objective is not None:
+        definition_files.append(definition / "objective.json")
+    record = create(root, definition, "continuous", config["id"], definition_files,
                     deliberative=True, state_tools=state_tools)
     persist(root, record)
     Simulator.create(root / "simulador", config, data)
     # Preserve the original bytes as well as their semantic content and provenance.
     shutil.copyfile(source_data, root / "simulador/data.json")
     size = initial_budget(root, identity["profile"])
-    if size["budgeted_bytes"] + 2048 >= continuous.consolidation_threshold_bytes:
+    headroom = 16384 if objective and objective.assessment_path else 2048
+    if size["budgeted_bytes"] + headroom >= continuous.consolidation_threshold_bytes:
         raise ValueError("Initial protected context plus startup margin does not fit below threshold.")
     record.update(runtime=identity, limits=asdict(continuous), condition="deliberative", review_policy=REVIEW_POLICY,
                   knowledge_checkpoint_policy=CHECKPOINT_POLICY,
-                  preflight={**report, "initial_budget": size, "startup_margin_bytes": 2048,
+                  preflight={**report, "initial_budget": size, "startup_margin_bytes": headroom,
                              "provider_checked": False, "campaign_executed": False})
+    if objective is not None:
+        record.update(objective={"definition": objective.definition(), "sha256": objective.sha256},
+                      objective_evaluation_policy=OBJECTIVE_POLICY)
     command = [sys.executable, "-m", "research_agent", (root / "definicion/peticion.md").read_text(encoding="utf-8"),
                "--experiment", str(root), "--continue", "--run-name", "piloto",
                "--simulation", str(root / "simulador"), "--mandate", str(root / "definicion/mandato.md"), "--continuous",
@@ -105,6 +122,8 @@ def prepare(root: Path, definition: Path, source_data: Path, *, state_tools: str
                "--consolidation-bytes", str(continuous.consolidation_threshold_bytes),
                "--max-calls", str(continuous.max_llm_calls), "--max-tools", str(continuous.max_tool_calls),
                "--continuous-timeout-seconds", str(continuous.timeout_seconds)]
+    if objective is not None:
+        command += ["--objective", str(root / "definicion/objective.json")]
     frozen_files = {path.relative_to(root).as_posix(): digest(path)
                          for name in ("definicion", "instrucciones", "estado", "simulador")
                          for path in (root / name).rglob("*") if path.is_file()}

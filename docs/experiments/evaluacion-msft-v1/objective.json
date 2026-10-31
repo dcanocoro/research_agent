@@ -1,0 +1,12 @@
+{
+  "id": "msft-decision-5y-v1",
+  "description": "Evaluar si Microsoft merece una inversión a cinco años al precio de referencia, frente a esperar, con fundamentos, escenarios, riesgos y condiciones de revisión",
+  "assessment_path": "empresas/MSFT/evaluacion.md",
+  "criteria": {
+    "negocio_fundamentos": "Explicar los mecanismos económicos materiales de Microsoft y la evidencia financiera necesaria para el juicio a cinco años, separando hechos, explicaciones corporativas e hipótesis; no se exige una enciclopedia de la empresa.",
+    "escenarios_valoracion": "Desarrollar escenarios explícitos y cuantificados a cinco años con supuestos, unidades, cálculos deterministas recuperables y sensibilidad de los resultados materiales. Explicar límites de las métricas y reinversión; una reserva genérica no sustituye el análisis.",
+    "precio_referencia": "Relacionar los escenarios y expectativas con el precio de referencia fijado en el mandato y sus fechas, mostrando qué expectativas lo justifican o hacen insuficiente el atractivo frente a esperar. No presentar ese precio como cotización actual.",
+    "riesgos_revision": "Identificar riesgos materiales y escenarios adversos, incertidumbres capaces de cambiar el juicio y condiciones observables para revisar supuestos o conclusión, con fundamentos y sin atribuir causalidad sin evidencia.",
+    "juicio_decision": "Producir una evaluación provisional y después una conclusión explícita y revisable de inversión al precio de referencia frente a esperar, conectada con fundamentos, escenarios y riesgos. Si hay un bloqueo material real, precisar por qué impide decidir y qué resultado permitiría resolverlo; no cerrar con insuficiencia genérica ni inventar recomendación."
+  }
+}

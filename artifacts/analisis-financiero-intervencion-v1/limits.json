@@ -1,7 +1,0 @@
-{
-  "max_llm_calls": 60,
-  "max_tool_calls": 90,
-  "timeout_seconds": 1200,
-  "finalization_seconds": 90,
-  "max_context_bytes": 1048576
-}

@@ -1,5 +1,18 @@
 # Documentación de Research Agent
 
+La [campaña decisoria de Microsoft](experiments/evaluacion-msft-v1/findings.md), con
+pregunta literal del usuario, produjo evaluación provisional, escenarios y cálculos
+en 100 llamadas ordinarias. Cerró por presupuesto, sin fallo operativo; el evaluador
+mantuvo impedimentos por recálculo pendiente. La [entrega](deliveries/2026-10-31-decision-objectives.md)
+distingue implementación, captura real y correcciones locales posteriores.
+
+La [V8 de objetivos y cobertura](experiments/objetivos-v8/protocol.md) permite un
+objetivo fijo con evaluación periódica separada y distancia determinista dada la
+evaluación. Conserva V7 sin objetivo. La [entrega](deliveries/2026-10-31-v8.md)
+separa pruebas locales de utilidad semántica pendiente. La [campaña real V8](experiments/inversion-real-v8/findings.md)
+se detuvo a las 144 llamadas ordinarias por agenda excesiva, con captura completa;
+sus tres evaluaciones no redujeron la distancia. No es contraste controlado ni aceptación.
+
 La [V6 de continuidad](experiments/continuidad-v6/protocol.md) añade foco activo en
 agenda, protección y vista del contenido recuperable, y observación longitudinal
 offline. Mantiene un investigador, sin supervisores LLM. La

@@ -1,9 +1,41 @@
 # Estrategia de investigación
 
-> Agenda revisada el 2026-10-30 con el encargo V7 aceptado por el usuario.
+> Agenda revisada el 2026-10-31 con el encargo V8 aceptado por el usuario.
 > Orienta próximos encargos; no autoriza por sí sola implementaciones o migraciones.
 
-## Encargo vigente: V7
+## Encargo vigente: V8
+
+El encargo posterior del 2026-10-31 autoriza dirección hacia una evaluación que permita
+decidir: documento provisional activo, impedimentos clasificados, seguimiento de
+adaptaciones y límite de agenda antes de escritura. El usuario fija literalmente
+la pregunta sobre Microsoft; el [protocolo](experiments/evaluacion-msft-v1/protocol.md)
+define estado nuevo y presupuestos antes de lanzar la campaña real autorizada.
+No se modifica la campaña V8 previa ni FinMate. El contraste no es causal por cambiar
+también tarea e instrucciones.
+Los [hallazgos](experiments/evaluacion-msft-v1/findings.md) registran evaluación
+provisional y escenarios, 100 llamadas ordinarias y cierre por presupuesto. No se
+completó la actualización de escenarios. Las correcciones de recortes y recuperación
+de revisión parcial fueron posteriores al cierre y solo tienen comprobación local.
+
+El usuario autoriza implementar el plan de [objetivos y cobertura V8](experiments/objetivos-v8/protocol.md):
+un objetivo fijo por ejecución, evaluador separado, distancia determinista dada la
+evaluación, feedback y reglas de reconsideración. Incluye contratos, CLI, captura,
+campañas, pruebas locales y documentación; no incluye proveedores ni campañas reales.
+Con objetivo sustituye la revisión externa V7; sin objetivo se conserva V7. La
+autorrevisión permanente permanece. No introduce grafos, dependencias ni planificador,
+ni cambia FinMate. La [entrega](deliveries/2026-10-31-v8.md) registra implementación
+y verificación; utilidad semántica y calidad siguen pendientes.
+
+Posteriormente el 2026-10-31 el usuario autoriza otra campaña como V7 y su conservación:
+estado nuevo, datos reales, 200 llamadas ordinarias, Python y objetivo V8 explícito.
+El [protocolo real V8](experiments/inversion-real-v8/protocol.md) fija presupuestos,
+definición y captura antes de lanzar. No se alteran runtime ni prompts durante el run.
+Los [hallazgos](experiments/inversion-real-v8/findings.md) registran 144 llamadas
+ordinarias y parada por agenda de 8987 bytes frente a 8192 permitidos, con captura
+completa y tres evaluaciones sin reducción. No se recorta estado ni se cambia el
+mecanismo para forzar continuación; el informe no autoriza otra intervención.
+
+## Antecedente: V7
 
 El usuario aprueba modificar el agente actual con resultado de sesión revisable,
 escritura conjunta recuperable, recuperación del fundamento activo, avisos operativos

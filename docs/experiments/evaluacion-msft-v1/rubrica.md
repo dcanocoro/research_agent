@@ -1,0 +1,3 @@
+# Rúbrica externa previa
+
+No se entrega al investigador. Revisar utilidad de la evaluación para decidir al precio fijado, conexión entre fundamentos y escenarios, fidelidad numérica y de fuentes escogidas, riesgos y condiciones de revisión, resolución de impedimentos y adaptación de métodos, persistencia y coste. Clasificar cada dimensión como sustentada, parcial, ausente o no verificable con ejemplos y límites. No premiar volumen, recomendación de compra ni distancia cero por sí solos. Declarar alcance de la verificación financiera y distinguirlo del juicio del evaluador interno. No es comparación causal con V8 ni prueba de rentabilidad.

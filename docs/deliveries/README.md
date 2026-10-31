@@ -5,6 +5,10 @@ limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o dec
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
 consultar [estrategia](../strategy.md).
 
+- [2026-10-31 — Dirección decisoria](2026-10-31-decision-objectives.md): juicio activo,
+  impedimentos y seguimiento de adaptaciones, agenda prevalidada y campaña Microsoft.
+- [2026-10-31 — V8](2026-10-31-v8.md): objetivo fijo, evaluación por criterios,
+  distancia, feedback y recuperación; pruebas locales sin campaña real.
 - [2026-10-30 — V7](2026-10-30-v7.md): resultados de sesión, escritura conjunta
   recuperable, continuidad, avisos operativos y revisión independiente; sin campaña.
 - [2026-10-29 — Continuidad V6](2026-10-29-continuity-v6.md): agenda activa,
