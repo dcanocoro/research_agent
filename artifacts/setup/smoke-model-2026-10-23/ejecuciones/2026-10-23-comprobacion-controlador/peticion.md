@@ -1,1 +1,0 @@
-Prueba de instalacion: responde unicamente OK. No investigues ni utilices herramientas.
