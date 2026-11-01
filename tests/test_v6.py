@@ -4,7 +4,7 @@ import hashlib
 import json
 
 import pytest
-from support import review_turn
+from support import review_turn, create_doc, edit_doc, save_arguments
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 
 from research_agent.agent import AgentA
@@ -26,46 +26,39 @@ def ops(tmp_path):
     return StateOperations(Workspace(tmp_path / "estado"))
 
 
-@pytest.mark.parametrize("writer", ["write_file", "write_markdown", "edit_state", "update_company_document"])
-def test_aapl_populated_hypothesis_cannot_be_moved_under_evidence(ops, writer):
+def test_aapl_populated_hypothesis_cannot_be_moved_under_evidence(ops):
     path = "empresas/AAPL/modelo.md"
     original = "### H1 — Caja\r\nHipótesis provisional.\r\n### E3 — Evidencia\r\nDato observado.\r\n"
-    created = ops.create_state(path, original, "Conservar")
+    created = create_doc(ops, path, original, "Conservar")
     broken = "### H1 — Caja\r\n\r\n### E3 — Evidencia\r\nHipótesis provisional.\r\nDato observado.\r\n"
     changes = [{"kind": "replace", "target": original, "content": broken}]
     with pytest.raises(ValueError, match="empty_section"):
-        if writer in {"write_file", "write_markdown"}:
-            getattr(ops.workspace, writer)(path, broken)
-        elif writer == "edit_state":
-            ops.edit_state(path, created["sha256"], changes, "Revisar")
-        else:
-            ops.update_company_document("AAPL", "modelo", "Revisar", "edit", None,
-                                        created["sha256"], changes, "Contrastar", [])
+        edit_doc(ops, path, created["sha256"], changes, "Revisar")
     assert ops.workspace.path(path).read_bytes() == original.encode()
 
 
 def test_header_hierarchy_loss_rejected_but_no_financial_template_imposed(ops):
     path = "empresas/AAPL/modelo.md"
     original = "## H1\n### Detalle\nArgumento provisional\n"
-    ops.create_state(path, original, "Conservar")
+    create_doc(ops, path, original, "Conservar")
     with pytest.raises(ValueError, match="empty_section"):
         ops.workspace.write_file(path, original.replace("### Detalle", "## E3"))
-    assert ops.create_state("nota.md", "## H1\n", "Nota")["applied"]
+    assert create_doc(ops, "nota.md", "## H1\n", "Nota")["applied"]
     # An ID that was already empty may be repaired without filling unrelated fields.
-    value = ops.create_state("empresas/ADP/modelo.md", "### H1\n\n### E1\nDatos.\n", "Inicializar")
+    value = create_doc(ops, "empresas/ADP/modelo.md", "### H1\n\n### E1\nDatos.\n", "Inicializar")
     assert value["validation"]["empty_ids"] == ["H1"]
 
 
 def test_duplicate_create_and_alias_bypass_rejected(ops):
     path = "empresas/AAPL/modelo.md"
     with pytest.raises(ValueError, match="duplicate_ids"):
-        ops.create_state(path, "### H1\nUno\n### H1\nDos\n", "Crear")
+        create_doc(ops, path, "### H1\nUno\n### H1\nDos\n", "Crear")
     assert not ops.workspace.path(path).exists()
-    ops.create_state(path, "### H1\nUno\n", "Crear")
+    create_doc(ops, path, "### H1\nUno\n", "Crear")
     with pytest.raises(ValueError, match="id_changed"):
-        ops.workspace.write_markdown(path, "### H2\nOtro\n")
+        ops.workspace.write_file(path, "### H2\nOtro\n")
     with pytest.raises(FileExistsError):
-        ops.create_state(path, "sin ID", "Crear")
+        create_doc(ops, path, "sin ID", "Crear")
 
 
 def test_external_duplicate_repair_and_preexisting_empty_id(ops):
@@ -79,13 +72,12 @@ def test_external_duplicate_repair_and_preexisting_empty_id(ops):
 
 def test_adp_revised_pending_and_literal_future_reference(ops):
     original = "### H1\nPendiente: recuperar ratios.\n### E2\nSin comparación.\n"
-    created = ops.create_state("empresas/ADP/modelo.md", original, "Guardar")
+    created = create_doc(ops, "empresas/ADP/modelo.md", original, "Guardar")
     changes = [{"kind": "replace", "target": "Pendiente: recuperar ratios.",
                 "content": "Comparación cuantificada en #E2. Pendiente: explicar persistencia económica."},
                {"kind": "replace", "target": "Sin comparación.",
                 "content": "Comparación modera #H1. Afecta empresas/ADP/valoracion.md#V1 (futura)."}]
-    value = ops.update_company_document("ADP", "modelo", "Revisar", "edit", None,
-                                        created["sha256"], changes, "Nuevo cálculo", [])
+    value = edit_doc(ops, "empresas/ADP/modelo.md", created["sha256"], changes, "Nuevo cálculo")
     assert value["changed_ids"] == ["H1", "E2"]
     assert value["validation"]["unresolved_references"] == [
         {"reference": "empresas/ADP/valoracion.md#V1", "status": "unavailable_document"}]
@@ -101,13 +93,13 @@ def test_large_recovered_views_remain_bounded_and_have_recovery(tmp_path):
     space = Workspace(tmp_path / "estado")
     recorder = RunRecorder(tmp_path / "runs")
     registry = ToolRegistry(recorder)
-    register_files(registry, space, state_tools="v5")
+    register_files(registry, space)
     recorder.start("fixture", {"run_id": "fixture"})
     text = "".join(f"### H{i}\n" + '😀\\"' * 400 + "\n" for i in range(20))
-    call = ResponseFunctionCall("c", "create_state", {"path": "empresas/X/modelo.md", "content": text, "purpose": "Guardar"})
+    call = ResponseFunctionCall("c", "record_research_advance", save_arguments("empresas/X/modelo.md", text))
     payload = asyncio.run(registry.execute(call)).payload
     assert payload["ok"] and len(encoded(payload)) <= 32768
-    value = payload["value"]
+    value = payload["value"]["files"][0]
     assert value["recovered_sections_omitted"] > 0 or any(s["partial"] for s in value["recovered_sections"])
     assert value["recovery"]
 
@@ -134,9 +126,8 @@ def test_continuous_checkpoints_and_progress_are_offline_and_not_extra_calls(tmp
     space.write_file("agenda.md", AGENDA_TEMPLATE)
     recorder = RunRecorder(tmp_path / "runs")
     registry = ToolRegistry(recorder)
-    register_files(registry, space, state_tools="v5")
-    function = ResponseFunctionCall("w", "create_state", {"path": "empresas/X/modelo.md",
-                                   "content": "### H1\nProvisional\n", "purpose": "Conservar"})
+    register_files(registry, space)
+    function = ResponseFunctionCall("w", "record_research_advance", save_arguments("empresas/X/modelo.md", "### H1\nProvisional\n"))
     turns = [ResponseTurn([function], "", function)] + [text()] * 9 + [text("Revisar incertidumbre"), text()]
     client = ScriptedClient(turns)
     agent = AgentA(client, registry, space, recorder,

@@ -16,7 +16,7 @@ DEFINITION = ROOT / "campaigns" / "casos-fijos"
 CASES = ("analista", "microsoft", "sector-ia")
 OPTIONS = (
     "--new", "--continuous", "--max-calls", "100", "--max-tools", "200",
-    "--timeout-seconds", "300", "--python", "--state-tools", "v5",
+    "--timeout-seconds", "300", "--python",
     "--context-bytes", "524288", "--consolidation-bytes", "262144",
 )
 

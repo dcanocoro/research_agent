@@ -8,6 +8,7 @@ Una campaña exploratoria real no completa automáticamente un contraste control
 
 | Pregunta / intervención | Implementación o preparación | Ejecución y resultado | Límites y registro |
 |---|---|---|---|
+| E1: simplificación conjunta | Escritura única e instrucciones condensadas sobre el mismo agente | Tres casos ejecutados; todos llegaron a `call_limit`; continuidad básica, errores de herramienta y cierre Microsoft inconsistente | [Protocolo](e1-simplificacion/protocol.md) y [hallazgos](e1-simplificacion/findings.md). Condición simplificada sin control contemporáneo; sin atribución causal. |
 | Tres casos fijos reutilizables | Prompts estables y lanzador paralelo con estados separados | Sin ejecuciones reales; comprobación local con procesos simulados | [Protocolo](casos-fijos/protocol.md). Tres casos de 100 llamadas ordinarias cada uno; sin controles adicionales ni atribución causal automática. |
 | Evaluación decisoria Microsoft | Objetivo V8 con evaluación activa e impedimentos | 100 ordinarias, 108 LLM; evaluación provisional y escenarios, actualización incompleta | [Protocolo](evaluacion-msft-v1/protocol.md) y [hallazgos](evaluacion-msft-v1/findings.md). Correcciones posteriores solo locales; sin recomendación validada. |
 | Objetivos y cobertura V8 | Objetivo fijo y evaluador por criterios implementados | Contraste controlado propuesto pendiente; mecanismo ejercitado en campañas posteriores | [Protocolo](objetivos-v8/protocol.md). Distancia condicionada por juicio y fuentes del evaluador. |

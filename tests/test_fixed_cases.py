@@ -29,6 +29,8 @@ def native_result(experiment, *, reason="call_limit", status="interrupted"):
 
 def test_three_real_local_processes_overlap_and_have_isolated_inputs(launcher, tmp_path, monkeypatch, capsys):
     """Replace only the child command with an offline worker and a three-way barrier."""
+    monkeypatch.setenv("LLM_TIMEOUT_SECONDS", "180")
+    monkeypatch.setenv("LLM_CALL_BUDGET_SECONDS", "180")
     actual_popen = subprocess.Popen
     calls = []
     worker = """
@@ -54,6 +56,8 @@ print('worker output')
         calls.append(command)
         experiment = command[command.index("--experiment") + 1]
         assert kwargs["cwd"] == ROOT
+        assert kwargs["env"]["LLM_TIMEOUT_SECONDS"] == "180"
+        assert kwargs["env"]["LLM_CALL_BUDGET_SECONDS"] == "180"
         return actual_popen([sys.executable, "-c", worker, experiment], **kwargs)
 
     monkeypatch.setattr(launcher.subprocess, "Popen", popen)
@@ -80,7 +84,7 @@ print('worker output')
 def test_budget_and_shared_runtime_options(launcher):
     options = launcher.OPTIONS
     for flag, value in (("--max-calls", "100"), ("--max-tools", "200"), ("--timeout-seconds", "300"),
-                        ("--context-bytes", "524288"), ("--consolidation-bytes", "262144"), ("--state-tools", "v5")):
+                        ("--context-bytes", "524288"), ("--consolidation-bytes", "262144")):
         assert options[options.index(flag) + 1] == value
     assert {"--new", "--continuous", "--python"} <= set(options)
     assert "--objective" not in options and "--continuous-timeout-seconds" not in options

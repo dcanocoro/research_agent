@@ -7,11 +7,17 @@ entradas, lanza su CLI y conserva evidencia. El núcleo no importa el controlado
 
 ## Tres casos fijos en paralelo
 
+El agente actual tiene una sola composición y una única escritura,
+`record_research_advance`. No hay selección legacy/v5. Véase el
+[protocolo de ablación E1](experiments/e1-simplificacion/protocol.md), pendiente de campaña.
+
 El [protocolo de casos fijos](experiments/casos-fijos/protocol.md) define tres prompts
 estables: analista abierto, Microsoft y sector de infraestructura de IA. Para lanzar
 una ejecución de cada caso, desde la raíz y con el entorno instalado:
 
 ```powershell
+$env:LLM_TIMEOUT_SECONDS = "180"
+$env:LLM_CALL_BUDGET_SECONDS = "180"
 .\.venv\Scripts\python.exe scripts/run_fixed_cases.py --output artifacts/mi-experimento
 ```
 
@@ -19,8 +25,10 @@ El destino debe ser nuevo. Se lanzan tres procesos simultáneos de la CLI nativa
 cada uno con su propio directorio: `analista/`, `microsoft/` y `sector-ia/`.
 Cada ejecución tiene 100 llamadas ordinarias (investigación más consolidación),
 200 herramientas como máximo y las revisiones LLM adicionales del runtime.
+Los valores de 180 segundos se heredan del proceso y no cambian .env; comprobarlos
+en los manifiestos. El lanzador no los impone si se omiten esas variables.
 No se fija timeout global adicional. Se requiere el extra Python ya instalado;
-el lanzador no instala dependencias ni sustituye perfiles. Usa Findata de solo
+el lanzador no instala dependencias ni sustituye el perfil LLM. Usa Findata de solo
 lectura y web reales, sin simulador ni objetivo JSON.
 
 `entradas/` conserva los tres prompts y el mandato efectivos; `logs/` conserva stdout

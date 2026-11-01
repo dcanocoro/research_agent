@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import base64
 from bisect import bisect_right
-import difflib
 import hashlib
 import json
 import os
@@ -301,38 +300,6 @@ class StateOperations:
         return page(items, {"path": path, "query": query, "context_lines": context_lines,
                             "order": "path,line", "version": signature}, signature, cursor)
 
-    def create_state(self, path: str, content: str, purpose: str) -> dict[str, Any]:
-        purpose_text(purpose)
-        with self.workspace.mutation_lock:
-            value = self.workspace.publish(path, content.encode("utf-8"), create=True)
-        return {**value, "applied": True, "previous_sha256": None, "operation": "create"}
-
-    def edit_state(self, path: str, expected_sha256: str, operations: list[dict[str, str]],
-                   purpose: str) -> dict[str, Any]:
-        purpose_text(purpose)
-        if not operations:
-            raise ValueError("empty_edit: supply explicit operations.")
-        with self.workspace.mutation_lock:
-            raw, version = self.workspace.read_version(path)
-            if version != expected_sha256:
-                raise ValueError("version_conflict: reread the current file before editing.")
-            original = raw.decode("utf-8")
-            updated = original
-            for operation in operations:
-                target, content, kind = operation["target"], operation["content"], operation["kind"]
-                # Count overlapping occurrences too.
-                if not target or len(list(re.finditer(f"(?={re.escape(target)})", updated))) != 1:
-                    raise ValueError("ambiguous_target: each target must occur exactly once.")
-                replacement = content if kind == "replace" else content + target if kind == "insert_before" else target + content
-                if kind not in {"replace", "insert_before", "insert_after"}:
-                    raise ValueError("invalid_edit")
-                updated = updated.replace(target, replacement, 1)
-            value = self.workspace.publish(path, updated.encode("utf-8"), expected_sha256=version)
-        diff = "".join(difflib.unified_diff(original.splitlines(keepends=True), updated.splitlines(keepends=True),
-                                          fromfile=path, tofile=path))
-        return {**value, "applied": True, "previous_sha256": version, "operation": "edit",
-                "operations_applied": len(operations), "diff": diff, "diff_partial": False}
-
     def company_path(self, symbol: str, dimension: str) -> str:
         if not re.fullmatch(r"[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*", symbol) or dimension not in DIMENSIONS:
             raise ValueError("invalid_company: use a resolved ASCII symbol and a supported dimension.")
@@ -385,20 +352,3 @@ class StateOperations:
             selector = {"kind": "section", "start": matches[0]["line"], "end": None}
         assert selector is not None
         return self.read_state(path, purpose, selector, expected_sha256, cursor)
-
-    def update_company_document(self, symbol: str, dimension: str, purpose: str, action: str,
-                                content: str | None, expected_sha256: str | None,
-                                operations: list[dict[str, str]] | None, reason: str,
-                                source_refs: list[str]) -> dict[str, Any]:
-        path = self.company_path(symbol, dimension)
-        if not reason.strip():
-            raise ValueError("reason_required")
-        with self.workspace.mutation_lock:
-            if action == "create" and content is not None and expected_sha256 is None and operations is None:
-                value = self.create_state(path, content, purpose)
-            elif action == "edit" and content is None and expected_sha256 is not None and operations is not None:
-                value = self.edit_state(path, expected_sha256, operations, purpose)
-            else:
-                raise ValueError("invalid_update: create requires content; edit requires version and operations.")
-        return {**value, "reason": reason, "source_refs": source_refs,
-                "references_checked": False, "meaning": "text persisted, financial validity not assessed"}

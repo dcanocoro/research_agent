@@ -1,4 +1,5 @@
 """Controlled state lifecycle, closing policy and capture failures."""
+from support import save_turn, save_arguments
 import asyncio
 import json
 from pathlib import Path
@@ -89,7 +90,7 @@ def test_deliberative_context_authority_and_early_answer(tmp_path):
     recorder = RunRecorder(root / "ejecuciones", experiment=root)
     tools = ToolRegistry(recorder)
     register_files(tools, space)
-    client = ScriptedClient([call("write_file", path="../mandato.md", content="Override"), text("No change")])
+    client = ScriptedClient([save_turn(path="../mandato.md", content="Override"), text("No change")])
     agent = AgentA(client, tools, space, recorder, instructions=prompts)
     result = asyncio.run(agent.run(AgentRequest("Continue", "s", "c", mandate="Keep cash; no leverage")))
     assert result.status == "completed" and result.state.files_written == ()
@@ -136,10 +137,10 @@ def test_cli_rejects_invalid_mandate_before_build(tmp_path, monkeypatch, source)
 
 @pytest.mark.parametrize("failure", [False, True])
 def test_deliberative_budget_or_failure_preserves_agenda(tmp_path, failure):
-    turns = ([call("write_file", path="agenda.md", content="Resume comparison"), RuntimeError("failure")]
+    turns = ([save_turn(path="agenda.md", content="Resume comparison", previous="Initial intention"), RuntimeError("failure")]
              if failure else [call("list_files", path=".")] * 3 +
-             [call("write_file", path="research.md", content="Evidence"),
-              call("write_file", path="agenda.md", content="Resume comparison"), text()])
+             [save_turn(path="research.md", content="Evidence"),
+              save_turn(path="agenda.md", content="Resume comparison", previous="Initial intention"), text()])
     agent = make_agent(tmp_path, turns, AgentLimits(max_llm_calls=6))
     agent.workspace.write_file("agenda.md", "Initial intention")
     result = asyncio.run(agent.run(AgentRequest("Continue", "s", "c", mandate="Investigate")))
@@ -228,8 +229,8 @@ def test_errors_are_not_saved_as_materials(tmp_path):
 
 def test_consolidation_allows_two_writes_without_publication(tmp_path):
     turns = [call("list_files", path="."), call("list_files", path="."), call("list_files", path="."),
-             call("write_file", path="evaluacion.md", content="Provisional"),
-             call("write_file", path="pendientes.md", content="Resolve uncertainty"), text()]
+             save_turn(path="evaluacion.md", content="Provisional"),
+             save_turn(path="pendientes.md", content="Resolve uncertainty"), text()]
     agent = make_agent(tmp_path, turns, AgentLimits(max_llm_calls=6))
     result = run(agent)
     assert result.status == "completed" and result.state.files_written == ("evaluacion.md", "pendientes.md")
@@ -254,7 +255,7 @@ def test_model_phase_timeout_retains_response_reserve(tmp_path):
 
 @pytest.mark.parametrize("failure", [RuntimeError("failed"), asyncio.CancelledError()])
 def test_partial_state_survives_failure_or_cancellation(tmp_path, failure):
-    agent = make_agent(tmp_path, [call("write_file", path="indice.md", content="Partial"), failure])
+    agent = make_agent(tmp_path, [save_turn(path="indice.md", content="Partial"), failure])
     if isinstance(failure, asyncio.CancelledError):
         with pytest.raises(asyncio.CancelledError):
             run(agent)
@@ -318,6 +319,10 @@ from research_agent.workspace import Workspace
 from research_agent.recording import RunRecorder
 from research_agent.tools import ToolRegistry
 from research_agent.integrations.file_tools import register_files
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "tests"))
+from support import save_current
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 root=Path(sys.argv[1]); first=sys.argv[2]=='first'
 deliberative=(root/'estado/agenda.md').exists()
@@ -327,13 +332,13 @@ class Fake:
     async def respond(self, **kwargs):
         self.count+=1
         if first and self.count==1:
-            c=ResponseFunctionCall('write','write_file',{'path':'indice.md','content':'Durable knowledge'})
+            c=ResponseFunctionCall('write', 'record_research_advance', save_current(space, **{'path':'indice.md','content':'Durable knowledge'}))
             return ResponseTurn([c],'',c)
         if first and self.count==2:
             c=ResponseFunctionCall('calculate','calculate',{'operation':'add','left':2,'right':3,'source_refs':[]})
             return ResponseTurn([c],'',c)
         if first and self.count==3 and deliberative:
-            c=ResponseFunctionCall('agenda','write_file',{'path':'agenda.md','content':'Compare remaining evidence'})
+            c=ResponseFunctionCall('agenda', 'record_research_advance', save_current(space, **{'path':'agenda.md','content':'Compare remaining evidence'}))
             return ResponseTurn([c],'',c)
         if not first:
             assert any(isinstance(x,ConversationContext) and x.payload.get('memory_index',{}).get('text')=='Durable knowledge' for x in kwargs['input_items'])
@@ -362,12 +367,11 @@ def test_cli_validates_before_building_and_freezes_instructions(tmp_path, monkey
     root = tmp_path / "experiment"
     @asynccontextmanager
     async def builder(workspace, runs, limits, **kwargs):
-        state_tools = kwargs.pop("state_tools", "legacy")
         agent = make_agent(tmp_path / "fake", [text("OK")])
         agent.workspace = Workspace(workspace)
         agent.recorder = RunRecorder(runs, **kwargs)
         agent.tools = ToolRegistry(agent.recorder)
-        register_files(agent.tools, agent.workspace, state_tools=state_tools)
+        register_files(agent.tools, agent.workspace)
         yield agent
     monkeypatch.setattr(cli, "build_agent", builder)
     assert cli.main(["Question", "--experiment", str(root), "--new", "--run-name", "Inicial"]) == 0
@@ -503,7 +507,6 @@ def test_file_write_finishes_without_background_thread(tmp_path, monkeypatch):
     async def reject_thread(*args, **kwargs):
         pytest.fail("file operation dispatched to background thread")
     monkeypatch.setattr(asyncio, "to_thread", reject_thread)
-    result = asyncio.run(agent.tools.execute(ResponseFunctionCall("write", "write_file", {
-        "path": "indice.md", "content": "Retained before closing"})))
+    result = asyncio.run(agent.tools.execute(ResponseFunctionCall("write", "record_research_advance", save_arguments("indice.md", "Retained before closing"))))
     assert result.payload["ok"]
     assert agent.workspace.path("indice.md").read_text() == "Retained before closing"

@@ -22,6 +22,11 @@ la revisión externa del continuo sin objetivo.
 
 ## Condiciones comunes
 
+Las condiciones siguientes describen la preparación original con V5. La
+[ablación E1](../e1-simplificacion/protocol.md) conserva encargos y presupuestos,
+pero cambia herramientas e instrucciones sobre el mismo agente; su protocolo
+declara esa intervención y los timeouts efectivos.
+
 Una ejecución nueva por caso, sin conocimiento previo ni intercambio de estado.
 Mismo intérprete, perfil LLM configurado, instrucciones vigentes, herramientas V5 y
 Python habilitado. Cada proceso conserva su propia copia nativa de instrucciones.

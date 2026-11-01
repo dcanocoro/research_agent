@@ -2,6 +2,7 @@
 
 Small budgets leave room for the bundled prompts before testing threshold crossings.
 """
+from support import save_turn, save_arguments, save_current
 import asyncio
 import json
 from dataclasses import replace
@@ -83,7 +84,7 @@ def test_three_reconstructions_recover_saved_state_and_preserve_mandate(tmp_path
             if consolidation:
                 if self.phases.get(n) != "written":
                     self.phases[n] = "written"
-                    return call("write_file", path="agenda.md", content=f"Pregunta pendiente {n + 1}")
+                    return call("record_research_advance", **save_current(agent.workspace, "agenda.md", f"Pregunta pendiente {n + 1}"))
                 return text("Avances conservados")
             if n < 3:
                 return text("novedad material " * 2500)
@@ -222,7 +223,7 @@ def test_failure_and_cancellation_preserve_capture(tmp_path, failure):
 
 
 def test_tool_limit_and_explicit_resume_do_not_replay_operation(tmp_path):
-    agent, request = make(tmp_path, [call("write_file", path="avance.md", content="guardado")],
+    agent, request = make(tmp_path, [save_turn(path="avance.md", content="guardado")],
                           config=ContinuousConfig(max_tool_calls=1))
     result = execute(agent, request)
     assert result.stop_reason == "tool_limit" and result.tool_calls == 1
@@ -252,7 +253,7 @@ def test_cli_rejects_missing_mandate_and_misplaced_options():
 def test_consolidation_tool_error_is_delivered_and_model_can_correct(tmp_path):
     agent, request = make(tmp_path, [text("novedad " * 6000),
         call("read_file", path="missing.md", offset=0, max_bytes=100),
-        call("write_file", path="agenda.md", content="Fundamentos conservados"),
+        save_turn(path="agenda.md", content="Fundamentos conservados", previous="Investigar la pregunta pendiente."),
         text("Consolidado"), text("Continuación")],
         config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=5))
     result = execute(agent, request)
@@ -270,14 +271,14 @@ def test_consolidation_tool_error_is_delivered_and_model_can_correct(tmp_path):
 def test_v5_empty_agenda_rejection_can_be_corrected_in_consolidation(tmp_path):
     import hashlib
     agent, request = make(tmp_path, [text("novedad " * 13000),
-        call("edit_state", path="agenda.md", purpose="Conservar fundamentos", expected_sha256=hashlib.sha256(b"").hexdigest(),
-             operations=[{"kind": "replace", "target": "\u0000", "content": "Fundamentos conservados"}]),
-        call("write_file", path="agenda.md", content="Fundamentos conservados"),
+        call("record_research_advance", changes=[dict(path="agenda.md", action="edit", content=None, expected_sha256=hashlib.sha256(b"").hexdigest(),
+             operations=[{"kind": "replace", "target": "\u0000", "content": "Fundamentos conservados"}])], reason="Conservar", source_refs=[]),
+        save_turn(path="agenda.md", content="Fundamentos conservados", previous=""),
         text("Consolidado"), text("Continuación")],
         config=ContinuousConfig(max_context_bytes=240000, consolidation_threshold_bytes=90000, max_llm_calls=5))
     agent.workspace.write_file("agenda.md", "")
     agent.tools = ToolRegistry(agent.recorder)
-    register_files(agent.tools, agent.workspace, state_tools="v5")
+    register_files(agent.tools, agent.workspace)
     result = execute(agent, request)
     assert result.stop_reason == "call_limit" and (result.llm_calls - result.llm_calls_by_phase["external_review"]) == 5
     error = next(i for i in agent.client.requests[2]["input_items"] if isinstance(i, ToolResult))
@@ -303,13 +304,13 @@ def test_four_failed_tools_still_exhaust_consolidation_and_renew(tmp_path):
 
 def test_applied_write_with_capture_error_is_delivered_without_automatic_replay(tmp_path, monkeypatch):
     agent, request = make(tmp_path, [text("novedad " * 6000),
-        call("write_file", path="avance.md", content="Guardado una vez"),
+        save_turn(path="avance.md", content="Guardado una vez"),
         call("read_file", path="avance.md", offset=0, max_bytes=100),
         text("Consolidado"), text("Continuación")],
         config=ContinuousConfig(max_context_bytes=100000, consolidation_threshold_bytes=30000, max_llm_calls=5))
     original_artifact = agent.recorder.artifact
     def fail_write_capture(value):
-        if isinstance(value, dict) and value.get("path") == "avance.md" and "sha256" in value:
+        if isinstance(value, dict) and any(f.get("path") == "avance.md" for f in value.get("files", [])):
             raise OSError("Synthetic capture failure after applying the write")
         return original_artifact(value)
     monkeypatch.setattr(agent.recorder, "artifact", fail_write_capture)
@@ -317,7 +318,7 @@ def test_applied_write_with_capture_error_is_delivered_without_automatic_replay(
     assert result.stop_reason == "call_limit" and result.tool_calls == 2
     error = next(i for i in agent.client.requests[2]["input_items"] if isinstance(i, ToolResult))
     assert not error.payload["ok"] and error.payload["applied"] is True
-    assert error.payload["mutation"]["path"] == "avance.md"
+    assert error.payload["mutation"]["files"][0]["path"] == "avance.md"
     assert agent.workspace.read_file("avance.md")["text"] == "Guardado una vez"
     assert len(events(agent, "lab.file.written")) == 1
     assert len(events(agent, "lab.context.renewed")) == 1
@@ -491,7 +492,7 @@ def test_review_cadence_survives_renewal_and_consolidation_has_priority(tmp_path
 @pytest.mark.parametrize("review_turn,reason", [
     (text(""), "call_limit"), (TimeoutError(), "review_timeout"),
     (RuntimeError("failure"), "operational_failure"), (asyncio.CancelledError(), "cancelled"),
-    (call("write_file", path="unwanted.md", content="unexpected"), "review_tools_disabled"),
+    (save_turn(path="unwanted.md", content="unexpected"), "review_tools_disabled"),
 ])
 def test_review_failures_and_empty_response_preserve_evidence(tmp_path, review_turn, reason):
     agent, request = make(tmp_path, [text("ordinario")] * 10 + [review_turn, text("continuación")],

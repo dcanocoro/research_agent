@@ -1,4 +1,5 @@
 """V7 integration and failure injection with local clients, never providers."""
+from support import save_turn
 import asyncio
 import hashlib
 import json
@@ -164,7 +165,7 @@ def test_external_review_separate_midpoint_and_final_and_totals(tmp_path):
     assert (agent.recorder.current / 'respuesta.md').read_text(encoding='utf-8') == 'avance'
 
 
-@pytest.mark.parametrize('response', [text('invalid'), call('write_file', path='bad.md', content='bad'), TimeoutError()])
+@pytest.mark.parametrize('response', [text('invalid'), save_turn(path='bad.md', content='bad'), TimeoutError()])
 def test_failed_reviewer_does_not_execute_or_stop_research(tmp_path, response):
     agent, request = make(tmp_path, [])
     class Client:
@@ -196,9 +197,12 @@ def test_cancellation_in_reviewer_has_no_final_review(tmp_path):
 
 
 def test_advance_renew_review_correct_and_continue_managed_session(tmp_path):
-    agent, request = make(tmp_path, [])
-    agent.recorder.experiment = tmp_path
-    instruction = tmp_path / 'deliberacion.md'
+    from research_agent.experiments import prepare_experiment
+    root = tmp_path / 'managed'
+    prepare_experiment(root, new=True, deliberative=True)
+    agent, request = make(root, [])
+    agent.recorder.experiment = root
+    instruction = root / 'instrucciones/deliberacion.md'
     instruction.write_text('Instrucción local simulada; no proveedor.', encoding='utf-8')
     request = replace(request, instructions=(instruction,), continuous=replace(request.continuous,
         max_llm_calls=7, max_context_bytes=120000, consolidation_threshold_bytes=50000))

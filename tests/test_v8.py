@@ -1,4 +1,5 @@
 """V8 deterministic and integration checks with local clients, never providers."""
+from support import save_turn
 import asyncio
 from dataclasses import replace
 import json
@@ -167,7 +168,7 @@ def test_periodic_priority_isolation_accounting_and_final_reuse(tmp_path):
     assert saved(agent)[0]["previous_valid_reference"] is None
 
 
-@pytest.mark.parametrize("bad", [text("not JSON"), call("write_file", path="forbidden.md", content="x"), TimeoutError("fixture")])
+@pytest.mark.parametrize("bad", [text("not JSON"), save_turn(path="forbidden.md", content="x"), TimeoutError("fixture")])
 def test_failed_evaluations_are_recorded_without_retry_or_stopping_research(tmp_path, bad):
     agent, request = setup(tmp_path, reports=[bad, report()])
     result = execute(agent, request)
@@ -228,10 +229,10 @@ def test_feedback_correction_renewal_and_final_reassessment(tmp_path):
             self.research += 1
             contexts = [getattr(x, "payload", {}) for x in items]
             if self.research == 20:
-                return call("write_file", path="modelo.md", content="Explica productos. Pendientes ingresos.")
+                return save_turn(path="modelo.md", content="Explica productos. Pendientes ingresos.")
             if self.research == 21:
                 assert any(c.get("objective_feedback", {}).get("metrics", {}).get("distance") == .5 for c in contexts)
-                return call("write_file", path="modelo.md", content="Explica productos e ingresos. #M1")
+                return save_turn(path="modelo.md", content="Explica productos e ingresos. #M1", previous="Explica productos. Pendientes ingresos.")
             if self.research == 22:
                 return text("investigación " * 9000)
             if self.research >= 23:
@@ -323,7 +324,7 @@ def test_tool_limit_evaluates_final_without_extra_research(tmp_path):
     original = agent.client.respond
     async def respond(**kwargs):
         if kwargs["allow_tools"]:
-            return call("write_file", path="modelo.md", content="Resultado #M1")
+            return save_turn(path="modelo.md", content="Resultado #M1")
         return await original(**kwargs)
     agent.client.respond = respond
     result = execute(agent, request)

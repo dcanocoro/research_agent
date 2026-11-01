@@ -1,5 +1,6 @@
 """Temporal gates, accounting and crash recovery without financial database writes."""
 import asyncio
+import hashlib
 from copy import deepcopy
 from dataclasses import asdict
 from datetime import date, timedelta
@@ -16,7 +17,7 @@ from findata.read.historical import available_facts
 from research_agent.contracts import AgentLimits
 from research_agent.simulation.state import Simulator, read, save
 from research_campaigns.longitudinal import activations, load_scenario, preflight, run_campaign
-from support import fake_cli
+from support import fake_cli, instruction_control
 
 
 def config(count=50):
@@ -320,11 +321,12 @@ def test_cli_instruction_bundle_argument(tmp_path, monkeypatch):
     import research_campaigns.longitudinal as module
     calls = []
     monkeypatch.setattr(module, "run_campaign", lambda *args, **kwargs: calls.append(kwargs) or 0)
-    bundle = "campaigns/analisis-financiero-v1/control"
+    bundle = str(instruction_control(tmp_path / "synthetic-control"))
+    definition = scenario(tmp_path, config(1)).parent
     source = tmp_path / "data.json"
     save(source, {})
     from research_campaigns.cli import main
-    assert main(["run", "campaigns/analisis-financiero-v1", "--condition", "deliberative",
+    assert main(["run", str(definition), "--condition", "deliberative",
                         "--instructions-dir", bundle, "--data", str(source), "--output", str(tmp_path / "c")]) == 0
     assert calls[0]["instructions_dir"] == Path(bundle)
 
@@ -432,6 +434,10 @@ from research_agent.recording import RunRecorder
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
 from research_agent.integrations.file_tools import register_files
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "tests"))
+from support import save_current
 from research_agent.simulation.state import Simulator
 from research_agent.simulation.tools import register_simulation
 from runtime_contracts.llm import AssistantResponse, ResponseFunctionCall, ResponseTurn
@@ -440,12 +446,11 @@ from infra.adapters.llm_trace import LLMCallTrace
 from research_agent.recording import serializable
 @asynccontextmanager
 async def builder(workspace, runs, limits, **kwargs):
-    state_tools = kwargs.pop('state_tools', 'legacy')
     simulator = Simulator(kwargs.pop('simulation'))
     recorder = RunRecorder(runs, **kwargs)
     space = Workspace(workspace)
     tools = ToolRegistry(recorder)
-    register_files(tools, space, state_tools=state_tools)
+    register_files(tools, space)
     class Search:
         async def search_documents(self, *args, **kwargs):
             return []
@@ -473,10 +478,10 @@ async def builder(workspace, runs, limits, **kwargs):
                     item = ResponseFunctionCall('read', 'read_file', {'path':'memory.md','offset':0,'max_bytes':100})
             elif self.n == 2:
                 old = (space.root/'memory.md').read_text() if (space.root/'memory.md').exists() else ''
-                item = ResponseFunctionCall('write', 'write_file', {'path':'memory.md','content':old+str(os.getpid())+'\\n'})
+                item = ResponseFunctionCall('write', 'record_research_advance', save_current(space, **{'path':'memory.md','content':old+str(os.getpid())+'\\n'}))
             elif self.n == 3 and deliberative:
-                item = ResponseFunctionCall('agenda', 'write_file', {'path':'agenda.md',
-                    'content':'Continue intention from process '+str(os.getpid())})
+                item = ResponseFunctionCall('agenda', 'record_research_advance', save_current(space, **{'path':'agenda.md',
+                    'content':'Continue intention from process '+str(os.getpid())}))
             else:
                 item = AssistantResponse('done')
             done = isinstance(item, AssistantResponse)
@@ -493,10 +498,10 @@ raise SystemExit(cli.main())
     def launcher(command, out, err):
         return launch([sys.executable, str(worker), *command[3:]], out, err)
     campaign = tmp_path / "cli-campaign"
-    instructions_dir = Path("campaigns/analisis-financiero-v1/control") if bundle else None
+    instructions_dir = instruction_control(tmp_path / "synthetic-control") if bundle else None
     assert run_campaign(campaign, scenario=scenario(tmp_path, cfg), data=dataset(cfg),
                         launcher=launcher, identity=lambda: {}, condition=condition,
-                        instructions_dir=instructions_dir, state_tools="legacy" if bundle else "v5") == 0
+                        instructions_dir=instructions_dir) == 0
     pids = (campaign / "estado/memory.md").read_text().splitlines()
     assert len(pids) == 3 and len(set(pids)) == 3
     assert len(Simulator(campaign / "simulador").state["orders"]) == 1
@@ -505,10 +510,11 @@ raise SystemExit(cli.main())
         assert run_campaign(campaign, launcher=launcher, identity=lambda: {}) == 0
     if bundle:
         from research_campaigns.longitudinal import freeze_files
-        assert read(campaign / "campaign.json")["instructions_sha256"] == freeze_files(instructions_dir)
+        expected = {**freeze_files(instructions_dir), "herramientas-estado.md": hashlib.sha256((campaign / "instrucciones/herramientas-estado.md").read_bytes()).hexdigest()}
+        assert read(campaign / "campaign.json")["instructions_sha256"] == expected
         for path in (campaign / "ejecuciones").glob("*/manifiesto.json"):
             effective = {Path(k).name: v["text"] for k, v in read(path)["prompts"].items()}
-            assert effective == {p.name: p.read_text(encoding="utf-8") for p in instructions_dir.glob("*.md")}
+            assert {k: v for k, v in effective.items() if k != "herramientas-estado.md"} == {p.name: p.read_text(encoding="utf-8") for p in instructions_dir.glob("*.md")}
         (campaign / "instrucciones/agente.md").write_text("changed")
         with pytest.raises(ValueError, match="Instructions changed"):
             run_campaign(campaign, identity=lambda: {})

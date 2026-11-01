@@ -163,7 +163,6 @@ def runtime_identity() -> dict[str, Any]:
 def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str, Any] | None = None,
                  condition: str | None = None,
                  instructions_dir: Path | None = None,
-                 state_tools: str | None = None,
                  launcher: Callable[[list[str], Path, Path], int] = launch,
                  identity: Callable[[], dict[str, Any]] = runtime_identity) -> int:
     campaign = campaign.absolute()
@@ -173,8 +172,6 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
     disjoint(campaign, Path(__file__).parent)
     if condition not in {None, "baseline", "deliberative"}:
         raise ValueError("Unknown experimental condition.")
-    if state_tools not in {None, "legacy", "v5"} or (scenario is None and state_tools is not None):
-        raise ValueError("State tools profile applies only when creating a campaign.")
     if scenario is None and condition is not None:
         raise ValueError("Resume uses its frozen condition; do not supply condition.")
     if instructions_dir is not None:
@@ -191,13 +188,14 @@ def run_campaign(campaign: Path, *, scenario: Path | None = None, data: dict[str
         disjoint(campaign, scenario)
         record = create(campaign, scenario.parent, "historical", config["id"],
                         [scenario, *scenario.parent.glob("*.md")],
-                        deliberative=condition == "deliberative", instructions_dir=instructions_dir,
-                        state_tools=state_tools or "v5")
+                        deliberative=condition == "deliberative", instructions_dir=instructions_dir)
         record.update(config=config, condition=condition, limits=config["limits"], runtime=identity(),
                       instructions_sha256=freeze_files(campaign / "instrucciones"),
                       progress={"next": 0, "active": None, "finished": False})
         persist(campaign, record)
     if scenario is None:
+        from research_agent.state_configuration import validate_state_configuration
+        validate_state_configuration(campaign)
         load(campaign)  # Reject unsupported captures before creating control directories.
     (campaign / "recuperacion").mkdir(exist_ok=True)
     with experiment_lock(campaign / "recuperacion"):

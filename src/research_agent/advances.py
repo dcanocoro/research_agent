@@ -96,7 +96,7 @@ def record_advance(workspace: Workspace, runs: Path, changes: list[dict[str, Any
                 before = after = raw.decode('utf-8')
                 for operation in change['operations']:
                     target, content, kind = operation['target'], operation['content'], operation['kind']
-                    if not target or len(list(re.finditer('(?=' + re.escape(target) + ')', after))) != 1:
+                    if len(list(re.finditer('(?=' + re.escape(target) + ')', after))) != 1:
                         raise ValueError('ambiguous_target')
                     if kind not in {'replace', 'insert_before', 'insert_after'}:
                         raise ValueError('invalid_edit')
@@ -135,7 +135,7 @@ def register_advance(registry: Any, workspace: Workspace) -> None:
     nullable = {"type": ["string", "null"]}
     operation = {"type": "object", "properties": {
         "kind": {"type": "string", "enum": ["replace", "insert_before", "insert_after"]},
-        "target": {"type": "string", "minLength": 1}, "content": string},
+        "target": {"type": "string"}, "content": string},
         "required": ["kind", "target", "content"], "additionalProperties": False}
     change = {"type": "object", "properties": {"path": string,
         "action": {"type": "string", "enum": ["create", "edit"]},
@@ -145,9 +145,9 @@ def register_advance(registry: Any, workspace: Workspace) -> None:
         "additionalProperties": False}
     def apply(changes: list[dict[str, Any]], reason: str, source_refs: list[str]) -> dict[str, Any]:
         return record_advance(workspace, registry.recorder.root, changes, reason, source_refs)
-    registry.register("record_research_advance", "Save one coherent advance across 1-5 files; versions and V6 integrity checked; recoverable batch, no semantic certification.",
+    registry.register("record_research_advance", "Save one coherent advance across 1-5 files; versions and structural integrity checked; recoverable batch, no semantic certification.",
         {"changes": {"type": "array", "minItems": 1, "maxItems": 5, "items": change},
          "reason": {"type": "string", "minLength": 1}, "source_refs": {"type": "array", "items": string}},
         apply, execution="inline", consolidation=True, mutation=True, bounded=True)
-    registry.contracts["record_research_advance"] = {"version": "state-tools-v7.1",
-        "text": "Create: content supplied, operations and expected_sha256 null. Edit: content null, exact operations and current expected_sha256 supplied. All changes validate before publishing; recovery journal outside state. Readers/editors external to this process are not isolated. No deletions. Evidence references are not semantically validated."}
+    registry.contracts["record_research_advance"] = {"version": "state-tools-e1",
+        "text": "Create: content supplied, operations and expected_sha256 null. Edit: content null, exact operations and current expected_sha256 supplied; empty target only matches an empty file. All changes validate before publishing; recovery journal outside state. Readers/editors external to this process are not isolated. No deletions. Evidence references are not semantically validated."}

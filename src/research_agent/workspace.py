@@ -89,11 +89,6 @@ class Workspace:
         return {"path": path, "text": text, "offset": offset,
                 "next_offset": next_offset if next_offset < source.stat().st_size else None}
 
-    def write_markdown(self, path: str, content: str) -> dict[str, Any]:
-        if Path(path).suffix.lower() != ".md":
-            raise ValueError("Only Markdown writes are allowed.")
-        return self.write_file(path, content)
-
     def write_file(self, path: str, content: str) -> dict[str, Any]:
         with self.mutation_lock:
             return self.publish(path, content.encode("utf-8"))

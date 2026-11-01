@@ -32,6 +32,9 @@ class AgentA:
 
     async def run(self, request: AgentRequest) -> AgentResult:
         from .advances import recover
+        if self.recorder.experiment is not None:
+            from .state_configuration import validate_state_configuration
+            validate_state_configuration(self.recorder.experiment)
         recover(self.workspace, self.recorder.root)
         if request.continuous is not None:
             from .continuous import run_continuous
@@ -216,6 +219,8 @@ class AgentA:
         prompts = {str(p): p.read_text(encoding="utf-8") for p in instructions}
         if self.recorder.experiment is None:
             prompts = {"agent_a.md": base, **prompts}
+            if not any(p.name in {"herramientas-estado.md", "state_tools.md"} for p in instructions):
+                prompts["state_tools.md"] = files("research_agent").joinpath("prompts/state_tools.md").read_text(encoding="utf-8")
             if persistent is not None and not any(p.name == "deliberacion.md" for p in instructions):
                 prompts["deliberation.md"] = files("research_agent").joinpath("prompts/deliberation.md").read_text(encoding="utf-8")
         elif persistent is not None and not any(p.name == "deliberacion.md" for p in instructions):
@@ -223,12 +228,12 @@ class AgentA:
         system = "\n\n".join(prompts.values())
         review_policy = None
         checkpoint_policy = None
-        experiment_state_profile = None
+        state_tools_configuration = None
         if self.recorder.experiment is not None:
             profile_path = self.recorder.experiment / "herramientas.json"
             Workspace._check_links(profile_path)
             if profile_path.exists():
-                experiment_state_profile = json.loads(profile_path.read_bytes())
+                state_tools_configuration = json.loads(profile_path.read_bytes())
         if request.continuous is not None:
             from .continuous import CHECKPOINT_POLICY, REVIEW_POLICY
             review_policy = REVIEW_POLICY
@@ -253,7 +258,7 @@ class AgentA:
                               if request.continuous is None and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
             "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
             "state_contracts": self.tools.contracts,
-            "experiment_state_profile": experiment_state_profile,
+            "state_tools_configuration": state_tools_configuration,
             "tools": self.tools.specs()})
         if self.recorder.contract_changes:
             notice = "State tool contracts changed since the previous run: " + ", ".join(self.recorder.contract_changes)

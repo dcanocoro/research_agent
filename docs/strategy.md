@@ -19,6 +19,11 @@ Las correcciones de recortes y recuperación de revisión parcial fueron posteri
 al cierre y solo tienen comprobación local. La [entrega](deliveries/2026-10-31-decision-objectives.md)
 separa esos momentos.
 
+La [ablación E1](experiments/e1-simplificacion/protocol.md), autorizada posteriormente
+a esta consolidación, simplifica escritura e instrucciones del mismo agente. Su
+implementación y checks no autorizan lanzar la tanda: la campaña permanece pendiente.
+No resuelve por sí sola las preguntas abiertas ni demuestra mejora semántica.
+
 ## Qué sigue abierto
 
 - Persistencia incremental y coherencia: varias campañas concentraron las escrituras

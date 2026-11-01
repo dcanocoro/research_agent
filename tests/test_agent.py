@@ -13,7 +13,7 @@ from research_agent.workspace import Workspace
 from research_agent.integrations.file_tools import register_files
 
 
-from support import ScriptedClient
+from support import ScriptedClient, save_arguments
 
 
 def response(text="done", call=None, provider=None):
@@ -36,7 +36,7 @@ def request(message="Investigate", conversation="test"):
 
 @pytest.mark.parametrize("provider", ["openai", "gemini"])
 def test_tools_preserve_replay_and_persist_memory(tmp_path, provider):
-    a = agent(tmp_path, [response(call=("write_markdown", {"path": "memory/index.md", "content": "Remember the limit"}), provider=provider), response("saved"), response("revised")])
+    a = agent(tmp_path, [response(call=("record_research_advance", save_arguments(**{"path": "memory/index.md", "content": "Remember the limit"})), provider=provider), response("saved"), response("revised")])
     first = asyncio.run(a.run(request()))
     assert first.status == "completed" and first.tool_calls == 1
     history = a.client.requests[1]["input_items"]
@@ -55,7 +55,7 @@ def test_reserved_finalization_disables_tools(tmp_path):
     assert a.client.requests[-1]["allow_tools"] is False
 
 
-@pytest.mark.parametrize("call", [("unknown", {}), ("write_markdown", {"path": "../escape.md", "content": "x"}), ("read_file", {})])
+@pytest.mark.parametrize("call", [("unknown", {}), ("record_research_advance", save_arguments(**{"path": "../escape.md", "content": "x"})), ("read_file", {})])
 def test_invalid_tools_are_returned_and_recorded(tmp_path, call):
     a = agent(tmp_path, [response(call=call), response("explained")])
     result = asyncio.run(a.run(request()))
@@ -66,7 +66,7 @@ def test_invalid_tools_are_returned_and_recorded(tmp_path, call):
 
 @pytest.mark.parametrize("error", [RuntimeError("secret"), TimeoutError()])
 def test_failure_preserves_partial_run(tmp_path, error):
-    a = agent(tmp_path, [response(call=("write_markdown", {"path": "notes/prior.md", "content": "confirmed"})), error])
+    a = agent(tmp_path, [response(call=("record_research_advance", save_arguments(**{"path": "notes/prior.md", "content": "confirmed"}))), error])
     result = asyncio.run(a.run(request()))
     assert result.status in {"failed", "interrupted"}
     assert (a.recorder.current / "resultado.json").exists()
@@ -102,13 +102,13 @@ def test_large_result_can_be_read_without_recursion(tmp_path):
 
 def test_workspace_utf8_pagination_and_restrictions(tmp_path):
     space = Workspace(tmp_path / "workspace")
-    space.write_markdown("memory/index.md", "á" * 5000)
+    space.write_file("memory/index.md", "á" * 5000)
     first = space.read_file("memory/index.md", max_bytes=8191)
     rest = space.read_file("memory/index.md", offset=first["next_offset"])
     assert first["text"] + rest["text"] == "á" * 5000
     for path in ("../outside.md", "C:/outside.md", "notes/a.exe", "file.md:stream"):
         with pytest.raises(ValueError):
-            space.write_markdown(path, "bad")
+            space.write_file(path, "bad")
     assert space.search_files("á")["matches"]
 
 
@@ -121,7 +121,7 @@ def test_workspace_rejects_links(tmp_path):
     except OSError:
         pytest.skip("Host does not permit symlinks.")
     with pytest.raises(ValueError):
-        space.write_markdown("link/escape.md", "bad")
+        space.write_file("link/escape.md", "bad")
 
 
 def test_findata_tools_are_readonly_and_rollback(monkeypatch):

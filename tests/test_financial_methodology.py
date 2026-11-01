@@ -11,26 +11,30 @@ import pytest
 from research_agent.experiments import prepare_experiment
 
 
-CONTROL = Path(__file__).resolve().parents[1] / "campaigns/analisis-financiero-v1/control"
+@pytest.fixture
+def control(tmp_path):
+    from support import instruction_control
+    return instruction_control(tmp_path / "synthetic-control")
 
 
-def test_frozen_control_and_default_replacement(tmp_path):
-    provenance = json.loads((CONTROL.parent / "control-provenance.json").read_text(encoding="utf-8"))
-    frozen = prepare_experiment(tmp_path / "control", new=True, deliberative=True, instructions_dir=CONTROL, state_tools="legacy")
+def test_frozen_control_and_default_replacement(tmp_path, control):
+    original = {p.name: p.read_bytes() for p in control.glob("*.md")}
+    frozen = prepare_experiment(tmp_path / "control", new=True, deliberative=True, instructions_dir=control)
     current = prepare_experiment(tmp_path / "new", new=True, deliberative=True)
-    assert len(frozen) == 3 and len(current) == 4
-    current = tuple(p for p in current if p.name != "herramientas-estado-v5.md")
+    assert len(frozen) == len(current) == 4
+    frozen = tuple(p for p in frozen if p.name != "herramientas-estado.md")
+    current = tuple(p for p in current if p.name != "herramientas-estado.md")
     for path in frozen:
-        assert hashlib.sha256(path.read_bytes()).hexdigest() == provenance["sha256"][path.name]
+        assert path.read_bytes() == original[path.name]
     assert all(a.read_text(encoding="utf-8") != b.read_text(encoding="utf-8") for a, b in zip(frozen, current))
-    assert prepare_experiment(tmp_path / "control", new=False, deliberative=True) == frozen
+    assert prepare_experiment(tmp_path / "control", new=False, deliberative=True) == (frozen[0], *sorted([*frozen[1:], tmp_path / "control/instrucciones/herramientas-estado.md"]))
     assert not (tmp_path / "new/estado/empresas").exists()
 
 
 @pytest.mark.parametrize("problem", ["missing", "extra", "directory", "invalid_utf8", "empty", "baseline"])
-def test_bad_bundle_leaves_no_experiment(tmp_path, problem):
+def test_bad_bundle_leaves_no_experiment(tmp_path, problem, control):
     bundle = tmp_path / "bundle"
-    shutil.copytree(CONTROL, bundle)
+    shutil.copytree(control, bundle)
     if problem == "missing":
         (bundle / "agente.md").unlink()
     elif problem == "extra":
@@ -47,14 +51,14 @@ def test_bad_bundle_leaves_no_experiment(tmp_path, problem):
     assert not (tmp_path / "exp").exists()
 
 
-def test_bundle_cannot_override_continuation_or_additive_instructions(tmp_path):
+def test_bundle_cannot_override_continuation_or_additive_instructions(tmp_path, control):
     root = tmp_path / "exp"
     prepare_experiment(root, new=True, deliberative=True)
     with pytest.raises(ValueError, match="new experiment"):
-        prepare_experiment(root, new=False, deliberative=True, instructions_dir=CONTROL)
+        prepare_experiment(root, new=False, deliberative=True, instructions_dir=control)
     with pytest.raises(ValueError, match="additive"):
         prepare_experiment(tmp_path / "other", new=True, deliberative=True,
-                           instructions_dir=CONTROL, instructions=(CONTROL / "agente.md",))
+                           instructions_dir=control, instructions=(control / "agente.md",))
 
 
 @pytest.mark.parametrize("failure", [False, True])
@@ -73,6 +77,10 @@ from research_agent.workspace import Workspace
 from research_agent.recording import RunRecorder
 from research_agent.tools import ToolRegistry
 from research_agent.integrations.file_tools import register_files
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "tests"))
+from support import save_current
 from runtime_contracts.llm import AssistantResponse, ConversationContext, ResponseFunctionCall, ResponseTurn
 root=Path(sys.argv[1]); first=sys.argv[2]=='first'; failure=sys.argv[3]=='True'
 space=Workspace(root/'estado'); rec=RunRecorder(root/'ejecuciones',experiment=root)
@@ -80,23 +88,23 @@ tools=ToolRegistry(rec); register_files(tools,space)
 model='empresas/ACME/modelo.md'; valuation='empresas/ACME/valoracion.md'
 evaluation='empresas/ACME/evaluacion.md'
 actions=([('calculate',dict(operation='multiply',left=2,right=10,source_refs=['fixture:eps','fixture:multiple'])),
-          ('write_file',dict(path=model,content='### H1\nEstado: provisional; EPS supuesto 2 USD.')),
-          ('write_file',dict(path=valuation,content='dynamic')),
-          ('write_file',dict(path=evaluation,content='Depende de empresas/ACME/valoracion.md#V1; precio ausente.')),
-          ('write_file',dict(path='indice.md',content='empresas/ACME/evaluacion.md; '+model+'; '+valuation)),
-          ('write_file',dict(path='agenda.md',content='Contrastar H1; afecta a '+valuation+'#V1'))] if first else
+          ('save',dict(path=model,content='### H1\nEstado: provisional; EPS supuesto 2 USD.')),
+          ('save',dict(path=valuation,content='dynamic')),
+          ('save',dict(path=evaluation,content='Depende de empresas/ACME/valoracion.md#V1; precio ausente.')),
+          ('save',dict(path='indice.md',content='empresas/ACME/evaluacion.md; '+model+'; '+valuation)),
+          ('save',dict(path='agenda.md',content='Contrastar H1; afecta a '+valuation+'#V1'))] if first else
          [('read_file',dict(path=model)),('read_file',dict(path=valuation)),
           ('read_file',dict(path=evaluation)),('search_files',dict(query=model+'#H1')),
-          ('write_file',dict(path=model,content='### H1\nEstado: revisada; EPS supuesto 1 USD. Antes 2; nueva evidencia fixture:update.')),
-          ('write_file',dict(path=valuation,content='### V1\nPendiente de revision tras '+model+'#H1; cifra anterior 20 USD superada.')),
-          ('write_file',dict(path=evaluation,content='Revision pendiente: atractivo anterior superado por cambio H1; depende de '+valuation+'#V1.')),
-          ('write_file',dict(path='agenda.md',content='Revisar V1 por cambio H1; '+valuation+'#V1'))])
+          ('save',dict(path=model,content='### H1\nEstado: revisada; EPS supuesto 1 USD. Antes 2; nueva evidencia fixture:update.')),
+          ('save',dict(path=valuation,content='### V1\nPendiente de revision tras '+model+'#H1; cifra anterior 20 USD superada.')),
+          ('save',dict(path=evaluation,content='Revision pendiente: atractivo anterior superado por cambio H1; depende de '+valuation+'#V1.')),
+          ('save',dict(path='agenda.md',content='Revisar V1 por cambio H1; '+valuation+'#V1'))])
 if not first and not failure:
     actions += [
         ('calculate',dict(operation='multiply',left=1,right=10,source_refs=['fixture:update','fixture:multiple'])),
-        ('write_file',dict(path=valuation,content='revised')),
-        ('write_file',dict(path=evaluation,content='Revision: escenario 10 USD por accion, antes 20; depende de '+valuation+'#V1. Precio compatible ausente; no inferir compra.')),
-        ('write_file',dict(path='agenda.md',content='H1 y V1 revisadas; pendiente precio comparable para '+evaluation))]
+        ('save',dict(path=valuation,content='revised')),
+        ('save',dict(path=evaluation,content='Revision: escenario 10 USD por accion, antes 20; depende de '+valuation+'#V1. Precio compatible ausente; no inferir compra.')),
+        ('save',dict(path='agenda.md',content='H1 y V1 revisadas; pendiente precio comparable para '+evaluation))]
 class Fake:
     count=0
     async def respond(self,**kwargs):
@@ -118,6 +126,8 @@ class Fake:
                 file,result=next((f,r) for f,r in results if r['result']==10)
                 ref=file.relative_to(space.root).as_posix()
                 args['content']='### V1\n10 USD por accion; antes 20, revisado por fixture:update; depende de '+model+'#H1; fuente '+ref
+            if name == "save":
+                name, args = "record_research_advance", save_current(space, **args)
             call=ResponseFunctionCall(str(self.count),name,args)
             return ResponseTurn([call],'',call)
         if failure and not first: raise RuntimeError('Controlled interruption after durable progress')

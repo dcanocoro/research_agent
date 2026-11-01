@@ -80,3 +80,45 @@ def review_turn():
     from runtime_contracts.llm import AssistantResponse, ResponseTurn
     value = json.dumps({"progress": "No evaluado por fixture", "blockers": [], "findings": [], "recommendations": []})
     return ResponseTurn([AssistantResponse(value)], value, None)
+
+
+def save_arguments(path, content, previous=None, *, reason="Conservar avance", source_refs=None):
+    """Construct the real write contract from explicit prior fixture text."""
+    import hashlib
+    change = dict(path=path, action="create" if previous is None else "edit",
+                  content=content if previous is None else None,
+                  expected_sha256=None if previous is None else hashlib.sha256(previous.encode("utf-8")).hexdigest(),
+                  operations=None if previous is None else [dict(kind="replace", target=previous, content=content)])
+    return dict(changes=[change], reason=reason, source_refs=source_refs or [])
+
+
+def save_current(space, path, content):
+    previous = space.read_version(path)[0].decode("utf-8") if space.path(path).exists() else None
+    return save_arguments(path, content, previous)
+
+
+def save_turn(path, content, previous=None):
+    from runtime_contracts.llm import ResponseFunctionCall, ResponseTurn
+    item = ResponseFunctionCall("save", "record_research_advance", save_arguments(path, content, previous))
+    return ResponseTurn([item], "", item)
+
+
+def create_doc(ops, path, content, reason):
+    from research_agent.advances import record_advance
+    args = save_arguments(path, content, reason=reason)
+    return record_advance(ops.workspace, ops.workspace.root.parent / "runs", **args)["files"][0]
+
+
+def edit_doc(ops, path, version, operations, reason):
+    from research_agent.advances import record_advance
+    return record_advance(ops.workspace, ops.workspace.root.parent / "runs", [
+        dict(path=path, action="edit", content=None, expected_sha256=version, operations=operations)
+    ], reason, [])["files"][0]
+
+
+def instruction_control(root):
+    """Synthetic frozen instructions for contract tests, not a historical campaign."""
+    root.mkdir()
+    for name in ("agente.md", "deliberacion.md", "investigacion-financiera.md"):
+        (root / name).write_text("Synthetic instruction control: " + name, encoding="utf-8")
+    return root

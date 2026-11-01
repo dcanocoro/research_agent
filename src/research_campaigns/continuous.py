@@ -20,7 +20,7 @@ from research_agent.simulation.state import Simulator, read
 from research_agent.simulation.tools import activation_message, register_simulation
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
-from research_agent.state_profiles import state_profile
+from research_agent.state_configuration import validate_state_configuration
 from research_agent.objectives import Objective
 from research_agent.objective_review import POLICY as OBJECTIVE_POLICY
 from .longitudinal import preflight, runtime_identity
@@ -39,9 +39,10 @@ def installed_identity() -> dict[str, Any]:
 
 def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
     """Use the runtime seed and schemas without constructing a client or DB engine."""
+    validate_state_configuration(root)
     space = Workspace(root / "estado", create=False)
     registry = ToolRegistry(RunRecorder(root / "ejecuciones"))
-    register_files(registry, space, state_tools=state_profile(root))
+    register_files(registry, space)
     simulator = Simulator(root / "simulador")
     register_simulation(registry, simulator, None)  # Web is disabled in this pilot.
     agent = AgentA(cast(Any, None), registry, space, registry.recorder,
@@ -76,7 +77,7 @@ def validate(definition: Path) -> dict[str, Any]:
             raise ValueError(f"Nonempty {name} required.")
     return config
 
-def prepare(root: Path, definition: Path, source_data: Path, *, state_tools: str = "v5") -> None:
+def prepare(root: Path, definition: Path, source_data: Path) -> None:
     root, definition, source_data = root.absolute(), definition.absolute(), source_data.absolute()
     for path in (root, definition, source_data):
         Workspace._check_links(path)
@@ -99,7 +100,7 @@ def prepare(root: Path, definition: Path, source_data: Path, *, state_tools: str
     if objective is not None:
         definition_files.append(definition / "objective.json")
     record = create(root, definition, "continuous", config["id"], definition_files,
-                    deliberative=True, state_tools=state_tools)
+                    deliberative=True)
     persist(root, record)
     Simulator.create(root / "simulador", config, data)
     # Preserve the original bytes as well as their semantic content and provenance.
@@ -148,9 +149,9 @@ def check(root: Path) -> None:
 
 
 
-def run_campaign(root: Path, definition: Path, source_data: Path, *, launcher=launch, state_tools: str = "v5") -> int:
+def run_campaign(root: Path, definition: Path, source_data: Path, *, launcher=launch) -> int:
     root = root.absolute()
-    prepare(root, definition, source_data, state_tools=state_tools)
+    prepare(root, definition, source_data)
     check(root)
     record = load(root)
     session = {"id": "piloto", "message": (root / "definicion/peticion.md").read_text(encoding="utf-8")}

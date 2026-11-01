@@ -1,6 +1,6 @@
 """Manual pilot preparation is reproducible, isolated and entirely offline."""
+from support import save_current, review_turn
 from pathlib import Path
-import shutil
 import socket
 from contextlib import asynccontextmanager
 import json
@@ -30,10 +30,17 @@ def prepared_inputs(tmp_path, monkeypatch, request):
 
     monkeypatch.setattr(socket.socket, "connect", forbidden)
     definition = tmp_path / "definition"
-    # The retired v1 definition is absent from the current checkout. Exercise two
-    # synthetic budgets over the maintained definition without restoring a campaign.
-    shutil.copytree(Path(__file__).parents[1] / "campaigns/contexto-continuo-v3", definition)
-    config = read(definition / "scenario.json")
+    # Pure synthetic definition: retired campaign recipes are not test fixtures.
+    from test_longitudinal import config as historical_config
+    config = historical_config(1)
+    config.update(schema_version="continuous-pilot-v1", end="2023-01-01", allow_web=False,
+                  messages={"2023-01-01": "Synthetic research mandate"},
+                  expected_profile={"provider": "openai", "model": "gpt-6-luna", "max_output_tokens": 16000},
+                  continuous={"max_context_bytes": 524288, "consolidation_threshold_bytes": 262144,
+                              "max_llm_calls": 60, "max_tool_calls": 120, "timeout_seconds": 1800})
+    definition.mkdir()
+    for name in ("mandato.md", "peticion.md", "rubrica.md"):
+        (definition / name).write_text("Synthetic test: " + name, encoding="utf-8")
     if request.param == "compact":
         config["continuous"]["consolidation_threshold_bytes"] = 220000
     config["universe"] = [{"symbol": "TEST", "name": "Synthetic fixture"}]
@@ -155,14 +162,18 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
         written: set[int] = set()
 
         async def respond(self, **kwargs):
+            if any("review_packet" in getattr(x, "payload", {}) for x in kwargs["input_items"]):
+                return review_turn()
             assert kwargs["max_tokens"] == 16000
             budget = next(x.payload["execution_budget"] for x in reversed(kwargs["input_items"])
                           if isinstance(x, ConversationContext) and "execution_budget" in x.payload)
+            if budget["phase"] == "review":
+                return ResponseTurn([AssistantResponse("Revisión sin herramientas")], "Revisión sin herramientas", None)
             n = budget["context_number"]
             if not any(t.name == "calculate" for t in kwargs["tools"]):
                 if n not in self.written:
                     self.written.add(n)
-                    call = ResponseFunctionCall("call", "write_file", {"path": "agenda.md", "content": f"Pregunta pendiente {n + 1}"})
+                    call = ResponseFunctionCall("call", "record_research_advance", save_current(Workspace(root / "estado", create=False), "agenda.md", f"Pregunta pendiente {n + 1}"))
                     return ResponseTurn([call], "", call)
                 return ResponseTurn([AssistantResponse("Conservado")], "Conservado", None)
             if n < 3:
@@ -172,11 +183,11 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
             return ResponseTurn([AssistantResponse("Recuperado")], "Recuperado", None)
 
     @asynccontextmanager
-    async def build(workspace, runs, limits, *, experiment, run_name, simulation, state_tools="legacy"):
+    async def build(workspace, runs, limits, *, experiment, run_name, simulation):
         space = Workspace(workspace)
         recorder = RunRecorder(runs, experiment=experiment, run_name=run_name)
         registry = ToolRegistry(recorder)
-        register_files(registry, space, state_tools=state_tools)
+        register_files(registry, space)
         simulator = Simulator(simulation)
         register_simulation(registry, simulator, None)
         yield AgentA(Client(), registry, space, recorder, limits,
@@ -184,8 +195,8 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
 
     monkeypatch.setattr("research_agent.cli.build_agent", build)
     command = read(root / "campaign.json")["command"][3:]
-    # V3 needs two research responses per window before crossing its higher threshold.
-    command[command.index("--max-calls") + 1] = "14"
+    # The synthetic budgets require multiple research responses before renewal.
+    command[command.index("--max-calls") + 1] = "18"
     assert main(command) == 0
     run = next((root / "ejecuciones").iterdir())
     events = [json.loads(line) for line in (run / "eventos.jsonl").read_text(encoding="utf-8").splitlines()]

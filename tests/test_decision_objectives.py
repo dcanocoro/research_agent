@@ -1,4 +1,5 @@
 """Decision-oriented direction, bounded recovery and atomic agenda validation."""
+from support import save_turn
 from dataclasses import replace
 import json
 import pytest
@@ -80,7 +81,7 @@ def test_assessment_refresh_after_write_and_recovery_after_renewal(tmp_path):
             self.research += 1
             assert 'resolver un impedimento material' in kwargs['system']
             if self.research == 1:
-                return call('write_file', path='evaluacion.md', content='Juicio provisional #J1. Escenario pendiente.')
+                return save_turn(path='evaluacion.md', content='Juicio provisional #J1. Escenario pendiente.')
             assert any('Juicio provisional' in c.get('active_assessment', {}).get('text', '') for c in contexts)
             if self.research == 2:
                 return text('material ' * 18000)

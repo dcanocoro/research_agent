@@ -273,17 +273,20 @@ from research_agent.recording import RunRecorder
 from research_agent.tools import ToolRegistry
 from research_agent.workspace import Workspace
 from research_agent.integrations.file_tools import register_files
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "tests"))
+from support import save_current
 from runtime_contracts.llm import AssistantResponse, ResponseTurn, ResponseFunctionCall
 from runtime_contracts.execution import current_run_context
 from infra.adapters.llm_trace import LLMCallTrace
 
 @asynccontextmanager
 async def builder(workspace, runs, limits=AgentLimits(), **kwargs):
-    state_tools = kwargs.pop('state_tools', 'legacy')
     space = Workspace(workspace)
     recorder = RunRecorder(runs, **kwargs)
     tools = ToolRegistry(recorder)
-    register_files(tools, space, state_tools=state_tools)
+    register_files(tools, space)
     class Client:
         n = 0
         async def respond(self, **request):
@@ -292,7 +295,7 @@ async def builder(workspace, runs, limits=AgentLimits(), **kwargs):
                 item = ResponseFunctionCall('read', 'read_file', {'path':'indice.md','offset':0,'max_bytes':8192})
             elif self.n == 2:
                 previous = (space.root/'remembered.md').read_text() if (space.root/'remembered.md').exists() else ''
-                item = ResponseFunctionCall('write', 'write_file', {'path':'remembered.md','content':previous+str(os.getpid())+'\\n'})
+                item = ResponseFunctionCall('write', 'record_research_advance', save_current(space, **{'path':'remembered.md','content':previous+str(os.getpid())+'\\n'}))
             else:
                 item = AssistantResponse('done')
             turn = ResponseTurn([item], 'done' if self.n == 3 else '', item if self.n < 3 else None)

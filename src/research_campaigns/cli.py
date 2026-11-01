@@ -32,7 +32,6 @@ def main(argv: list[str] | None = None) -> int:
             command.add_argument("--case")
             command.add_argument("--condition", choices=["baseline", "deliberative"])
             command.add_argument("--instructions-dir", type=Path)
-            command.add_argument("--state-tools", choices=["legacy", "v5"], default="v5")
     for name in ("resume", "report"):
         sub.add_parser(name).add_argument("campaign", type=Path)
     progress = sub.add_parser("progress", help="Observe a native run offline; no semantic score or provider calls.")
@@ -83,15 +82,15 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("--case applies only to document suites.")
         if mode == "suite":
             from .suite import run_suite
-            return run_suite(suite, args.output, args.case, state_tools=args.state_tools)[1]
+            return run_suite(suite, args.output, args.case)[1]
         if mode == "historical":
             from .longitudinal import run_campaign
             return run_campaign(args.output, scenario=path, data=read(args.data) if args.data else None,
-                                condition=args.condition, instructions_dir=args.instructions_dir, state_tools=args.state_tools)
+                                condition=args.condition, instructions_dir=args.instructions_dir)
         if args.data is None:
             raise ValueError("Continuous campaigns require a local --data dataset.")
         from .continuous import run_campaign as run_continuous
-        return run_continuous(args.output, args.definition, args.data, state_tools=args.state_tools)
+        return run_continuous(args.output, args.definition, args.data)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         parser.error(str(exc))
     except KeyboardInterrupt:

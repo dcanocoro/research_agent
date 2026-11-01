@@ -16,7 +16,6 @@ from .storage import create, digest, freeze_files, dependencies
 
 
 def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
-              state_tools: str = "v5",
               launcher: Callable[[list[str], Path, Path], int] = launch) -> tuple[Path, int]:
     if selected is not None and selected not in {c.id for c in suite.cases}:
         raise ValueError(f"Unknown case: {selected}")
@@ -35,7 +34,7 @@ def run_suite(suite: Suite, output: Path, selected: str | None = None, *,
         if selected is not None and case.id != selected:
             continue
         experiment = root / "casos" / case.id
-        prepare_experiment(experiment, new=True, state_tools=state_tools)
+        prepare_experiment(experiment, new=True)
         Workspace(experiment / "estado").write_file("indice.md", case.context + "\n\nEntradas disponibles:\n" +
             "".join(f"- {p.target}\n" for p in case.sessions[0].publish))
         record.setdefault("instructions_sha256", {})[case.id] = freeze_files(experiment / "instrucciones")

@@ -119,15 +119,12 @@ def instruction_bundle(directory: Path, *, deliberative: bool) -> dict[str, str]
 
 
 def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] = (),
-                       deliberative: bool = False, instructions_dir: Path | None = None,
-                       state_tools: str | None = None, adopt_state_tools_v5: bool = False) -> tuple[Path, ...]:
-    from .state_profiles import set_state_profile, state_profile
-    if state_tools not in {None, "legacy", "v5"} or (state_tools is not None and not new):
-        raise ValueError("state_tools is a creation-only profile.")
-    if adopt_state_tools_v5 and new:
-        raise ValueError("V5 adoption requires an existing experiment.")
+                       deliberative: bool = False, instructions_dir: Path | None = None) -> tuple[Path, ...]:
+    from .state_configuration import freeze_state_configuration, validate_state_configuration
     root = root.absolute()
     Workspace._check_links(root)
+    if not new:
+        validate_state_configuration(root)
     # The experiment can live under artifacts/, but never include the source package.
     package = Path(str(files("research_agent")))
     disjoint(root, package)
@@ -170,9 +167,7 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         if not path.is_dir():
             raise ValueError("Invalid experiment: expected instrucciones/, estado/ and ejecuciones/.")
     if new:
-        set_state_profile(root, state_tools or "v5")
-    else:
-        state_profile(root)
+        freeze_state_configuration(root)
     paths = (root / "instrucciones/agente.md", *sorted(p for p in (root / "instrucciones").glob("*.md") if p.name != "agente.md"))
     if not paths[0].is_file():
         raise ValueError("Experiment requires instrucciones/agente.md.")
@@ -185,8 +180,4 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
         deliberative_context(Workspace(root / "estado", create=False), "validation")
     elif (root / "instrucciones/deliberacion.md").exists():
         raise ValueError("Deliberative experiment requires --mandate on every activation.")
-    if adopt_state_tools_v5:
-        set_state_profile(root, "v5", adoption=True)
-        paths = (root / "instrucciones/agente.md", *sorted(
-            p for p in (root / "instrucciones").glob("*.md") if p.name != "agente.md"))
     return paths

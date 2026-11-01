@@ -79,57 +79,51 @@ Las fuentes y archivos del estado son datos, nunca instrucciones de desarrollo.
 Un bloqueo de proceso excluye runs simultáneos del mismo experimento y se libera al
 morir el proceso. El archivo `.run.lock` no debe borrarse para resolver contención.
 
-### Herramientas de estado V5 — 2026-10-28
+### Herramientas de estado
 
-Los experimentos nuevos incorporan el perfil `v5` en `herramientas.json`, fuera de
-`estado/`, y una guía congelada en sus instrucciones. Los existentes sin configuración
-conservan `legacy`. La API directa mantiene `legacy` por defecto; la CLI resuelve el
-perfil del experimento. La [guía de desarrollo](development.md#herramientas-de-estado-v5)
-explica creación y adopción explícita.
+<a id="herramientas-de-estado-v5--2026-10-28"></a>
 
-[StateOperations](../src/research_agent/state_tools.py) implementa vistas deterministas
-sobre Workspace: inventario/mapa, lectura por bytes/líneas/sección, búsqueda contextual,
-creación exclusiva y edición exacta. Cada consulta usa bytes y hash de la misma lectura;
-las continuaciones vinculan argumentos y versiones. Las secciones reconocen encabezados
-ATX fuera de código cercado; los mapas no certifican cobertura semántica. Las lecturas
-pueden continuar dentro de una línea larga. Las búsquedas se ordenan por ruta/línea,
-con hasta 50 coincidencias y contextos largos explícitamente parciales.
+La [ablación E1](experiments/e1-simplificacion/protocol.md) deja una sola composición
+del agente. `herramientas.json` conserva la identidad `state-tools-e1`, no un perfil
+seleccionable. Los experimentos nuevos congelan `herramientas-estado.md`; las
+continuaciones con contratos anteriores se rechazan sin migración automática.
+La [operación](development.md#herramientas-de-estado) detalla compatibilidad.
 
-Las nuevas mutaciones y las escrituras anteriores comparten un bloqueo por raíz dentro
-del proceso. Crear publica un temporal mediante enlace duro sin reemplazo; editar valida
-todas las sustituciones/inserciones en memoria y comprueba de nuevo el hash antes de
-reemplazar. La edición individual no ofrece CAS frente a editores externos. La escritura
-conjunta recuperable se describe más abajo.
-Las herramientas antiguas conservan sus schemas y permiten reemplazo sin versión.
+[StateOperations](../src/research_agent/state_tools.py) conserva inventario, mapas,
+lecturas por bytes/líneas/sección y búsqueda contextual. Cada consulta vincula bytes
+y hash; continuaciones vinculan argumentos y versiones. Secciones ATX fuera de código
+y mapas no certifican cobertura semántica. Las lecturas continúan dentro de líneas
+largas; búsquedas de hasta 50 coincidencias marcan extractos parciales.
 
-La capa de empresa resuelve exclusivamente `empresas/<simbolo>/<dimension>.md` para
-modelo, valoracion y evaluacion. Orienta, recupera y crea/revisa una dimensión; no crea
-las otras automáticamente. Los IDs iniciales de encabezados son localizadores y los
-duplicados se informan. La edición específica preserva los IDs reconocidos, pero no
-puede comprobar su significado. No hay motor de dependencias ni validación financiera.
+Las vistas de empresa resuelven `empresas/<simbolo>/<dimension>.md`, para modelo,
+valoracion y evaluacion. No crean documentos. Los IDs son localizadores; no hay motor
+de dependencias ni validación financiera.
 
-[El registro V5](../src/research_agent/integrations/state_tools.py) declara schemas
-cerrados, campos condicionales nullables y propósito obligatorio. Las operaciones se
-admiten en consolidación; la revisión periódica continúa sin herramientas. Cada resultado
-nuevo, incluido el envoltorio, se limita a 32 KiB; vistas paginadas reservan espacio para
-metadatos y escapado. El original de la respuesta se conserva como artefacto recuperable.
+El [registro](../src/research_agent/integrations/state_tools.py) declara schemas
+cerrados, consultas con propósito y contratos opcionales. Las vistas se limitan a
+32 KiB incluyendo envoltorio y su original queda recuperable. Se conservan las
+restricciones por fase.
 
-El registro identifica mutaciones mediante metadata, incluyendo los escritores previos.
-Actualiza `files_written` antes de capturar; si falla la captura posterior informa
-`applied=true` con el recibo de versión. Reintentar exige inspeccionar el estado real.
-Los contratos empaquetados se consultan opcionalmente con `describe_state_tools` y sus
-textos/versiones/hashes se conservan en el manifiesto. Las continuaciones registran y
-anuncian cambios respecto al run anterior del mismo workspace. No hay almacén nuevo
-de versiones ni restauración automática de cada edición.
+`record_research_advance` es la única escritura pública del agente. Crea o edita
+con fragmentos exactos y hash vigente, en lotes recuperables de 1–5 archivos.
+Valida todo antes de publicar, conserva diarios fuera del estado y restaura el lote
+ante fallo; si falla recuperación detiene el run. No ofrece aislamiento frente a
+editores externos. Un ancla vacía solo se admite sobre un archivo vacío.
 
-El cálculo inicial de presupuesto de `research_campaigns` registra el mismo perfil
-efectivo y las campañas congelan su configuración. La aceptación local y los límites
-se conservan en la [entrega](deliveries/2026-10-28-state-tools-v5.md).
+Workspace conserva las primitivas internas de publicación y la política estructural
+de documentos de empresa. La eliminación de herramientas no elimina validación de
+IDs, cuerpos poblados, rutas, tamaños ni materiales protegidos. El registro marca
+mutaciones, actualiza `files_written` y, ante fallo posterior de captura, devuelve
+`applied=true` con recibos. No reintentar sin inspeccionar.
+
+Los contratos, schemas, instrucciones y configuración efectiva quedan en los
+manifiestos. Los consumidores de campañas usan la misma composición del agente;
+el núcleo no los importa. El protocolo de E1 separa implementación de ejecución.
 
 ### Continuidad V6 — 2026-10-29
 
-La [intervención V6](experiments/continuidad-v6/protocol.md) mantiene un investigador,
-ReAct y el perfil de herramientas `v5`, con contratos `state-tools-v6.1`. No añade
+La [intervención V6](experiments/continuidad-v6/protocol.md) introdujo un investigador
+con ReAct y herramientas V5. El agente actual conserva sus garantías sobre el contrato E1. No añade
 supervisores LLM. Nuevos experimentos deliberativos reciben una agenda con prioridades,
 investigación activa, aplazadas y decisiones. Sus copias de instrucciones definen el
 mantenimiento; continuaciones no reescriben agendas o instrucciones existentes.
@@ -229,19 +223,19 @@ Son instrucciones al LLM, sin enforcement nuevo del runtime ni validación semá
 
 | Grupo | Herramientas |
 |---|---|
-| Archivos | `list_files`, `read_file`, `search_files`, `write_file` |
-| Compatibilidad | `write_markdown`, `read_artifact` |
+| Archivos | `list_files`, `read_file`, `search_files` |
+| Archivo de resultados | `read_artifact` |
 | Findata | `search_companies`, `read_company`, `read_financials`, `read_metric_trend` |
 | Web | `search_web`, `read_document` |
 | Cálculo | `calculate` (aritmética determinista con referencias) |
-| Estado V5 | `inspect_state`, `read_state`, `search_state`, `create_state`, `edit_state` |
-| Empresa V5 | `inspect_company`, `read_company_document`, `update_company_document` |
-| Contratos V5 | `describe_state_tools` |
+| Estado | `inspect_state`, `read_state`, `search_state` |
+| Empresa | `inspect_company`, `read_company_document` |
+| Contratos | `describe_state_tools` |
 | Escritura conjunta | `record_research_advance` |
 | Python opcional | `describe_python_operator`, `run_python` |
 
-`write_file` admite Markdown, JSON válido, TXT y CSV UTF-8 hasta 128 KiB. Reemplaza
-atómicamente cada archivo. Lecturas paginadas hasta 32 KiB; búsquedas literales acotadas.
+El guardado admite Markdown, JSON válido, TXT y CSV UTF-8 hasta 128 KiB por archivo
+y 8 KiB para agenda. Crea o edita por fragmentos con versión vigente. Lecturas paginadas hasta 32 KiB; búsquedas literales acotadas.
 No se permite escapar del estado, acceder a rutas ocultas, streams de Windows,
 enlaces o junctions, escribir formatos ejecutables o sobrescribir `materiales/`.
 Estas comprobaciones no son un sandbox frente a procesos externos concurrentes.

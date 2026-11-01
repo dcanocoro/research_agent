@@ -231,51 +231,44 @@ La integración local, sus escenarios y sus pruebas se retiraron el 2026-10-24.
 El wheel compartido no se modifica. Las campañas actuales usan la CLI propia y
 `python -m research_campaigns`; los archivos históricos no se reescriben.
 
-## Herramientas de estado V5
+## Herramientas de estado
 
-Los experimentos nuevos usan V5 por defecto. Para crear un control sin las operaciones
-nuevas, indicar `--state-tools legacy` junto con `--new`. Los experimentos existentes
-sin `herramientas.json` mantienen legacy; sus instrucciones no se actualizan solas.
+<a id="herramientas-de-estado-v5"></a>
 
-```powershell
-.\.venv\Scripts\python.exe -m research_agent "Investiga la pregunta" --experiment artifacts/prueba-v5 --new --run-name inicial
-.\.venv\Scripts\python.exe -m research_agent "Continúa" --experiment artifacts/prueba-anterior --continue --run-name adopcion --adopt-state-tools-v5
-```
+La [ablación E1](experiments/e1-simplificacion/protocol.md) simplifica directamente
+el agente: hay una sola composición y una única escritura, `record_research_advance`.
+Se retiraron los selectores `--state-tools` y `--adopt-state-tools-v5`, también de
+las APIs internas. La identidad `state-tools-e1` en `herramientas.json` describe
+el contrato instalado; no selecciona una variante.
 
-Estos comandos ejecutan proveedores: son ejemplos de uso autorizado posterior, no
-checks locales. Añadir `--mandate` cuando el experimento sea deliberativo. La adopción
-conserva instrucciones previas, añade `herramientas-estado-v5.md` y registra transición
-con fecha real en la configuración externa al estado. No adopta automáticamente
-campañas congeladas; su reanudación mantiene los bloqueos de cambios.
+Los experimentos nuevos congelan `herramientas-estado.md` junto a sus otras
+instrucciones. Las continuaciones requieren ese contrato y su guía. Los experimentos
+anteriores, incluso sin configuración, se rechazan antes de construir clientes;
+usar el código anterior o una migración expresamente autorizada. No se reescriben
+instrucciones, estado ni capturas históricas.
 
-`research_campaigns run ... --state-tools legacy` permite preparar controles nuevos
-con el perfil anterior; omitirlo selecciona V5. La configuración queda congelada y
-`resume` no admite sustituirla.
+Las consultas conservan propósito, selectores, versiones y cursores. El guardado
+crea o edita de uno a cinco archivos con versiones y fragmentos exactos. Un target
+vacío solo es único en un archivo vacío: permite inicializarlo sin reemplazo ciego.
+En los demás casos se rechaza como ambiguo. Ante conflicto releer; ante
+`applied=true` inspeccionar lo aplicado antes de reintentar.
 
-La API `prepare_experiment(..., state_tools="legacy"|"v5")` selecciona perfil solo
-al crear; `adopt_state_tools_v5=True` permite adopción explícita al continuar.
-`build_agent(..., state_tools="v5")` y `register_files(..., state_tools="v5")` activan
-la composición directa, que mantiene legacy por defecto para consumidores anteriores.
+Los [contratos de estado](../src/research_agent/state_contracts/state.md) y
+[empresa](../src/research_agent/state_contracts/company.md) conservan ejemplos
+recuperables con `describe_state_tools`. La publicación, diarios y recuperación
+siguen siendo internos al runtime, fuera de la memoria editable.
 
-Las consultas nuevas usan `purpose`, selectores explícitos, versión y cursor opaco.
-Para editar se requiere el hash recién leído. Ante `applied=true` y fallo de captura,
-inspeccionar el documento antes de reintentar. La escritura por empresa exige motivo
-y lista explícita de referencias; conservarlas no certifica su validez. Los contratos
-y ejemplos de [estado](../src/research_agent/state_contracts/state.md) y
-[empresa](../src/research_agent/state_contracts/company.md) están empaquetados y son
-recuperables con `describe_state_tools`, sin ampliar el acceso de `read_file`.
-
-Verificación local: `.\.venv\Scripts\python.exe -m pytest -q tests/test_state_tools.py`.
-El caso H1/V1 usa cliente controlado y renovación real del contexto; no demuestra
-selección autónoma de herramientas ni mejora del razonamiento financiero.
+Verificación local sin proveedores:
+`python -m pytest -q tests/test_state_tools.py tests/test_v6.py tests/test_v7.py`.
+Estos checks no acreditan calidad financiera ni elección autónoma de herramientas.
 
 ## Continuidad V6 y evaluación offline
 
-La [V6](experiments/continuidad-v6/protocol.md) usa la misma familia de herramientas
-`v5`; no existe `--state-tools v6`. Nuevos experimentos deliberativos crean una agenda
+La [V6 histórica](experiments/continuidad-v6/protocol.md) introdujo continuidad sobre V5;
+el agente actual conserva esa continuidad con escritura única. Los nuevos experimentos deliberativos crean una agenda
 con foco activo y copian los prompts actuales. Las continuaciones mantienen sus copias;
 adoptar instrucciones nuevas exige editarlas explícitamente y conservar la versión
-anterior. Los contratos efectivos `state-tools-v6.1` se congelan por run; una campaña
+anterior. Los contratos efectivos se congelan por run; una campaña
 preparada con otro runtime no puede reanudarse silenciosamente.
 
 Las definiciones históricas se retiraron del checkout. Para una definición continua
