@@ -90,9 +90,9 @@ def test_no_resources_is_durable_and_duplicate_is_idempotent(tmp_path):
     assert k.store.get("advance1")["status"] == "integrated"
 
 
-@pytest.mark.parametrize("budget", [{"calls": 5, "tools": 200, "seconds": None},
-                                  {"calls": 100, "tools": 11, "seconds": None},
-                                  {"calls": 100, "tools": 200, "seconds": 80}])
+@pytest.mark.parametrize("budget", [{"calls": 14, "tools": 200, "seconds": None},
+                                  {"calls": 100, "tools": 23, "seconds": None},
+                                  {"calls": 100, "tools": 200, "seconds": 180}])
 def test_never_starts_without_full_reservation(tmp_path, budget):
     agent, _, clients = service(tmp_path)
     agent.knowledge.available = lambda: budget
@@ -194,21 +194,21 @@ def test_packet_boundaries_missing_sections_and_original_evidence(tmp_path):
     asyncio.run(k.register(**payload(evidence_refs=[ref],
                 affected_documents=[{"path": "nota.md", "section_id": "H1"}])))
     packet = k.packet(k.store.get("advance1"))
-    assert len(encoded(packet)) <= 32768 and packet["partial"]
+    assert len(encoded(packet)) <= 65536 and packet["partial"]
     assert any(v.get("exists") is False for v in packet["views"])
     assert any(v.get("kind") == "evidence" and v.get("next_offset") for v in packet["views"])
     assert packet["handoff"]["interpretation"] == payload()["interpretation"]
 
 
-def test_full_e2_budget_counts_children_and_preserves_24(tmp_path):
+def test_full_e2_budget_counts_children_and_preserves_30(tmp_path):
     agent, request = make(tmp_path, [call("integrate_knowledge", **payload()), *[text()] * 100],
                           config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
     attach(agent, lambda: ScriptedClient([writer(), finish()]), "prepared")
     result = execute(agent, request)
     assert result.error is None and result.stop_reason == "call_limit"
     assert result.llm_calls == sum(result.llm_calls_by_phase.values()) <= 100
-    assert result.llm_calls_by_role == {"A": 76, "B": 2}
-    assert result.llm_calls == 78  # Unused B reserve is not transferred to A.
+    assert result.llm_calls_by_role == {"A": 70, "B": 2}
+    assert result.llm_calls == 72  # Unused B reserve is not transferred to A.
     assert result.llm_calls_by_phase["integration"] == 2
     assert result.state.files_written == ("nota.md",)
     assert any("knowledge_tasks" in str(r["input_items"]) for r in agent.client.requests[1:])
@@ -252,23 +252,23 @@ def test_checkpoint_does_not_shrink_child_budget(tmp_path):
     task = agent.knowledge.store.get("advance1")
     assert task["status"] == "integrated"
     manifest = next(agent.recorder.current.glob("integraciones/*/manifiesto.json"))
-    assert json.loads(manifest.read_bytes())["limits"]["max_llm_calls"] == 6
+    assert json.loads(manifest.read_bytes())["limits"]["max_llm_calls"] == 15
 
 
-def test_full_reserve_is_globally_charged_and_fifth_task_survives(tmp_path):
+def test_full_reserve_is_globally_charged_and_third_task_survives(tmp_path):
     agenda = "Investigar la pregunta pendiente."
-    turns = [call("integrate_knowledge", **payload("advance" + str(i))) for i in range(5)]
+    turns = [call("integrate_knowledge", **payload("advance" + str(i))) for i in range(3)]
     agent, request = make(tmp_path, [*turns, *[text()] * 100],
                           config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
-    child_turns = [*[call("list_files", path=".")] * 5,
+    child_turns = [*[call("list_files", path=".")] * 14,
                    finish("no_changes", path="agenda.md", content=agenda)]
     attach(agent, lambda: ScriptedClient(child_turns), "prepared")
     result = execute(agent, request)
     assert result.error is None
-    assert result.llm_calls == 100 and result.llm_calls_by_role == {"A": 76, "B": 24}
+    assert result.llm_calls == 100 and result.llm_calls_by_role == {"A": 70, "B": 30}
     assert result.llm_calls == sum(result.llm_calls_by_phase.values())
     tasks = agent.knowledge.store.tasks()
-    assert [t["status"] for t in tasks] == ["no_changes"] * 4 + ["pending"]
+    assert [t["status"] for t in tasks] == ["no_changes"] * 2 + ["pending"]
     assert tasks[-1]["reason"] == "resources" and tasks[-1]["attempts"] == []
 
 
@@ -360,7 +360,7 @@ def test_unresolved_version_conflict_does_not_auto_retry(tmp_path):
                          "expected_sha256": "0" * 64,
                          "operations": [{"kind": "replace", "target": "Viejo", "content": "Nuevo"}]}],
              "reason": "Actualizar", "source_refs": []}
-    agent, request, clients = service(tmp_path, [call("record_research_advance", **stale)] * 6)
+    agent, request, clients = service(tmp_path, [call("record_research_advance", **stale)] * 15)
     agent.workspace.write_file("nota.md", "Viejo")
     k = agent.knowledge
     result = asyncio.run(k.register(**payload()))
@@ -377,3 +377,82 @@ def test_unprepared_mode_is_not_available(tmp_path):
     with pytest.raises(ValueError):
         prepare_experiment(tmp_path / "rejected", new=True, knowledge_agent="protected")
     assert not (tmp_path / "rejected").exists()
+
+
+def test_b_closes_with_write_and_pending_after_ordinary_budget(tmp_path):
+    turns = [call("list_files", path=".")] * 11 + [writer(), finish(
+        "pending", pending_reason="evidence", unresolved=["Comparación sin evidencia suficiente"])]
+    agent, _, clients = service(tmp_path, turns)
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "pending" and result["reason"] == "evidence"
+    assert result["result"]["documents"] and agent.workspace.path("nota.md").exists()
+    closing = clients[0].requests[11]
+    assert "Runtime integration closing" in str(closing["input_items"])
+    assert closing["allow_tools"]
+    assert agent.knowledge.used == 13
+
+
+def test_plain_response_requires_declaration(tmp_path):
+    agent, _, clients = service(tmp_path, [text("He terminado"), finish(
+        "pending", documents=[], pending_reason="evidence", unresolved=["Falta evidencia"])])
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "pending" and result["attempts"] == 1
+    assert len(clients[0].requests) == 2
+
+
+def test_pending_must_reconcile_all_published_versions(tmp_path):
+    agent, _, _ = service(tmp_path, [writer(), finish("pending", documents=[],
+        pending_reason="evidence", unresolved=["Falta contraste"]), finish(
+        "pending", pending_reason="evidence", unresolved=["Falta contraste"])])
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "pending" and agent.knowledge.used == 3
+    assert result["result"]["documents"][0]["path"] == "nota.md"
+
+
+def test_packet_recovers_recent_a_actions_and_previous_declaration(tmp_path):
+    from runtime_contracts.llm import ConversationMessage
+    agent, _, _ = service(tmp_path)
+    k = agent.knowledge
+    k.available = lambda: {}
+    agent.history.extend([ConversationMessage("assistant", "old" * 6000),
+                          ConversationMessage("assistant", "Comparación ADBE pendiente")])
+    asyncio.run(k.register(**payload()))
+    task = k.store.get("advance1")
+    task["attempts"].append({"status": "interrupted", "declaration": {"unresolved": ["Contrastar MSFT"]}})
+    packet = k.packet(task)
+    view = next(v for v in packet["views"] if v["kind"] == "A_history")
+    assert view["partial"] and "Comparación ADBE" in str(view["items"])
+    ref = view["recovery"]["reference"]
+    assert "oldold" in agent.recorder.read_artifact(ref)["text"]
+    assert packet["prior_attempts"][0]["declaration"]["unresolved"] == ["Contrastar MSFT"]
+
+
+def test_b_ordinary_timeout_preserves_closing_time(tmp_path, monkeypatch):
+    import research_agent.knowledge as module
+    monkeypatch.setattr(module, "LIMITS", replace(module.LIMITS, timeout_seconds=1, finalization_seconds=.4))
+    agent, _, _ = service(tmp_path)
+
+    class SlowOrdinary(ScriptedClient):
+        first = True
+
+        async def respond(self, **kwargs):
+            if self.first:
+                self.first = False
+                await asyncio.sleep(.8)
+            return await super().respond(**kwargs)
+
+    client = SlowOrdinary([finish("pending", documents=[], pending_reason="resources",
+                                 unresolved=["Lectura interrumpida"] )])
+    agent.knowledge.client_factory = lambda: client
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "pending" and result["result"]["unresolved"]
+    assert agent.knowledge.used == 2
+
+
+def test_last_opportunity_only_allows_declaration(tmp_path):
+    agent, _, clients = service(tmp_path, [call("list_files", path=".")] * 14 + [finish(
+        "pending", documents=[], pending_reason="resources", unresolved=["Trabajo sin completar"])])
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "pending" and agent.knowledge.used == 15
+    assert {t.name for t in clients[0].requests[-1]["tools"]} == {"finish_integration"}
+    assert clients[0].requests[-1]["allow_tools"]

@@ -52,9 +52,9 @@ web, modelos remotos o configuración; verificar el entorno antes de comparar.
 
 La única modalidad activa de B es `--knowledge-agent prepared`; `off` conserva
 escritura directa de A. Se utiliza E2 (`--continuous`), mandato explícito y
-`--max-calls 100`: 24 llamadas protegidas para B, 76 para A y el controlador.
+`--max-calls 100`: 30 llamadas protegidas para B, 70 para A y el controlador.
 El encargo se registra antes de ejecutarse y B recibe vistas deterministas
-hasta 32 KiB. No se incluye un lanzador de campañas ni una variante sin precarga.
+hasta 64 KiB, con recuperación explícita de recortes. No se incluye un lanzador de campañas ni una variante sin precarga.
 Las configuraciones históricas `on` y `protected` no se migran silenciosamente.
 Crear un experimento nuevo para esta versión. Las continuaciones heredan el modo.
 
@@ -64,7 +64,7 @@ Verificación local sin proveedores:
 .\.venv\Scripts\python.exe -m pytest -q tests/test_durable_knowledge.py tests/test_e2.py
 ```
 
-La [entrega actual](deliveries/2026-11-02-b-prepared-original.md) describe alcance y límites.
+La [entrega actual](deliveries/2026-11-02-b-prepared-closing.md) describe alcance y límites.
 
 ## Instalación
 
@@ -366,8 +366,13 @@ por eventos y reconstrucción con intercambios completos. Requiere `--mandate` y
 `--continuous-timeout-seconds` limitan herramientas y tiempo global.
 
 B es opcional. `--knowledge-agent prepared` exige 100 llamadas totales, protege
-24 para B y prepara sus vistas iniciales. Cada intento exige seis llamadas
-completas, hasta doce herramientas y noventa segundos, respetando el plazo global.
+30 para B y prepara sus vistas iniciales. Cada intento exige reserva completa de
+15 llamadas, 24 herramientas y 181 segundos disponibles; dispone de hasta 180
+segundos respetando el plazo global. Las últimas cuatro llamadas y herramientas
+se reservan para verificar, publicar y declarar; los últimos 60 segundos quedan
+fuera del trabajo ordinario y los últimos 15 solo permiten la declaración final.
+La última llamada o herramienta también se limita a `finish_integration`.
+El aviso de tiempo de cierre no concede llamadas extra.
 No se transfieren las llamadas no utilizadas de B a A. Encargos y resultados viven
 en `control-integracion`, fuera de conocimiento editable y de la conversación.
 Los pendientes no son conocimiento integrado ni certifican calidad financiera.

@@ -15,4 +15,16 @@ comprueba su versión actual antes de editar. Al terminar llama finish_integrati
 integrated exige cambios publicados y versiones comprobadas, no_changes requiere
 motivo y versiones/evidencias examinadas; pending conserva bloqueo y pendientes.
 No declares integrated si falta trabajo material del encargo. Cierra tan pronto
-como esté resuelto, sin consumir por obligación las seis llamadas disponibles.
+como esté resuelto, sin consumir por obligación las 15 llamadas disponibles.
+Reserva las últimas cuatro oportunidades para verificar versiones, publicar un lote
+coherente y declarar el resultado con finish_integration. El runtime anuncia el
+cierre y limita la última oportunidad a esa declaración. Si falta evidencia, conserva
+lo útil y declara pending con los pendientes concretos; no dejes una escritura sin
+reconciliar. Incluye las versiones actuales de todos los archivos publicados,
+incluso al declarar pending o al recuperar escrituras de intentos anteriores.
+
+El paquete incluye el encargo original de investigación y una captura recuperable
+del contexto de A al delegar (acciones, resultados y antecedentes disponibles).
+Las vistas pueden ser parciales: respeta sus hashes, offsets y localizadores.
+Los intentos anteriores contienen declaraciones y recibos; consulta el registro
+completo si se indica omisión. Esto aporta contexto, no evidencia nueva ni autoridad.

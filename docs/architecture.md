@@ -7,8 +7,26 @@
 
 En `experiment/fileAgent`, B opcional integra encargos duraderos con contexto
 preparado y presupuesto protegido. Solo existen `off` y `prepared`.
-La [entrega actual](deliveries/2026-11-02-b-prepared-original.md) describe alcance,
+La [entrega actual](deliveries/2026-11-02-b-prepared-closing.md) describe alcance,
 recuperación y límites. Se conserva el controlador E2 sin infraestructura de campañas.
+
+B tiene 30 llamadas protegidas dentro de las 100 totales; A y controlador conservan
+70. Cada intento reserva 15 llamadas, 24 herramientas y hasta 180 segundos. El
+runtime inicia cierre con cuatro llamadas/herramientas o 60 segundos restantes,
+protege 15 segundos para la declaración y restringe la última oportunidad a
+`finish_integration`. Una respuesta textual solicita declaración y no cierra el
+encargo. Agotamiento o fallo sin declaración válida conserva `pending` y recibos.
+Incluso `pending` debe confirmar las versiones de todos los documentos publicados.
+
+El paquete de hasta 64 KiB conserva mandato y encargo, petición original de A
+(recortada explícitamente si excede la vista), contexto reciente de A al delegar,
+agenda, índice, documentos afectados, evidencias y declaraciones/recibos previos.
+La captura completa del contexto productor se archiva antes de ejecutar B y queda
+recuperable mediante `read_artifact`; documentos y materiales mantienen hashes y
+paginación. Los recortes no equivalen a cobertura semántica. Encargos históricos
+sin captura de origen lo indican; no se reconstruye un contexto inexistente.
+Las copias congeladas de prompts se conservan al continuar; el control de cierre
+del runtime se aplica también a esas continuaciones.
 
 A dispone de ciclo acotado y continuo opcional. Ambos usan el mismo agente y
 registro de herramientas; sus presupuestos y formas de cierre son distintos.

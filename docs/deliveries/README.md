@@ -6,6 +6,8 @@ correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda v
 consultar [estrategia](../strategy.md). Los estados «sin campaña» describen el cierre
 de aquella entrega; las ejecuciones posteriores están en el [registro experimental](../experiments/README.md).
 
+- [2026-11-02 — Recursos y cierre de B preparado](2026-11-02-b-prepared-closing.md):
+  15 llamadas por intento, reserva de cierre y contexto recuperable; sin campaña.
 - [2026-11-01 — Agente de conocimiento opcional](2026-11-01-knowledge-agent.md):
   delegación secuencial activable en CLI, presupuestos compartidos y registros hijos;
   comprobaciones locales y tanda posterior de tres casos; persistencia insuficiente,

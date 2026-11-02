@@ -184,11 +184,11 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
     def a_remaining() -> int | None:
         if config.max_llm_calls is None:
             return None
-        return (76 - (calls - agent.knowledge.used)) if agent.knowledge is not None else config.max_llm_calls - calls
+        return ((100 - agent.configuration["knowledge_reserve"]) - (calls - agent.knowledge.used)) if agent.knowledge is not None else config.max_llm_calls - calls
 
     def child_model() -> None:
         nonlocal calls
-        if calls >= 100 or agent.knowledge.used >= 24:
+        if calls >= 100 or agent.knowledge.used >= agent.configuration["knowledge_reserve"]:
             raise RuntimeError("Integration budget exhausted")
         calls += 1
         calls_by_phase["integration"] += 1
@@ -554,7 +554,7 @@ async def run_continuous(agent: AgentA, request: AgentRequest) -> AgentResult:
                 if turn.function_call is not None:
                     timeout = min(agent.limits.timeout_seconds, deadline - monotonic()) if deadline is not None else agent.limits.timeout_seconds
                     if agent.knowledge is not None and turn.function_call.name in {"integrate_knowledge", "retry_knowledge"}:
-                        timeout = deadline - monotonic() if deadline is not None else max(120, agent.limits.timeout_seconds)
+                        timeout = deadline - monotonic() if deadline is not None else max(181, agent.limits.timeout_seconds)
                     if timeout <= 0:
                         reason = "time_limit"
                         break

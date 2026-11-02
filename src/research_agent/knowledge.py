@@ -17,8 +17,9 @@ from .recording import RunRecorder, encoded
 from .tools import ToolRegistry
 from .workspace import Workspace
 
-LIMITS = AgentLimits(max_llm_calls=6, max_tool_calls=12, timeout_seconds=90,
-                     finalization_seconds=5, max_context_bytes=128 * 1024)
+RESERVE = 30
+LIMITS = AgentLimits(max_llm_calls=15, max_tool_calls=24, timeout_seconds=180,
+                     finalization_seconds=60, max_context_bytes=128 * 1024)
 CONFIG = "agente-conocimiento.json"
 MODES = ("off", "prepared")
 
@@ -134,6 +135,7 @@ class KnowledgeService:
         root = (self.agent.recorder.experiment or self.agent.recorder.root.parent) / "control-integracion"
         self.store = TaskStore(root, self.agent.workspace, request.mandate or "")
         self.mandate = request.mandate or ""
+        self.research_request = request.message
         recover(self.agent.workspace, self.agent.recorder.root)
         for task in self.store.tasks():
             if task["attempts"] and task["attempts"][-1]["status"] == "running":
@@ -219,6 +221,12 @@ class KnowledgeService:
         assert self.store is not None
         task, created = self.store.register(payload)
         if created:
+            # Freeze the producing context before B runs or A renews its conversation.
+            task["origin"] = {"request": self.research_request[:2000],
+                              "request_partial": len(self.research_request) > 2000, "activation": self.activation,
+                              "history_ref": self.agent.recorder.artifact({"kind": "A_context_at_handoff",
+                                                                          "request": self.research_request, "items": self.agent.history})}
+            self.store.save(task)
             await self.drain()
         return self.public(self.store.get(task["task_id"]))
 
@@ -249,24 +257,49 @@ class KnowledgeService:
             if len(encoded([*selected, row])) <= 4096:
                 selected.append(row)
         return {"tasks": selected, "pending_count": sum(t["status"] == "pending" for t in tasks),
-                "omitted": len(rows) - len(selected), "recovery": {"tool": "inspect_knowledge_tasks", "offset": 0}, "B_calls_used": self.used, "B_reserved_remaining": 24 - self.used}
+                "omitted": len(rows) - len(selected), "recovery": {"tool": "inspect_knowledge_tasks", "offset": 0}, "B_calls_used": self.used, "B_reserved_remaining": RESERVE - self.used}
 
     def packet(self, task: dict[str, Any]) -> dict[str, Any]:
         payload = task["payload"]
         packet: dict[str, Any] = {"handoff": payload, "mandate_constraints": self.mandate,
-                                  "prior_attempts": [],
+                                  "prior_attempts": [], "origin": task.get("origin", {"unavailable": "legacy task"}),
                                   "task_recovery": {"tool": "read_integration_task", "offset": 0},
-                                  "views": [], "omitted": [], "partial": False}
-        if len(encoded(packet)) > 32768:
+                                  "views": [], "omitted": [], "partial": task.get("origin", {}).get("request_partial", False)}
+        if len(encoded(packet)) > 65536:
             raise ValueError("Protected handoff and mandate exceed packet limit")
-        for attempt in task["attempts"][-2:]:
-            summary = {"status": attempt["status"], "receipts": [
-                {k: r[k] for k in ("path", "sha256") if k in r} for r in attempt.get("receipts", [])[:5]]}
-            if len(encoded({**packet, "prior_attempts": [*packet["prior_attempts"], summary]})) < 30000:
+        for attempt in reversed(task["attempts"]):
+            summary = {"status": attempt["status"], "declaration": attempt.get("declaration"),
+                       "stop_reason": attempt.get("stop_reason"), "receipts": [
+                {k: r[k] for k in ("path", "sha256") if k in r} for r in attempt.get("receipts", [])]}
+            if len(encoded({**packet, "prior_attempts": [*packet["prior_attempts"], summary]})) < 60000:
                 packet["prior_attempts"].append(summary)
             else:
                 packet["partial"] = True
                 packet["omitted"] = ["Previous attempt details: use read_integration_task"]
+        origin_ref = task.get("origin", {}).get("history_ref")
+        if origin_ref:
+            # Complete original is recoverable; select recent items, marking oversized previews explicitly.
+            chunks, offset = [], 0
+            while True:
+                data = self.agent.recorder.read_artifact(origin_ref, offset=offset, max_bytes=32768)
+                chunks.append(data["text"])
+                if data.get("next_offset") is None:
+                    break
+                offset = data["next_offset"]
+            history = json.loads("".join(chunks))["items"]
+            recent: list[Any] = []
+            summarized = False
+            for index, item in reversed(list(enumerate(history))):
+                if len(encoded(item)) > 6000:
+                    item = {"item_index": index, "partial": True,
+                            "preview": encoded(item)[:4000].decode("utf-8", errors="ignore")}
+                    summarized = True
+                if len(encoded([item, *recent])) > 12000:
+                    break
+                recent.insert(0, item)
+            self.add_view(packet, {"kind": "A_history", "items": recent,
+                                   "partial": summarized or len(recent) != len(history),
+                                   "recovery": {"tool": "read_artifact", "reference": origin_ref}})
         docs = [{"path": "indice.md", "section_id": None}, {"path": "agenda.md", "section_id": None},
                 *payload["affected_documents"]]
         seen = set()
@@ -300,20 +333,24 @@ class KnowledgeService:
             except (ValueError, OSError) as exc:
                 view = {"kind": "evidence", "reference": ref, "unavailable": type(exc).__name__}
             self.add_view(packet, view)
-        assert len(encoded(packet)) <= 32768
+        assert len(encoded(packet)) <= 65536
         return packet
 
     @staticmethod
     def add_view(packet: dict[str, Any], view: dict[str, Any]) -> None:
-        if len(encoded({**packet, "views": [*packet["views"], view]})) < 31000:
+        if len(encoded({**packet, "views": [*packet["views"], view]})) < 62000:
             packet["views"].append(view)
             packet["partial"] |= view.get("partial", False) or view.get("next_offset") is not None
         else:
             packet["partial"] = True
             # The full handoff already lists every document/reference, including omitted views.
-            packet["omitted"] = ["Additional views omitted; recover documents/evidence from handoff references"]
+            notice = "Additional views omitted; recover documents/evidence from handoff references and origin.history_ref"
+            if notice not in packet["omitted"]:
+                packet["omitted"].append(notice)
 
     def validate_outcome(self, task: dict[str, Any], outcome: dict[str, Any], receipts: list[dict[str, Any]]) -> None:
+        if outcome["status"] == "pending" and not outcome["unresolved"]:
+            raise ValueError("Pending requires explicit unresolved task work")
         if outcome["status"] == "pending" and outcome["pending_reason"] == "none":
             raise ValueError("Pending requires resources, evidence or conflict reason")
         if outcome["status"] != "pending" and outcome["pending_reason"] != "none":
@@ -329,7 +366,7 @@ class KnowledgeService:
             if current != doc["sha256"]:
                 raise ValueError("version_conflict")
         for receipt in receipts:
-            if outcome["status"] == "integrated" and receipt["path"] not in versions:
+            if receipt["path"] not in versions:
                 raise ValueError("All written documents require confirmed versions")
         for ref in outcome["evidence_refs"]:
             self.agent.recorder.read_artifact(ref, max_bytes=1)
@@ -345,8 +382,8 @@ class KnowledgeService:
                 continue
             budget = self.available()
             remaining_time = budget.get("seconds")
-            if (24 - self.used < 6 or budget.get("calls", 0) < 6 or budget.get("tools", 0) < 12
-                    or (remaining_time is not None and remaining_time < 91)):
+            if (RESERVE - self.used < LIMITS.max_llm_calls or budget.get("calls", 0) < LIMITS.max_llm_calls or budget.get("tools", 0) < LIMITS.max_tool_calls
+                    or (remaining_time is not None and remaining_time < LIMITS.timeout_seconds + 1)):
                 task["reason"] = "resources"
                 self.store.save(task)
                 continue
@@ -360,8 +397,8 @@ class KnowledgeService:
         store = self.store
         packet = self.packet(task)
         budget = self.available()
-        if (24 - self.used < 6 or budget.get("calls", 0) < 6 or budget.get("tools", 0) < 12
-                or (budget.get("seconds") is not None and budget["seconds"] < 91)):
+        if (RESERVE - self.used < LIMITS.max_llm_calls or budget.get("calls", 0) < LIMITS.max_llm_calls or budget.get("tools", 0) < LIMITS.max_tool_calls
+                or (budget.get("seconds") is not None and budget["seconds"] < LIMITS.timeout_seconds + 1)):
             task["reason"] = "resources"
             store.save(task)
             return
@@ -403,7 +440,7 @@ class KnowledgeService:
                                       "task_id": task["task_id"], "attempt_id": attempt["id"]},
                        instructions=instructions, role="B")
         child.journal_root = self.agent.recorder.root
-        child.deadline_override = min(monotonic() + 90, budget.get("deadline") or float("inf"))
+        child.deadline_override = min(monotonic() + LIMITS.timeout_seconds, budget.get("deadline") or float("inf"))
 
         def charge_model() -> None:
             self.charge_model()
@@ -497,7 +534,7 @@ def attach(agent: Any, client_factory: Callable[[], Any], mode: str) -> None:
     agent.knowledge = service
     agent.tools.unregister("record_research_advance")
     agent.tools.contracts.pop("record_research_advance", None)
-    agent.configuration = {**agent.configuration, "knowledge_mode": mode, "knowledge_reserve": 24,
+    agent.configuration = {**agent.configuration, "knowledge_mode": mode, "knowledge_reserve": RESERVE,
                            "knowledge_limits": asdict(LIMITS)}
     string = {"type": "string", "minLength": 1}
     doc = {"type": "object", "properties": {"path": string, "section_id": {"type": ["string", "null"]}},

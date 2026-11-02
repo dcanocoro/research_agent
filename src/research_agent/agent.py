@@ -68,6 +68,7 @@ class AgentA:
         consolidation_calls = 0
         consolidation_deadline = deadline
         response_seconds = self.limits.finalization_seconds * 2 / 3
+        integration_response_seconds = min(15, self.limits.finalization_seconds / 4)
         captures = ExitStack()
         captured: list[dict[str, Any]] = []
 
@@ -122,7 +123,28 @@ class AgentA:
                         reason = "timeout"
                         break
                     size = len(encoded({"system": system, "input": self.history, "tools": self.tools.specs()}))
-                    if can_consolidate:
+                    if self.role == "B":
+                        # Four tool-capable calls: verify, publish, declare, repair declaration.
+                        if phase == "research" and (calls >= self.limits.max_llm_calls - 4
+                                or tool_calls >= self.limits.max_tool_calls - 4
+                                or remaining <= self.limits.finalization_seconds
+                                or size >= self.limits.max_context_bytes - 32768):
+                            phase = "integration_closing"
+                            self.history.append(ConversationMessage("user",
+                                "Runtime integration closing: stop expanding the task. Verify applied changes, "
+                                "publish one coherent batch if justified, then call finish_integration. "
+                                "Declare pending with explicit unresolved work when evidence is insufficient. "
+                                "A text response does not close the integration. Prioritize closure now; "
+                                "the final opportunity only accepts finish_integration."))
+                        final_declaration = (calls >= self.limits.max_llm_calls - 1
+                                             or tool_calls >= self.limits.max_tool_calls - 1
+                                             or remaining <= integration_response_seconds)
+                        closing = False
+                        allowed = frozenset({"finish_integration"}) if final_declaration else None
+                        # Ordinary work cannot consume the time reserved for closure.
+                        call_deadline = (deadline - self.limits.finalization_seconds if phase == "research"
+                                         else deadline if final_declaration else deadline - integration_response_seconds)
+                    elif can_consolidate:
                         margin = min(32768, self.limits.max_context_bytes // 4)
                         if (remaining <= response_seconds or calls >= self.limits.max_llm_calls - 1
                                 or tool_calls >= self.limits.max_tool_calls):
@@ -149,7 +171,8 @@ class AgentA:
                             reason = "context_limit" if size >= self.limits.max_context_bytes - 4096 else "budget"
                             self.history.append(ConversationMessage("user", "Execution resources are ending. Deliver the best supported answer from available evidence, state limitations and unfinished work. Do not call tools."))
                     specs = self.tools.specs(allowed)
-                    phase_capacity = (0 if closing else min(2 - consolidation_calls,
+                    phase_capacity = (self.limits.max_llm_calls - calls - (4 if phase == "research" else 0)
+                                      if self.role == "B" else 0 if closing else min(2 - consolidation_calls,
                                       self.limits.max_llm_calls - calls - 1) if phase == "consolidation"
                                       else self.limits.max_llm_calls - calls - (3 if can_consolidate else 1))
                     budget = {"phase": phase, "llm_calls_available": self.limits.max_llm_calls - calls,
@@ -174,6 +197,10 @@ class AgentA:
                                 tools=specs, allow_tools=not closing,
                                 timeout=max(0.001, call_deadline - monotonic()))
                     except TimeoutError:
+                        if self.role == "B" and call_deadline < deadline:
+                            phase = "integration_closing"
+                            self.history.append(ConversationMessage("user", "Ordinary integration time ended. Close now with finish_integration, preserving explicit pending work."))
+                            continue
                         if not can_consolidate or closing:
                             raise
                         self.recorder.event("lab.phase.timeout", phase=phase, operation="model")
@@ -181,6 +208,12 @@ class AgentA:
                         continue
                     self.history.extend(turn.output_items)
                     if turn.function_call is None:
+                        if self.role == "B":
+                            phase = "integration_closing"
+                            self.history.append(ConversationMessage("user",
+                                "Integration is still open. Use finish_integration to declare the verified result "
+                                "or explicit pending work; a text response is insufficient."))
+                            continue
                         if turn.text.strip():
                             answer, status = turn.text, "completed"
                             if not closing:
@@ -194,7 +227,7 @@ class AgentA:
                     if self.on_tool_call is not None:
                         self.on_tool_call()
                     tool_calls += 1
-                    tool_time = (call_deadline - monotonic() if can_consolidate else
+                    tool_time = (call_deadline - monotonic() if can_consolidate or self.role == "B" else
                                  deadline - monotonic() - (self.limits.finalization_seconds if self.role == "A" else 0))
                     try:
                         async with asyncio.timeout(max(0.001, tool_time)):
@@ -279,12 +312,16 @@ class AgentA:
             "objective_evaluation_policy": self._objective_policy(request),
             "knowledge_checkpoint_policy": checkpoint_policy,
             "persistent_context": persistent,
-            "closing_policy": {"consolidation_calls": 2, "response_calls": 1,
+            "closing_policy": ({"integration_closing_calls": 4, "final_tool": "finish_integration",
+                                "reserved_seconds": self.limits.finalization_seconds,
+                                "final_declaration_seconds": min(15, self.limits.finalization_seconds / 4),
+                                "closing_tool_reserve": 4}
+                               if self.role == "B" else {"consolidation_calls": 2, "response_calls": 1,
                                "consolidation_seconds_at_time_threshold": self.limits.finalization_seconds / 3,
                                "response_seconds": self.limits.finalization_seconds * 2 / 3,
                                "context_reserve_bytes": min(32768, self.limits.max_context_bytes // 4),
                                "consolidation_tools": sorted(self.tools.consolidation_tools or ())}
-                              if self.role == "A" and request.continuous is None and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
+                              if self.role == "A" and request.continuous is None and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None),
             "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
             "state_contracts": self.tools.contracts,
             "state_tools_configuration": state_tools_configuration,
