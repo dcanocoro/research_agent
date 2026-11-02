@@ -1,0 +1,379 @@
+"""Durable B, E2 budget protection and crash recovery without external services."""
+import asyncio
+import hashlib
+import json
+from dataclasses import replace
+
+import pytest
+
+from research_agent.contracts import ContinuousConfig
+from research_agent.knowledge import attach, mode_for, TaskStore
+from research_agent.experiments import prepare_experiment
+from research_agent.runtime_control import RuntimeState
+from research_agent.recording import encoded
+from support import ScriptedClient, save_arguments
+from test_continuous import make, call, text, execute
+
+
+def payload(task_id="advance1", **changes):
+    return {"task_id": task_id, "finding": "La hipótesis requiere revisión", "interpretation": "Fundamento provisional",
+            "unresolved": [], "evidence_refs": [], "affected_documents": [{"path": "nota.md", "section_id": None}],
+            "scope": ["nota.md"], **changes}
+
+
+def finish(status="integrated", path="nota.md", content="Avance", **changes):
+    return call("finish_integration", **{"status": status, "reason": "Integración comprobada",
+                "documents": [{"path": path, "sha256": hashlib.sha256(content.encode()).hexdigest()}],
+                "evidence_refs": [], "unresolved": [], "pending_reason": "none", **changes})
+
+
+def writer(path="nota.md", content="Avance"):
+    return call("record_research_advance", **save_arguments(path=path, content=content))
+
+
+def service(tmp_path, child_turns=(), mode="prepared"):
+    agent, request = make(tmp_path, [], config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
+    clients = []
+
+    def factory():
+        client = ScriptedClient(child_turns)
+        clients.append(client)
+        return client
+
+    attach(agent, factory, mode)
+    agent._prepare(request, "activation1", "interaction")
+    state = RuntimeState()
+    agent.knowledge.begin(request, state)
+    agent.knowledge.available = lambda: {"calls": 100, "tools": 200, "seconds": None}
+    return agent, request, clients
+
+
+def test_store_precedes_child_and_reports_verified_integration(tmp_path):
+    agent, _, clients = service(tmp_path, [writer(), finish()])
+    integration = agent.knowledge
+    original = integration.client_factory
+
+    def factory():
+        task = integration.store.get("advance1")
+        assert task["status"] == "pending" and task["attempts"][-1]["status"] == "running"
+        return original()
+
+    integration.client_factory = factory
+    result = asyncio.run(integration.register(**payload()))
+    assert result["status"] == "integrated" and result["semantic_validity_assessed"] is False
+    assert agent.workspace.path("nota.md").read_text() == "Avance"
+    assert integration.used == 2
+    assert len(clients[0].requests) == 2
+    names = {t.name for t in clients[0].requests[0]["tools"]}
+    assert {"finish_integration", "read_integration_task", "record_research_advance"} <= names
+    assert not names & {"integrate_knowledge", "search_web", "calculate", "run_python"}
+    assert integration.state.declarations[-1]["source"] == "knowledge_agent"
+    assert not integration.state.declarations[-1]["semantic_validity_assessed"]
+
+
+def test_no_resources_is_durable_and_duplicate_is_idempotent(tmp_path):
+    agent, request, clients = service(tmp_path, [writer(), finish()])
+    k = agent.knowledge
+    k.available = lambda: {"calls": 5, "tools": 200, "seconds": None}
+    result = asyncio.run(k.register(**payload()))
+    assert result["status"] == "pending" and result["reason"] == "resources"
+    assert clients == []
+    same = asyncio.run(k.register(**payload()))
+    assert same["task_id"] == result["task_id"] and same["attempts"] == 0
+    with pytest.raises(ValueError, match="different content"):
+        asyncio.run(k.register(**payload(finding="Otro avance")))
+    # Renewal does not discard the queue; an activation receives a new reserved budget.
+    agent._prepare(request, "activation2", "interaction2")
+    k.begin(request, RuntimeState())
+    k.available = lambda: {"calls": 100, "tools": 200, "seconds": None}
+    asyncio.run(k.drain())
+    assert k.store.get("advance1")["status"] == "integrated"
+
+
+@pytest.mark.parametrize("budget", [{"calls": 5, "tools": 200, "seconds": None},
+                                  {"calls": 100, "tools": 11, "seconds": None},
+                                  {"calls": 100, "tools": 200, "seconds": 80}])
+def test_never_starts_without_full_reservation(tmp_path, budget):
+    agent, _, clients = service(tmp_path)
+    agent.knowledge.available = lambda: budget
+    asyncio.run(agent.knowledge.register(**payload()))
+    assert clients == []
+
+
+def test_store_failure_never_constructs_child(tmp_path, monkeypatch):
+    agent, _, clients = service(tmp_path)
+    monkeypatch.setattr(agent.knowledge.store, "save", lambda value: (_ for _ in ()).throw(OSError("disk")))
+    with pytest.raises(OSError):
+        asyncio.run(agent.knowledge.register(**payload()))
+    assert clients == []
+
+
+def test_invalid_paths_and_references_do_not_register(tmp_path):
+    agent, _, _ = service(tmp_path)
+    for data in [payload(scope=["../outside"]), payload(evidence_refs=["nota.md"]),
+                 payload(evidence_refs=["archivo/no/missing.json"]), payload(task_id="../bad")]:
+        with pytest.raises((ValueError, OSError)):
+            asyncio.run(agent.knowledge.register(**data))
+    assert agent.knowledge.store.tasks() == []
+
+
+def test_pending_evidence_requires_explicit_retry(tmp_path):
+    agent, _, clients = service(tmp_path, [finish("pending", documents=[], pending_reason="evidence",
+                                              unresolved=["Falta fuente primaria"])])
+    k = agent.knowledge
+    asyncio.run(k.register(**payload()))
+    assert k.store.get("advance1")["reason"] == "evidence"
+    asyncio.run(k.drain())
+    assert len(clients) == 1
+    k.client_factory = lambda: ScriptedClient([writer(), finish()])
+    result = asyncio.run(k.retry("advance1"))
+    assert result["status"] == "integrated" and result["attempts"] == 2
+
+
+def test_no_changes_has_versions_and_no_writes(tmp_path):
+    agent, _, _ = service(tmp_path, [finish("no_changes")])
+    agent.workspace.write_file("nota.md", "Avance")
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "no_changes"
+    assert agent.tools.files_written == []
+
+
+def test_partial_write_cancel_then_reconcile_without_duplicate_write(tmp_path):
+    agent, request, _ = service(tmp_path, [writer(), asyncio.CancelledError()])
+    k = agent.knowledge
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(k.register(**payload()))
+    assert agent.workspace.path("nota.md").read_text() == "Avance"
+    assert k.store.get("advance1")["attempts"][-1]["status"] == "running"
+    agent._prepare(request, "activation2", "interaction2")
+    k.begin(request, RuntimeState())
+    assert k.store.get("advance1")["reason"] == "recovery"
+    k.client_factory = lambda: ScriptedClient([finish()])
+    asyncio.run(k.drain())
+    assert k.store.get("advance1")["status"] == "integrated"
+    assert len(list((agent.recorder.root / "transacciones").glob("*.json"))) == 1
+
+
+def test_publication_before_result_store_failure_is_recoverable(tmp_path, monkeypatch):
+    agent, request, _ = service(tmp_path, [writer(), finish()])
+    k = agent.knowledge
+    original = k.store.save
+
+    def fail_after_declaration(task):
+        if task["status"] == "integrated":
+            raise OSError("result publication failed")
+        original(task)
+
+    monkeypatch.setattr(k.store, "save", fail_after_declaration)
+    with pytest.raises(OSError):
+        asyncio.run(k.register(**payload()))
+    agent._prepare(request, "activation2", "interaction2")
+    k.begin(request, RuntimeState())
+    task = k.store.get("advance1")
+    assert task["status"] == "integrated" and task["result"]["documents"]
+
+
+def test_namespaces_isolate_workspace_and_mandate(tmp_path):
+    agent, request, _ = service(tmp_path)
+    k = agent.knowledge
+    k.available = lambda: {}
+    asyncio.run(k.register(**payload()))
+    original = k.store
+    k.begin(replace(request, mandate="Otro mandato"), RuntimeState())
+    assert k.store.tasks() == [] and len(original.tasks()) == 1
+    other = TaskStore(original.root.parent, type(agent.workspace)(tmp_path / "different"), request.mandate)
+    assert other.tasks() == []
+
+
+def test_packet_boundaries_missing_sections_and_original_evidence(tmp_path):
+    agent, _, _ = service(tmp_path)
+    k = agent.knowledge
+    k.available = lambda: {}
+    ref = agent.recorder.artifact({"source": "x" * 4000})
+    agent.workspace.write_file("nota.md", "# H1 Fundamento\n" + "x" * 10000)
+    asyncio.run(k.register(**payload(evidence_refs=[ref],
+                affected_documents=[{"path": "nota.md", "section_id": "H1"}])))
+    packet = k.packet(k.store.get("advance1"))
+    assert len(encoded(packet)) <= 32768 and packet["partial"]
+    assert any(v.get("exists") is False for v in packet["views"])
+    assert any(v.get("kind") == "evidence" and v.get("next_offset") for v in packet["views"])
+    assert packet["handoff"]["interpretation"] == payload()["interpretation"]
+
+
+def test_full_e2_budget_counts_children_and_preserves_24(tmp_path):
+    agent, request = make(tmp_path, [call("integrate_knowledge", **payload()), *[text()] * 100],
+                          config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
+    attach(agent, lambda: ScriptedClient([writer(), finish()]), "prepared")
+    result = execute(agent, request)
+    assert result.error is None and result.stop_reason == "call_limit"
+    assert result.llm_calls == sum(result.llm_calls_by_phase.values()) <= 100
+    assert result.llm_calls_by_role == {"A": 76, "B": 2}
+    assert result.llm_calls == 78  # Unused B reserve is not transferred to A.
+    assert result.llm_calls_by_phase["integration"] == 2
+    assert result.state.files_written == ("nota.md",)
+    assert any("knowledge_tasks" in str(r["input_items"]) for r in agent.client.requests[1:])
+
+
+def test_mode_is_frozen_and_b_instructions_excluded_from_a(tmp_path):
+    root = tmp_path / "experiment"
+    prompts = prepare_experiment(root, new=True, knowledge_agent="prepared")
+    assert mode_for(root) == "prepared"
+    assert not {"agente-conocimiento.md", "delegacion-conocimiento.md"} & {p.name for p in prompts}
+    with pytest.raises(ValueError, match="frozen"):
+        prepare_experiment(root, new=False, knowledge_agent="off")
+
+
+def test_checkpoint_does_not_shrink_child_budget(tmp_path):
+    from research_agent.context_budget import ByteCounter
+    from research_agent.continuous import POLICY, context_seed
+    from research_agent.runtime_control import INSTRUCTION
+    from importlib.resources import files
+
+    class AtCheckpoint(ScriptedClient):
+        delegated = False
+
+        async def respond(self, **kwargs):
+            if not self.delegated and "Context renewal approaching" in str(kwargs["input_items"]):
+                self.delegated = True
+                self.requests.append(kwargs)
+                return call("integrate_knowledge", **payload())
+            return await super().respond(**kwargs)
+
+    agent, request = make(tmp_path, [], config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
+    agent.client = AtCheckpoint([text("x" * 30000), *[text()] * 100])
+    attach(agent, lambda: ScriptedClient([writer(), finish()]), "prepared")
+    system = "\n\n".join(files("research_agent").joinpath("prompts", n).read_text(encoding="utf-8")
+                         for n in ("agent_a.md", "state_tools.md", "deliberation.md", "knowledge_delegation.md"))
+    size = ByteCounter().measure(system + POLICY + INSTRUCTION, context_seed(agent, request, "initial"), agent.tools.specs(), 128)
+    request = replace(request, continuous=replace(request.continuous,
+                      consolidation_threshold_bytes=size["budgeted_bytes"] + 12000))
+    result = execute(agent, request)
+    assert result.error is None and result.llm_calls <= 100
+    task = agent.knowledge.store.get("advance1")
+    assert task["status"] == "integrated"
+    manifest = next(agent.recorder.current.glob("integraciones/*/manifiesto.json"))
+    assert json.loads(manifest.read_bytes())["limits"]["max_llm_calls"] == 6
+
+
+def test_full_reserve_is_globally_charged_and_fifth_task_survives(tmp_path):
+    agenda = "Investigar la pregunta pendiente."
+    turns = [call("integrate_knowledge", **payload("advance" + str(i))) for i in range(5)]
+    agent, request = make(tmp_path, [*turns, *[text()] * 100],
+                          config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
+    child_turns = [*[call("list_files", path=".")] * 5,
+                   finish("no_changes", path="agenda.md", content=agenda)]
+    attach(agent, lambda: ScriptedClient(child_turns), "prepared")
+    result = execute(agent, request)
+    assert result.error is None
+    assert result.llm_calls == 100 and result.llm_calls_by_role == {"A": 76, "B": 24}
+    assert result.llm_calls == sum(result.llm_calls_by_phase.values())
+    tasks = agent.knowledge.store.tasks()
+    assert [t["status"] for t in tasks] == ["no_changes"] * 4 + ["pending"]
+    assert tasks[-1]["reason"] == "resources" and tasks[-1]["attempts"] == []
+
+
+def test_scope_rejects_entire_batch_and_original_materials(tmp_path):
+    changes = save_arguments(path="nota.md", content="Avance")
+    changes["changes"].extend(save_arguments(path="fuera.md", content="Fuera")["changes"])
+    agent, _, _ = service(tmp_path, [call("record_research_advance", **changes),
+                         finish("pending", documents=[], pending_reason="conflict", unresolved=["Ámbito"] )])
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "pending" and result["reason"] == "conflict"
+    assert not agent.workspace.path("nota.md").exists()
+    with pytest.raises(ValueError, match="read-only"):
+        asyncio.run(agent.knowledge.register(**payload("source", scope=["materiales/"],
+                    affected_documents=[{"path": "materiales/source.json", "section_id": None}])))
+
+
+def test_no_false_integration_without_receipts_or_with_stale_versions(tmp_path):
+    agent, _, _ = service(tmp_path)
+    k = agent.knowledge
+    k.available = lambda: {}
+    asyncio.run(k.register(**payload()))
+    task = k.store.get("advance1")
+    outcome = finish().function_call.arguments
+    with pytest.raises(ValueError, match="confirmed changes"):
+        k.validate_outcome(task, outcome, [])
+    agent.workspace.write_file("nota.md", "Versión diferente")
+    with pytest.raises(ValueError, match="version_conflict"):
+        k.validate_outcome(task, dict(outcome), [{"path": "nota.md"}])
+
+
+def test_child_capture_error_preserves_receipts(tmp_path, monkeypatch):
+    from research_agent.knowledge import ChildRecorder
+    original = ChildRecorder.artifact
+
+    def broken(self, value):
+        if isinstance(value, dict) and value.get("operation") == "record_research_advance":
+            raise OSError("capture unavailable")
+        return original(self, value)
+
+    monkeypatch.setattr(ChildRecorder, "artifact", broken)
+    agent, _, _ = service(tmp_path, [writer(), finish()])
+    result = asyncio.run(agent.knowledge.register(**payload()))
+    assert result["status"] == "integrated"
+    assert agent.knowledge.confirmed(agent.knowledge.store.get("advance1"))
+    assert agent.recorder.capture_errors
+
+
+def test_child_time_is_independent_of_a_operation_limit(tmp_path):
+    from research_agent.contracts import AgentLimits
+
+    class SlowerThanA(ScriptedClient):
+        async def respond(self, **kwargs):
+            if not self.requests:
+                await asyncio.sleep(1.2)
+            return await super().respond(**kwargs)
+
+    agent, request = make(tmp_path, [call("integrate_knowledge", **payload()), *[text()] * 100],
+                          config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
+    agent.limits = AgentLimits(timeout_seconds=1, finalization_seconds=.2)
+    attach(agent, lambda: SlowerThanA([writer(), finish()]), "prepared")
+    result = execute(agent, request)
+    assert result.error is None
+    assert agent.knowledge.store.get("advance1")["status"] == "integrated"
+
+
+def test_recovery_preserves_evidence_blocker_after_result_failure(tmp_path, monkeypatch):
+    agent, request, clients = service(tmp_path, [finish("pending", documents=[], pending_reason="evidence",
+                                                       unresolved=["Fuente no recuperada"])])
+    k = agent.knowledge
+    original = k.store.save
+
+    def fail(task):
+        if task["reason"] == "evidence":
+            raise OSError("publication failed")
+        original(task)
+
+    monkeypatch.setattr(k.store, "save", fail)
+    with pytest.raises(OSError):
+        asyncio.run(k.register(**payload()))
+    agent._prepare(request, "activation2", "interaction2")
+    k.begin(request, RuntimeState())
+    assert k.store.get("advance1")["reason"] == "evidence"
+    asyncio.run(k.drain())
+    assert len(clients) == 1
+
+
+def test_unresolved_version_conflict_does_not_auto_retry(tmp_path):
+    stale = {"changes": [{"path": "nota.md", "action": "edit", "content": None,
+                         "expected_sha256": "0" * 64,
+                         "operations": [{"kind": "replace", "target": "Viejo", "content": "Nuevo"}]}],
+             "reason": "Actualizar", "source_refs": []}
+    agent, request, clients = service(tmp_path, [call("record_research_advance", **stale)] * 6)
+    agent.workspace.write_file("nota.md", "Viejo")
+    k = agent.knowledge
+    result = asyncio.run(k.register(**payload()))
+    assert result["reason"] == "conflict"
+    agent._prepare(request, "activation2", "interaction2")
+    k.begin(request, RuntimeState())
+    asyncio.run(k.drain())
+    assert len(clients) == 1
+
+
+def test_unprepared_mode_is_not_available(tmp_path):
+    with pytest.raises(ValueError):
+        mode_for(None, "protected")
+    with pytest.raises(ValueError):
+        prepare_experiment(tmp_path / "rejected", new=True, knowledge_agent="protected")
+    assert not (tmp_path / "rejected").exists()

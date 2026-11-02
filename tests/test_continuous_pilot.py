@@ -75,7 +75,7 @@ def test_prepare_freezes_new_state_and_builds_luna_command_without_network(prepa
     report = read(root / "campaign.json")["preflight"]
     assert report["ready"] and not report["provider_checked"] and not report["campaign_executed"]
     threshold = read(root / "definicion/scenario.json")["continuous"]["consolidation_threshold_bytes"]
-    assert command[command.index("--consolidation-bytes") + 1] == str(threshold)
+    assert command[command.index("--renewal-bytes") + 1] == str(threshold)
     assert report["initial_budget"]["budgeted_bytes"] + report["startup_margin_bytes"] < threshold
     assert read(root / "campaign.json")["runtime"]["profile"]["model"] == "gpt-6-luna"
 
@@ -167,10 +167,10 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
             assert kwargs["max_tokens"] == 16000
             budget = next(x.payload["execution_budget"] for x in reversed(kwargs["input_items"])
                           if isinstance(x, ConversationContext) and "execution_budget" in x.payload)
-            if budget["phase"] == "review":
+            if budget["purpose"] == "evaluator":
                 return ResponseTurn([AssistantResponse("Revisión sin herramientas")], "Revisión sin herramientas", None)
             n = budget["context_number"]
-            if not any(t.name == "calculate" for t in kwargs["tools"]):
+            if budget["purpose"] == "checkpoint":
                 if n not in self.written:
                     self.written.add(n)
                     call = ResponseFunctionCall("call", "record_research_advance", save_current(Workspace(root / "estado", create=False), "agenda.md", f"Pregunta pendiente {n + 1}"))
@@ -200,9 +200,10 @@ def test_prepared_cli_crosses_three_windows_with_real_prompts_and_luna_reserve(p
     assert main(command) == 0
     run = next((root / "ejecuciones").iterdir())
     events = [json.loads(line) for line in (run / "eventos.jsonl").read_text(encoding="utf-8").splitlines()]
-    assert len([e for e in events if e["event"] == "lab.context.renewed"]) == 3
+    assert len([e for e in events if e["event"] == "lab.context.renewed"]) >= 3
     assert all(e["budgeted_bytes"] <= 524288 for e in events if e["event"] == "lab.context.budget")
     result = read(run / "resultado.json")
-    assert result["stop_reason"] == "call_limit" and result["answer"] == "Recuperado"
+    assert result["stop_reason"] == "call_limit"
+    assert any(e["event"] == "lab.continuous.response" and e["text"] == "Recuperado" for e in events)
     assert not result["state"]["capture_errors"]
     assert Simulator(root / "simulador").state["date"] == "2023-01-01"

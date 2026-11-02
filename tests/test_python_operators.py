@@ -354,7 +354,7 @@ def test_python_in_continuous_mode(tmp_path, configuration):
     a, req = make(tmp_path, [response(call=("run_python", wire({
         "operator": "calculate", "code": 'def run(inputs, parameters):\n    return {"x": 4}',
         "inputs": {}, "input_refs": {}, "parameters": {}, "source_refs": []}))), response("Observed 4")],
-        config=ContinuousConfig(max_llm_calls=2))
+        config=ContinuousConfig(max_llm_calls=3))
     python.register_python(a.tools, a.workspace, configuration)
     a.configuration["python_operators"] = configuration
     result = asyncio.run(a.run(replace(req)))

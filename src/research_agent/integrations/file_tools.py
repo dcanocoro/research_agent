@@ -1,8 +1,12 @@
+from pathlib import Path
+from collections.abc import Callable
+from typing import Any
 from ..workspace import Workspace
 from ..tools import ToolRegistry
 
 
-def register_files(registry: ToolRegistry, workspace: Workspace) -> None:
+def register_files(registry: ToolRegistry, workspace: Workspace, *, writable: bool = True, arithmetic: bool = True,
+                   journal_root: Path | None = None, write_guard: Callable[[list[dict[str, Any]]], None] | None = None) -> None:
     registry.workspace = workspace
     registry.recorder.workspace = workspace
     string = {"type": "string"}
@@ -13,12 +17,14 @@ def register_files(registry: ToolRegistry, workspace: Workspace) -> None:
     registry.register("search_files", "Find literal text in state Markdown, JSON, TXT and CSV.", {"query": string, "path": string}, workspace.search_files, execution="inline", consolidation=True)
     registry.register("read_artifact", "Read a full stored tool result as JSON text with byte pagination.",
                       {"reference": string, **window}, registry.recorder.read_artifact, execution="inline", consolidation=True)
-    registry.register("calculate", "Deterministic arithmetic with explicit inputs and source references. Ratios are fractions; multiply by 100 for percent.",
-        {"operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
-         "left": {"type": "number"}, "right": {"type": "number"},
-         "source_refs": {"type": "array", "items": {"type": "string"}}}, calculate, material=True)
-    from ..advances import register_advance
-    register_advance(registry, workspace)
+    if arithmetic:
+        registry.register("calculate", "Deterministic arithmetic with explicit inputs and source references. Ratios are fractions; multiply by 100 for percent.",
+            {"operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"]},
+             "left": {"type": "number"}, "right": {"type": "number"},
+             "source_refs": {"type": "array", "items": {"type": "string"}}}, calculate, material=True)
+    if writable:
+        from ..advances import register_advance
+        register_advance(registry, workspace, journal_root=journal_root, write_guard=write_guard)
     from .state_tools import register_state_tools
     register_state_tools(registry, workspace)
 

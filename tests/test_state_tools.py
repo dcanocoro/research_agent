@@ -385,7 +385,9 @@ def test_company_h1_v1_recovered_after_context_renewal(tmp_path):
         async def respond(self, **kwargs):
             if any("review_packet" in getattr(x, "payload", {}) for x in kwargs["input_items"]):
                 return review_turn()
-            if not any(s.name == "calculate" for s in kwargs["tools"]):
+            budget = next(x.payload["execution_budget"] for x in reversed(kwargs["input_items"])
+                          if isinstance(x, ConversationContext) and "execution_budget" in x.payload)
+            if budget["purpose"] == "checkpoint":
                 return text("Conservado; V1 pendiente.")
             n, self.step = self.step, self.step + 1
             results = [x for x in kwargs["input_items"] if isinstance(x, ToolResult)]
@@ -420,7 +422,7 @@ def test_company_h1_v1_recovered_after_context_renewal(tmp_path):
     agent = AgentA(client, tools, space, recorder, AgentLimits(),
                    configuration={"provider": "openai", "model": "fake", "max_output_tokens": 128})
     request = AgentRequest("Revisar H1 y sus consecuencias", "state", "conversation", mandate="Investiga con datos sintéticos.",
-                           continuous=ContinuousConfig(max_context_bytes=240000, consolidation_threshold_bytes=90000, max_llm_calls=10))
+                           continuous=ContinuousConfig(max_context_bytes=240000, consolidation_threshold_bytes=90000, max_llm_calls=12))
     result = asyncio.run(agent.run(request))
     assert result.stop_reason == "call_limit" and client.recovered, result
     assert "10 %" in space.read_version("empresas/ACME/modelo.md")[0].decode()

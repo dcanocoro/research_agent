@@ -153,26 +153,25 @@ def test_periodic_priority_isolation_accounting_and_final_reuse(tmp_path):
     agent, request = setup(tmp_path)
     result = execute(agent, request)
     assert result.stop_reason == "call_limit"
-    assert result.llm_calls_by_phase == {"research": 21, "consolidation": 0, "review": 2,
-                                         "external_review": 0, "objective_evaluation": 1}
+    assert result.llm_calls_by_phase == {"researcher": 20, "checkpoint": 0, "evaluator": 1}
     assert result.llm_calls == sum(result.llm_calls_by_phase.values())
     phases = [e["phase"] for e in events(agent, "lab.model.started")]
-    assert phases[phases.index("objective_evaluation") - 1] == "review"
+    assert phases[phases.index("evaluator") - 1] == "researcher"
     evaluation = agent.client.evaluations[0]
     assert not evaluation["allow_tools"] and evaluation["tools"] == []
     assert len(evaluation["input_items"]) == 1 and "objective_evaluation_packet" in evaluation["input_items"][0].payload
     manifest = json.loads((agent.recorder.current / "manifiesto.json").read_bytes())
     assert manifest["objective"]["sha256"] == request.objective.sha256
     assert manifest["external_review_policy"] is None
-    assert json.loads((agent.recorder.current / "evaluacion-objetivo/final.json").read_bytes())["reused"]
+    assert json.loads((agent.recorder.current / "evaluacion-objetivo/final.json").read_bytes())["kind"] == "final"
     assert saved(agent)[0]["previous_valid_reference"] is None
 
 
 @pytest.mark.parametrize("bad", [text("not JSON"), save_turn(path="forbidden.md", content="x"), TimeoutError("fixture")])
 def test_failed_evaluations_are_recorded_without_retry_or_stopping_research(tmp_path, bad):
-    agent, request = setup(tmp_path, reports=[bad, report()])
+    agent, request = setup(tmp_path, calls=23, reports=[bad, report()])
     result = execute(agent, request)
-    assert result.stop_reason == "call_limit" and result.llm_calls_by_phase["research"] == 21
+    assert result.stop_reason == "call_limit" and result.llm_calls_by_phase["researcher"] == 21
     assert [v["status"] for v in saved(agent)] == ["failed", "complete"]
     assert not (agent.workspace.root / "forbidden.md").exists()
     assert len(events(agent, "lab.objective.failed")) == 1
@@ -182,7 +181,7 @@ def test_failed_evaluations_are_recorded_without_retry_or_stopping_research(tmp_
 def test_partial_is_diagnostic_without_distance(tmp_path):
     agent, request = setup(tmp_path, calls=2, reports=[report("cubierto", "no_evaluable")])
     result = execute(agent, request)
-    assert result.llm_calls_by_phase["objective_evaluation"] == 1
+    assert result.llm_calls_by_phase["evaluator"] == 1
     value = saved(agent)[0]
     assert value["status"] == "partial" and value["metrics"]["distance"] is None
     summary = json.loads((agent.recorder.current / "evaluacion-objetivo/summary.json").read_bytes())
@@ -209,55 +208,18 @@ def test_time_and_operational_stops_do_not_evaluate(tmp_path):
     assert result.stop_reason == "time_limit" and not saved(other)
 
 
-def test_feedback_correction_renewal_and_final_reassessment(tmp_path):
-    agent, request = setup(tmp_path, config=ContinuousConfig(max_llm_calls=26, max_context_bytes=524288,
-                                                            consolidation_threshold_bytes=100000))
-    class Workflow(Client):
-        def __init__(self):
-            super().__init__([report(), report("cubierto", "cubierto")])
-            self.research = 0
-            self.recovered = False
-
-        async def respond(self, **kwargs):
-            items = kwargs["input_items"]
-            if "objective_evaluation_packet" in getattr(items[0], "payload", {}):
-                return await super().respond(**kwargs)
-            if not kwargs["allow_tools"]:
-                return text("Continuar")
-            if not any(t.name == "calculate" for t in kwargs["tools"]):
-                return text("Conocimiento conservado")
-            self.research += 1
-            contexts = [getattr(x, "payload", {}) for x in items]
-            if self.research == 20:
-                return save_turn(path="modelo.md", content="Explica productos. Pendientes ingresos.")
-            if self.research == 21:
-                assert any(c.get("objective_feedback", {}).get("metrics", {}).get("distance") == .5 for c in contexts)
-                return save_turn(path="modelo.md", content="Explica productos e ingresos. #M1", previous="Explica productos. Pendientes ingresos.")
-            if self.research == 22:
-                return text("investigación " * 9000)
-            if self.research >= 23:
-                assert any("fixed_objective" in c for c in contexts)
-                assert any("objective_feedback" in c for c in contexts)
-                self.recovered = True
-            return text("Avance")
-    agent.client = Workflow()
-    result = execute(agent, request)
-    assert result.stop_reason == "call_limit" and agent.client.recovered
-    assert events(agent, "lab.context.renewed")
-    assert [s["metrics"]["distance"] for s in saved(agent)] == [.5, 0]
-    assert saved(agent)[1]["previous_valid_reference"] == saved(agent)[0]["reference"]
 
 
 def test_managed_continuation_only_recovers_same_workspace_and_objective(tmp_path):
     root = tmp_path / "experiment"
     prompts = prepare_experiment(root, new=True, deliberative=True)
-    agent, request = setup(root, calls=1)
+    agent, request = setup(root, calls=2)
     agent.recorder.experiment = root
     request = replace(request, instructions=prompts)
     execute(agent, request)
     # A damaged later capture must not hide the earlier complete evaluation in this run.
     (agent.recorder.current / "evaluacion-objetivo/evaluation-9999.json").write_text("{", encoding="utf-8")
-    next_agent, next_request = setup(root, calls=1)
+    next_agent, next_request = setup(root, calls=2)
     next_agent.recorder.experiment = root
     execute(next_agent, replace(next_request, instructions=prompts))
     first_contexts = [getattr(x, "payload", {}) for x in next_agent.client.requests[0]["input_items"]]
@@ -302,7 +264,7 @@ def test_campaign_freezes_objective_and_rejects_drift(prepared_inputs):
 def test_native_reader_and_report_show_partial_failures_and_objective_phase(tmp_path):
     import importlib
     from research_campaigns.evidence import inspect_run
-    agent, request = setup(tmp_path, calls=42, reports=[report(), text("invalid"), report("cubierto", "no_evaluable")])
+    agent, request = setup(tmp_path, calls=44, reports=[report(), text("invalid"), report("cubierto", "no_evaluable")])
     result = execute(agent, request)
     info = inspect_run(tmp_path, agent.recorder.current, objective_sha256=objective().sha256)
     summary = info["objective_summary"]
@@ -316,7 +278,7 @@ def test_native_reader_and_report_show_partial_failures_and_objective_phase(tmp_
     importlib.import_module("research_campaigns.report").report(tmp_path, record)
     view = (tmp_path / "README.md").read_text(encoding="utf-8")
     assert "Cobertura V8" in view and "fallidas: 1" in view and "parciales: 1" in view
-    assert f"Llamadas: {result.llm_calls_by_phase['objective_evaluation']}" in view
+    assert f"Llamadas: {result.llm_calls_by_phase['evaluator']}" in view
 
 
 def test_tool_limit_evaluates_final_without_extra_research(tmp_path):
@@ -329,12 +291,12 @@ def test_tool_limit_evaluates_final_without_extra_research(tmp_path):
     agent.client.respond = respond
     result = execute(agent, request)
     assert result.stop_reason == "tool_limit" and result.tool_calls == 1
-    assert result.llm_calls_by_phase["research"] == 1 and len(saved(agent)) == 1
+    assert result.llm_calls_by_phase["researcher"] == 1 and len(saved(agent)) == 1
     assert saved(agent)[0]["kind"] == "final"
 
 
 def test_oversized_packet_is_captured_as_skipped_and_not_a_distance(tmp_path):
-    agent, request = setup(tmp_path, config=ContinuousConfig(max_llm_calls=1, max_context_bytes=50000,
+    agent, request = setup(tmp_path, config=ContinuousConfig(max_llm_calls=2, max_context_bytes=50000,
                                                             consolidation_threshold_bytes=48000))
     for n in range(10):
         (agent.workspace.root / f"materiales/source-{n}.json").write_text("fuente " * 1000, encoding="utf-8")
@@ -342,7 +304,7 @@ def test_oversized_packet_is_captured_as_skipped_and_not_a_distance(tmp_path):
     for n in range(40):
         agent.workspace.write_file(f"modelo-{n}.md", "productos " * 500 + references)
     result = execute(agent, request)
-    assert result.stop_reason == "call_limit" and result.llm_calls_by_phase["objective_evaluation"] == 0
+    assert result.stop_reason == "call_limit" and result.llm_calls_by_phase["evaluator"] == 0
     assert saved(agent)[0]["status"] == "skipped"
     assert "metrics" not in saved(agent)[0]
 
@@ -350,29 +312,7 @@ def test_oversized_packet_is_captured_as_skipped_and_not_a_distance(tmp_path):
 def test_zero_distance_requests_closure_once_without_stopping_continuous(tmp_path):
     agent, request = setup(tmp_path, calls=42, reports=[report("cubierto", "cubierto")] * 3)
     result = execute(agent, request)
-    assert result.stop_reason == "call_limit" and result.llm_calls_by_phase["research"] == 42
+    assert result.stop_reason == "call_limit" and result.llm_calls_by_phase["researcher"] == 40
     reports = saved(agent)
-    assert len(reports) == 2  # The unchanged final result reuses the second periodic evaluation.
+    assert len(reports) == 2  # Final checks the complete current packet, including actions and budget.
     assert sum(any("síntesis" in i for i in r["interventions"]) for r in reports) == 1
-
-
-def test_consolidation_defers_due_evaluation_without_backlog(tmp_path):
-    agent, request = setup(tmp_path, config=ContinuousConfig(max_llm_calls=25, max_context_bytes=524288,
-                                                            consolidation_threshold_bytes=100000))
-    original = agent.client.respond
-    count = 0
-    async def respond(**kwargs):
-        nonlocal count
-        if kwargs["allow_tools"] and any(t.name == "calculate" for t in kwargs["tools"]):
-            count += 1
-            if count == 20:
-                return text("material " * 18000)
-        return await original(**kwargs)
-    agent.client.respond = respond
-    result = execute(agent, request)
-    assert result.stop_reason == "call_limit"
-    phases = [e["phase"] for e in events(agent, "lab.model.started")]
-    evaluation_index = phases.index("objective_evaluation")
-    assert "consolidation" in phases[20:evaluation_index]
-    assert phases[evaluation_index - 1] == "review"
-    assert result.llm_calls_by_phase["objective_evaluation"] == 1

@@ -6,6 +6,16 @@ Una campaña exploratoria real no completa automáticamente un contraste control
 
 ## Registro consolidado al 2026-10-31
 
+Tanda posterior autorizada (2026-11-01): [integración de conocimiento con B](agente-conocimiento-v1/protocol.md),
+tres casos fijos nuevos con 100 llamadas ordinarias compartidas por A y B cada uno.
+Los [hallazgos](agente-conocimiento-v1/findings.md) registran 325 llamadas LLM totales,
+23 hijos interrumpidos por presupuesto y una única actualización de agenda;
+sin control contemporáneo ni mejora semántica demostrada.
+
+Preparación posterior (2026-11-01): [investigación autónoma de 1000 llamadas](investigacion-autonoma-1000/protocol.md)
+sobre `experiment/fileAgent`, con mandato abierto, estado nuevo y techo total que
+incluye revisiones. Comando preparado; sin ejecución ni hallazgos en esta entrega.
+
 | Pregunta / intervención | Implementación o preparación | Ejecución y resultado | Límites y registro |
 |---|---|---|---|
 | E1: simplificación conjunta | Escritura única e instrucciones condensadas sobre el mismo agente | Tres casos ejecutados; todos llegaron a `call_limit`; continuidad básica, errores de herramienta y cierre Microsoft inconsistente | [Protocolo](e1-simplificacion/protocol.md) y [hallazgos](e1-simplificacion/findings.md). Condición simplificada sin control contemporáneo; sin atribución causal. |

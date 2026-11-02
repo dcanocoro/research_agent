@@ -100,7 +100,7 @@ def test_assessment_refresh_after_write_and_recovery_after_renewal(tmp_path):
 
 
 def test_decision_objective_requires_decision_review_from_evaluator(tmp_path):
-    agent, request = setup(tmp_path, calls=1, reports=[report()])
+    agent, request = setup(tmp_path, calls=2, reports=[report()])
     result = execute(agent, replace(request, objective=objective(assessment_path='evaluacion.md')))
     assert result.stop_reason == 'call_limit' and saved(agent)[0]['status'] == 'failed'
 
@@ -124,7 +124,7 @@ def test_partial_review_recovers_without_inventing_a_complete_distance(tmp_path)
     prompts = prepare_experiment(root, new=True, deliberative=True)
     partial = decision_report()
     partial['criteria'][1]['status'] = 'no_evaluable'
-    agent, request = setup(root, calls=1, reports=[partial])
+    agent, request = setup(root, calls=2, reports=[partial])
     agent.recorder.experiment = root
     obj = objective(assessment_path='evaluacion.md')
     execute(agent, replace(request, instructions=prompts, objective=obj))

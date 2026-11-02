@@ -17,25 +17,36 @@ from observability_context import bind_interaction_context, interaction_context_
 from .contracts import AgentLimits, AgentRequest, AgentResult
 from .recording import RunRecorder, encoded
 from .tools import ToolRegistry
+from .runtime_control import identity as runtime_identity
 from .workspace import Workspace
 
 
 class AgentA:
     def __init__(self, client: ConversationClient, tools: ToolRegistry, workspace: Workspace,
                  recorder: RunRecorder, limits: AgentLimits = AgentLimits(), configuration: dict[str, Any] | None = None,
-                 instructions: tuple[Path, ...] = ()) -> None:
+                 instructions: tuple[Path, ...] = (), *, role: str = "A") -> None:
         self.client, self.tools, self.workspace, self.recorder = client, tools, workspace, recorder
         self.limits, self.configuration = limits, configuration or {}
         self.history: list[ConversationItem] = []
         self._conversation_id: str | None = None
         self.instructions = instructions
+        self.role = role
+        self.knowledge: Any = None
+        self.journal_root = recorder.root
+        self.deadline_override: float | None = None
+        self.on_model_call: Any = None
+        self.on_tool_call: Any = None
+        self.run_id: str | None = None
+        self.stop_requested = False
 
     async def run(self, request: AgentRequest) -> AgentResult:
         from .advances import recover
+        if self.knowledge is not None and (request.continuous is None or request.continuous.max_llm_calls != 100):
+            raise ValueError("Durable B requires E2 with 100 total LLM calls")
         if self.recorder.experiment is not None:
             from .state_configuration import validate_state_configuration
             validate_state_configuration(self.recorder.experiment)
-        recover(self.workspace, self.recorder.root)
+        recover(self.workspace, self.journal_root)
         if request.continuous is not None:
             from .continuous import run_continuous
             return await run_continuous(self, request)
@@ -45,12 +56,14 @@ class AgentA:
         self._conversation_id = request.conversation_id
         run_id, interaction_id = str(uuid4()), str(uuid4())
         deadline = monotonic() + self.limits.timeout_seconds
+        if self.deadline_override is not None:
+            deadline = min(deadline, self.deadline_override)
         system = self._prepare(request, run_id, interaction_id, persistent)
         calls = tool_calls = 0
         answer = error = None
         status: Literal["completed", "interrupted", "failed", "cancelled"] = "interrupted"
         reason = "budget"
-        can_consolidate = self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2
+        can_consolidate = self.role == "A" and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2
         phase = "research"
         consolidation_calls = 0
         consolidation_deadline = deadline
@@ -83,7 +96,7 @@ class AgentA:
                 reason = "answered"
             self.history.append(ConversationMessage("user", text))
             self.recorder.event("lab.phase.changed", previous_phase=previous, phase=target, cause=cause)
-        context = RunContext(run_id, turn_id=interaction_id, regime="lab", component="agent_a", deadline=deadline)
+        context = RunContext(run_id, turn_id=interaction_id, regime="lab", component="agent_b" if self.role == "B" else "agent_a", deadline=deadline)
         interaction = interaction_context_for(interaction_id=interaction_id, conversation_id=request.conversation_id)
         with bind_run_context(context), bind_interaction_context(interaction):
             self.recorder.event("lab.run.started", **request.metadata)
@@ -127,7 +140,7 @@ class AgentA:
                                          else deadline - self.limits.finalization_seconds)
                     else:
                         closing = (remaining <= self.limits.finalization_seconds
-                                   or calls >= self.limits.max_llm_calls - 1
+                                   or (self.role == "A" and calls >= self.limits.max_llm_calls - 1)
                                    or tool_calls >= self.limits.max_tool_calls
                                    or size >= self.limits.max_context_bytes - 4096)
                         allowed = frozenset() if closing else None
@@ -150,6 +163,8 @@ class AgentA:
                     if len(encoded({"system": system, "input": self.history, "tools": specs})) > self.limits.max_context_bytes:
                         reason = "context_limit"
                         break
+                    if self.on_model_call is not None:
+                        self.on_model_call()
                     calls += 1
                     if phase == "consolidation":
                         consolidation_calls += 1
@@ -176,9 +191,11 @@ class AgentA:
                     if closing:
                         reason = "tools_disabled"
                         break
+                    if self.on_tool_call is not None:
+                        self.on_tool_call()
                     tool_calls += 1
                     tool_time = (call_deadline - monotonic() if can_consolidate else
-                                 deadline - monotonic() - self.limits.finalization_seconds)
+                                 deadline - monotonic() - (self.limits.finalization_seconds if self.role == "A" else 0))
                     try:
                         async with asyncio.timeout(max(0.001, tool_time)):
                             result = await self.tools.execute(turn.function_call, allowed_names=allowed)
@@ -188,6 +205,9 @@ class AgentA:
                                             {"ok": False, "error_type": "timeout"})
                         self.recorder.event("lab.phase.timeout", phase=phase, operation="tool")
                     self.history.append(result)
+                    if self.role == "B" and self.stop_requested:
+                        status, reason = "completed", "answered"
+                        break
             except asyncio.CancelledError:
                 status, reason = "cancelled", "cancelled"
                 raise
@@ -207,7 +227,7 @@ class AgentA:
     def _prepare(self, request: AgentRequest, run_id: str, interaction_id: str,
                  persistent: dict[str, Any] | None = None) -> str:
         from .advances import recover
-        recover(self.workspace, self.recorder.root)
+        recover(self.workspace, self.journal_root)
         instructions = (*self.instructions, *request.instructions)
         protected = [Path(str(files("research_agent"))), *instructions]
         disjoint(self.workspace.root, self.recorder.root)
@@ -215,16 +235,23 @@ class AgentA:
             disjoint(self.workspace.root, path)
             disjoint(self.recorder.root, path)
         self.tools.reset()
-        base = files("research_agent").joinpath("prompts/agent_a.md").read_text(encoding="utf-8")
+        self.run_id = run_id
+        base = files("research_agent").joinpath("prompts/knowledge_agent.md" if self.role == "B" else "prompts/agent_a.md").read_text(encoding="utf-8")
         prompts = {str(p): p.read_text(encoding="utf-8") for p in instructions}
         if self.recorder.experiment is None:
-            prompts = {"agent_a.md": base, **prompts}
+            if self.role != "B" or not any(p.name == "agente-conocimiento.md" for p in instructions):
+                prompts = {"knowledge_agent.md" if self.role == "B" else "agent_a.md": base, **prompts}
             if not any(p.name in {"herramientas-estado.md", "state_tools.md"} for p in instructions):
                 prompts["state_tools.md"] = files("research_agent").joinpath("prompts/state_tools.md").read_text(encoding="utf-8")
             if persistent is not None and not any(p.name == "deliberacion.md" for p in instructions):
                 prompts["deliberation.md"] = files("research_agent").joinpath("prompts/deliberation.md").read_text(encoding="utf-8")
         elif persistent is not None and not any(p.name == "deliberacion.md" for p in instructions):
             raise ValueError("Deliberative experiment requires instrucciones/deliberacion.md.")
+        if self.knowledge is not None:
+            root = self.recorder.experiment
+            guide = ((root / "instrucciones/delegacion-conocimiento.md").read_text(encoding="utf-8") if root
+                     else files("research_agent").joinpath("prompts/knowledge_delegation.md").read_text(encoding="utf-8"))
+            prompts["knowledge_delegation.md"] = guide
         system = "\n\n".join(prompts.values())
         review_policy = None
         checkpoint_policy = None
@@ -238,14 +265,16 @@ class AgentA:
             from .continuous import CHECKPOINT_POLICY, REVIEW_POLICY
             review_policy = REVIEW_POLICY
             checkpoint_policy = CHECKPOINT_POLICY
-        self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id,
+        self.recorder.start(run_id, {"run_id": run_id, "interaction_id": interaction_id, "role": self.role,
+            "parent_run_id": self.configuration.get("parent_run_id"),
             "conversation_id": request.conversation_id, "workspace_id": request.workspace_id,
             "workspace_fingerprint": hashlib.sha256(str(self.workspace.root.resolve()).encode()).hexdigest(),
             "limits": asdict(self.limits), "configuration": self.configuration, "metadata": request.metadata,
             "condition": "deliberative" if persistent is not None else "baseline",
             "continuous": asdict(request.continuous) if request.continuous is not None else None,
             "review_policy": review_policy,
-            "external_review_policy": {"version": "v7", "midpoint": "half ordinary limit or 50 research calls", "final": "controlled budget stop with time available", "same_profile": True, "tools": False} if request.continuous and request.objective is None else None,
+            "external_review_policy": review_policy if request.continuous and request.objective is None else None,
+            "runtime_control": runtime_identity() if request.continuous else None,
             "objective": {"definition": request.objective.definition(), "sha256": request.objective.sha256} if request.objective else None,
             "objective_evaluation_policy": self._objective_policy(request),
             "knowledge_checkpoint_policy": checkpoint_policy,
@@ -255,7 +284,7 @@ class AgentA:
                                "response_seconds": self.limits.finalization_seconds * 2 / 3,
                                "context_reserve_bytes": min(32768, self.limits.max_context_bytes // 4),
                                "consolidation_tools": sorted(self.tools.consolidation_tools or ())}
-                              if request.continuous is None and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
+                              if self.role == "A" and request.continuous is None and self.limits.max_llm_calls >= 4 and self.limits.max_tool_calls >= 2 else None,
             "prompts": {k: {"sha256": hashlib.sha256(v.encode()).hexdigest(), "text": v} for k, v in prompts.items()},
             "state_contracts": self.tools.contracts,
             "state_tools_configuration": state_tools_configuration,
@@ -269,8 +298,8 @@ class AgentA:
     @staticmethod
     def _objective_policy(request: AgentRequest) -> dict[str, Any] | None:
         from .objective_review import POLICY
-        from .continuous import DECISION_DIRECTION
-        return {**POLICY, "direction": DECISION_DIRECTION,
+        from .continuous import DECISION_DIRECTION, REVIEW_POLICY
+        return {**POLICY, **REVIEW_POLICY, "direction": DECISION_DIRECTION,
                 "protected_seed_headroom_bytes": 16384 if request.objective and request.objective.assessment_path else 0} if request.objective is not None else None
 
     def _finish(self, result: AgentResult, captured: list[dict[str, Any]]) -> AgentResult:

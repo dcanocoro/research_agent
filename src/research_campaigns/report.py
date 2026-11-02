@@ -39,7 +39,10 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
              f"Configuración técnica: `campaign.json → runtime`. Comprobación de datos: {cell(record.get('preflight', {}).get('ready'))}.", ""]
     profile = record.get("runtime", {}).get("profile", {})
     lines += [f"Modelo: {cell(profile.get('model'))}. Proveedor: {cell(profile.get('provider'))}.", ""]
-    if record.get("review_policy"):
+    if record.get("review_policy", {}).get("budget") == "total_llm_calls":
+        lines += ["E2: el techo incluye investigador, checkpoint y evaluador. El desglose es por propósito, no por fase. "
+                  "Política efectiva: `campaign.json → review_policy`.", ""]
+    elif record.get("review_policy"):
         lines += ["El límite de llamadas cubre investigación y consolidación; las revisiones periódicas y externas son adicionales. "
                   "Comparten los límites de tiempo y contexto. Política efectiva: `campaign.json → review_policy`.", ""]
     if (root / "definicion/peticion.md").is_file():
@@ -50,7 +53,7 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
         if path.is_file():
             lines.append(f"- {link(path.relative_to(root).as_posix())}")
     lines += ["", "## Sesiones e intentos", "",
-              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM total / herramientas | LLM investigación / consolidación / revisión / externa / objetivo | Segundos | Evidencia |",
+              "| Sesión / intento | Fecha | Petición | Estado / cierre | LLM total / herramientas | LLM por fase histórica o propósito E2 | Segundos | Evidencia |",
               "|---|---|---|---|---|---|---|---|"]
     diagnostics = []
     for session in record["sessions"]:
@@ -89,14 +92,14 @@ def report(root: Path, record: dict[str, Any] | None = None) -> None:
             cell(session.get("message", activation.get("message"))),
             cell(session["status"]) + " / " + cell(details.get("stop_reason", session.get("reason"))),
             f"{cell(details.get('llm_calls'))} / {cell(details.get('tool_calls'))}",
-            " / ".join(cell(phases.get(p)) for p in ("research", "consolidation", "review", "external_review", "objective_evaluation")),
+            " / ".join(cell(phases.get(p)) for p in (("researcher", "checkpoint", "evaluator") if "researcher" in phases else ("research", "consolidation", "review", "external_review", "objective_evaluation"))),
             cell(session.get("elapsed_seconds", details.get("duration_seconds"))), " · ".join(refs)]) + " |")
         objective = details.get("objective_summary")
         if objective:
             diagnostics.append(f"- {cell(session['id'])}: cobertura V8 (última evaluación completa válida): "
                                f"{cell(objective.get('last_valid_metrics'))}; estado actual: {cell(objective.get('latest_status'))}; "
                                f"fallidas: {cell(objective.get('failures'))}; parciales: {cell(objective.get('partial'))}; "
-                               f"omitidas: {cell(objective.get('skipped'))}. Llamadas: {cell(phases.get('objective_evaluation'))}.")
+                               f"omitidas: {cell(objective.get('skipped'))}. Llamadas: {cell(phases.get('evaluator', phases.get('objective_evaluation')))}.")
             if objective.get("decision_useful") is not None:
                 diagnostics.append(f"- {cell(session['id'])}: utilidad para decidir según el evaluador: {cell(objective['decision_useful'])}; no es aceptación financiera independiente.")
     lines += ["", "## Diagnósticos", "", *(diagnostics or ["Sin errores de captura observados."]),

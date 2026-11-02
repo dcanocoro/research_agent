@@ -135,10 +135,10 @@ def test_continuous_checkpoints_and_progress_are_offline_and_not_extra_calls(tmp
     request = AgentRequest("Investiga", "state", "chat", mandate="Compara fundamentos",
                            continuous=ContinuousConfig(max_llm_calls=11))
     result = asyncio.run(agent.run(request))
-    assert (result.llm_calls - result.llm_calls_by_phase["external_review"]) == len(client.requests) == 12
+    assert result.llm_calls == 11 and len(client.requests) == 10
     report = evaluate_run(recorder.current)
-    assert report["writes_by_phase"] == {"research": 1, "consolidation": 0, "review": 0, "external_review": 0, "unknown": 0}
-    assert [item["label"] for item in report["observations"]] == ["initial", "review", "final"]
+    assert report["writes_by_phase"] == {"researcher": 1, "checkpoint": 0, "evaluator": 0, "unknown": 0}
+    assert [item["label"] for item in report["observations"]] == ["initial", "evaluation", "final"]
     assert "empresas/X/modelo.md" in report["observations"][1]["changed_documents"]
     assert all(v["status"] == "not_assessed" for v in report["semantic_review"].values())
     context = next(x.payload for x in client.requests[0]["input_items"]
@@ -147,7 +147,7 @@ def test_continuous_checkpoints_and_progress_are_offline_and_not_extra_calls(tmp
     assert "continuidad/indice.json" in result.artifact_refs
     before = space.snapshot()
     assert main(["progress", str(recorder.current)]) == 0
-    assert space.snapshot() == before and len(client.requests) == 12
+    assert space.snapshot() == before and len(client.requests) == 10
     with pytest.raises(SystemExit):
         main(["progress", str(recorder.current)])  # Cannot overwrite prior review evidence.
 

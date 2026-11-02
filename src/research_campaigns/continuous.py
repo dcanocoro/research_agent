@@ -11,6 +11,7 @@ from typing import Any, cast
 
 from research_agent.agent import AgentA
 from research_agent.context_budget import ByteCounter
+from research_agent.runtime_control import RuntimeState, register_report, INSTRUCTION, validate_runtime, identity as control_identity
 from research_agent.continuous import CHECKPOINT_POLICY, POLICY, REVIEW_POLICY, DECISION_DIRECTION, context_seed
 from research_agent.contracts import AgentRequest, ContinuousConfig
 from research_agent.experiments import disjoint, validate_mandate
@@ -40,9 +41,11 @@ def installed_identity() -> dict[str, Any]:
 def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
     """Use the runtime seed and schemas without constructing a client or DB engine."""
     validate_state_configuration(root)
+    validate_runtime(root)
     space = Workspace(root / "estado", create=False)
     registry = ToolRegistry(RunRecorder(root / "ejecuciones"))
     register_files(registry, space)
+    register_report(registry, RuntimeState(), space)
     simulator = Simulator(root / "simulador")
     register_simulation(registry, simulator, None)  # Web is disabled in this pilot.
     agent = AgentA(cast(Any, None), registry, space, registry.recorder,
@@ -53,7 +56,7 @@ def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
                            continuous=ContinuousConfig(**read(root / "definicion/scenario.json")["continuous"]),
                            objective=Objective.load(root / "definicion/objective.json") if (root / "definicion/objective.json").exists() else None)
     paths = sorted((root / "instrucciones").glob("*.md"), key=lambda p: (p.name != "agente.md", p.name))
-    system = "\n\n".join(p.read_text(encoding="utf-8") for p in paths) + "\n\n" + POLICY
+    system = "\n\n".join(p.read_text(encoding="utf-8") for p in paths) + "\n\n" + POLICY + "\n\n" + INSTRUCTION
     if request.objective:
         system += "\n\n" + DECISION_DIRECTION
     return ByteCounter().measure(system, context_seed(agent, request, "initial"), registry.specs(), profile["max_output_tokens"])
@@ -110,7 +113,7 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
     if size["budgeted_bytes"] + headroom >= continuous.consolidation_threshold_bytes:
         raise ValueError("Initial protected context plus startup margin does not fit below threshold.")
     record.update(runtime=identity, limits=asdict(continuous), condition="deliberative", review_policy=REVIEW_POLICY,
-                  knowledge_checkpoint_policy=CHECKPOINT_POLICY,
+                  knowledge_checkpoint_policy=CHECKPOINT_POLICY, runtime_control=control_identity(),
                   preflight={**report, "initial_budget": size, "startup_margin_bytes": headroom,
                              "provider_checked": False, "campaign_executed": False})
     if objective is not None:
@@ -120,7 +123,7 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
                "--experiment", str(root), "--continue", "--run-name", "piloto",
                "--simulation", str(root / "simulador"), "--mandate", str(root / "definicion/mandato.md"), "--continuous",
                "--context-bytes", str(continuous.max_context_bytes),
-               "--consolidation-bytes", str(continuous.consolidation_threshold_bytes),
+               "--renewal-bytes", str(continuous.consolidation_threshold_bytes),
                "--max-calls", str(continuous.max_llm_calls), "--max-tools", str(continuous.max_tool_calls),
                "--continuous-timeout-seconds", str(continuous.timeout_seconds)]
     if objective is not None:
@@ -128,6 +131,7 @@ def prepare(root: Path, definition: Path, source_data: Path) -> None:
     frozen_files = {path.relative_to(root).as_posix(): digest(path)
                          for name in ("definicion", "instrucciones", "estado", "simulador")
                          for path in (root / name).rglob("*") if path.is_file()}
+    frozen_files["runtime.json"] = digest(root / "runtime.json")
     frozen_files["herramientas.json"] = digest(root / "herramientas.json")
     record.update(command=command, byte_policy=ByteCounter().metadata, files=frozen_files)
     persist(root, record)

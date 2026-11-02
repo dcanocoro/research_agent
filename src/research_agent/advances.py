@@ -8,6 +8,7 @@ import re
 import tempfile
 from pathlib import Path
 from typing import Any
+from collections.abc import Callable
 from uuid import uuid4
 
 from .recording import encoded
@@ -69,7 +70,7 @@ def recover(workspace: Workspace, runs: Path) -> None:
 
 
 def record_advance(workspace: Workspace, runs: Path, changes: list[dict[str, Any]],
-                   reason: str, source_refs: list[str]) -> dict[str, Any]:
+                   reason: str, source_refs: list[str], *, journal_metadata: dict[str, str] | None = None) -> dict[str, Any]:
     if not reason.strip() or not 1 <= len(changes) <= 5:
         raise ValueError('Supply a reason and one to five changes.')
     with workspace.mutation_lock:
@@ -107,7 +108,7 @@ def record_advance(workspace: Workspace, runs: Path, changes: list[dict[str, Any
             workspace.validate_publish(path, after.encode('utf-8'), create=change['action'] == 'create')
             prepared.append({'path': path, 'before': before, 'after': after})
         journal = runs / 'transacciones' / (str(uuid4()) + '.json')
-        data = {'workspace': str(workspace.root.resolve()), 'status': 'pending', 'changes': prepared}
+        data = {'workspace': str(workspace.root.resolve()), 'status': 'pending', 'changes': prepared, 'integration': journal_metadata}
         atomic_bytes(journal, encoded(data))
         receipts = []
         try:
@@ -118,6 +119,7 @@ def record_advance(workspace: Workspace, runs: Path, changes: list[dict[str, Any
                 receipts.append({**value, 'previous_sha256': previous, 'applied': True,
                                  'excerpt': item['after'].encode('utf-8')[:1200].decode('utf-8', errors='ignore'),
                                  'partial': len(item['after'].encode('utf-8')) > 1200})
+            data['receipts'] = receipts
             data['status'] = 'committed'
             atomic_bytes(journal, encoded(data))
         except Exception:
@@ -130,7 +132,8 @@ def record_advance(workspace: Workspace, runs: Path, changes: list[dict[str, Any
                 'reason': reason, 'source_refs': source_refs, 'semantic_validity_assessed': False}
 
 
-def register_advance(registry: Any, workspace: Workspace) -> None:
+def register_advance(registry: Any, workspace: Workspace, *, journal_root: Path | None = None,
+                     write_guard: Callable[[list[dict[str, Any]]], None] | None = None) -> None:
     string = {"type": "string"}
     nullable = {"type": ["string", "null"]}
     operation = {"type": "object", "properties": {
@@ -144,7 +147,9 @@ def register_advance(registry: Any, workspace: Workspace) -> None:
         "required": ["path", "action", "content", "expected_sha256", "operations"],
         "additionalProperties": False}
     def apply(changes: list[dict[str, Any]], reason: str, source_refs: list[str]) -> dict[str, Any]:
-        return record_advance(workspace, registry.recorder.root, changes, reason, source_refs)
+        if write_guard is not None:
+            write_guard(changes)
+        return record_advance(workspace, journal_root if journal_root is not None else registry.recorder.root, changes, reason, source_refs)
     registry.register("record_research_advance", "Save one coherent advance across 1-5 files; versions and structural integrity checked; recoverable batch, no semantic certification.",
         {"changes": {"type": "array", "minItems": 1, "maxItems": 5, "items": change},
          "reason": {"type": "string", "minLength": 1}, "source_refs": {"type": "array", "items": string}},

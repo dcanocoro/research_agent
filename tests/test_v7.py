@@ -127,7 +127,7 @@ def test_observer_deduplicates_and_resets_only_writes(tmp_path):
     for _ in range(3):
         obs.observe('fetch', {'x': 1}, payload, True, space)
     obs.observe('read', {}, {'ok': True, 'value': {'path': 'x.md', 'sha256': 'v'}}, False, space)
-    assert {n['kind'] for n in obs.drain()} == {'repeated_query', 'persistence_interval'}
+    assert {n['kind'] for n in obs.drain()} == {'repeated_query', 'repeated_query_persistent', 'persistence_interval'}
     assert not obs.drain()
     for _ in range(2):
         obs.observe('edit', {'path': 'x.md'}, {'ok': False, 'message': 'version_conflict'}, False, space)
@@ -153,10 +153,10 @@ def test_external_review_separate_midpoint_and_final_and_totals(tmp_path):
     agent, request = make(tmp_path, [text()] * 4)
     request = replace(request, continuous=replace(request.continuous, max_llm_calls=4))
     result = execute(agent, request)
-    assert result.llm_calls == 6 and result.llm_calls_by_phase['external_review'] == 2
+    assert result.llm_calls == 4 and result.llm_calls_by_phase['evaluator'] == 1
     assert result.llm_calls == sum(result.llm_calls_by_phase.values())
     assert result.stop_reason == 'call_limit' and result.status == 'interrupted'
-    assert len(agent.client.review_requests) == 2
+    assert len(agent.client.review_requests) == 1
     for entry in agent.client.review_requests:
         assert not entry['tools'] and not entry['allow_tools']
         assert len(entry['input_items']) == 1
@@ -177,8 +177,8 @@ def test_failed_reviewer_does_not_execute_or_stop_research(tmp_path, response):
             return text('research')
     agent.client = Client()
     result = execute(agent, request)
-    assert result.stop_reason == 'call_limit' and result.llm_calls_by_phase['research'] == 3
-    assert len(events(agent, 'lab.external_review.failed')) == 2
+    assert result.stop_reason == 'call_limit' and result.llm_calls_by_phase['researcher'] == 2
+    assert len(events(agent, 'lab.external_review.failed')) == 1
     assert not agent.workspace.path('bad.md').exists()
 
 
@@ -192,7 +192,7 @@ def test_cancellation_in_reviewer_has_no_final_review(tmp_path):
     agent.client = Client()
     with pytest.raises(asyncio.CancelledError):
         execute(agent, request)
-    assert not (agent.recorder.current / 'revision-externa/final-input.json').exists()
+    assert (agent.recorder.current / 'revision-externa/final-input.json').exists()
     assert json.loads((agent.recorder.current / 'resultado.json').read_bytes())['status'] == 'cancelled'
 
 
@@ -205,7 +205,7 @@ def test_advance_renew_review_correct_and_continue_managed_session(tmp_path):
     instruction = root / 'instrucciones/deliberacion.md'
     instruction.write_text('Instrucción local simulada; no proveedor.', encoding='utf-8')
     request = replace(request, instructions=(instruction,), continuous=replace(request.continuous,
-        max_llm_calls=7, max_context_bytes=120000, consolidation_threshold_bytes=50000))
+        max_llm_calls=12, max_context_bytes=120000, consolidation_threshold_bytes=50000))
     class Client:
         step = 0
         reviewed = False
@@ -219,12 +219,8 @@ def test_advance_renew_review_correct_and_continue_managed_session(tmp_path):
                     'findings': [{'status': 'comprobado', 'detail': 'Pendiente obsoleto en H1',
                                   'references': ['empresas/X/modelo.md#H1']}], 'recommendations': ['Corregir pendiente']})
                 return text(value)
-            if any(x.get('external_review_feedback', {}).get('historical_versions') for x in contexts):
+            if any('runtime_feedback' in x or x.get('external_review_feedback', {}).get('historical_versions') for x in contexts):
                 self.historical = True
-            phase = next(x['execution_capabilities']['phase'] for x in reversed(contexts)
-                         if 'execution_capabilities' in x)
-            if phase != 'research':
-                return text('Conservado')
             self.step += 1
             if self.step == 1:
                 agenda = '# Agenda\n## Investigación activa\nResultado: comparar. Criterio: evidencia suficiente o bloqueo fundado.\nempresas/X/modelo.md#H1\n'
@@ -232,6 +228,8 @@ def test_advance_renew_review_correct_and_continue_managed_session(tmp_path):
                     edit(agent.workspace, 'agenda.md', 'Investigar la pregunta pendiente.', agenda),
                     create('empresas/X/modelo.md', '### H1\nPendiente antiguo\n')], reason='Avance', source_refs=[])
             if self.step == 2:
+                return call('report_work', kind='milestone', references=[], disposition='pending', documents=[], reason='Primera evaluación')
+            if self.step == 3:
                 return text('Material para renovar. ' * 3000)
             if self.reviewed and not self.corrected:
                 assert any('external_review_feedback' in x for x in contexts)
@@ -266,4 +264,4 @@ def test_expired_deadline_has_no_external_review(tmp_path, monkeypatch):
     request = replace(request, continuous=replace(request.continuous, timeout_seconds=1))
     result = execute(agent, request)
     assert result.stop_reason == 'time_limit'
-    assert result.llm_calls_by_phase['external_review'] == 0
+    assert result.llm_calls_by_phase['evaluator'] == 0

@@ -26,6 +26,11 @@ No resuelve por sí sola las preguntas abiertas ni demuestra mejora semántica.
 
 ## Qué sigue abierto
 
+El encargo del 2026-11-01 prepara una [campaña autónoma de 1000 llamadas](experiments/investigacion-autonoma-1000/protocol.md)
+sobre `experiment/fileAgent`, con mandato abierto, estado nuevo y comando para
+ejecución posterior por el usuario. Se conserva el controlador por fases y se añade
+solo un techo total opcional para incluir las revisiones; no se lanza en esta entrega.
+
 - Persistencia incremental y coherencia: varias campañas concentraron las escrituras
   en consolidación y dejaron pendientes contradictorios entre agenda y expedientes.
 - Dirección útil: conservar el mandato o recibir feedback no demuestra que se elijan

@@ -138,6 +138,8 @@ def evaluate_run(run: Path, checks: Path | None = None) -> dict[str, Any]:
             previous = files
             previous_complete = checkpoint["capture_complete"]
     writes = {"research": 0, "consolidation": 0, "review": 0, "external_review": 0, "unknown": 0}
+    if manifest.get("runtime_control"):
+        writes = {"researcher": 0, "checkpoint": 0, "evaluator": 0, "unknown": 0}
     successful_reads = []
     context_number, phase = 0, "unknown"
     pending = {}

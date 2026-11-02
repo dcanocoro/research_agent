@@ -36,11 +36,12 @@ class ToolRegistry:
         self.workspace: Workspace | None = None
         self.files_written: list[str] = []
         self.materials: list[str] = []
+        self.mutation_receipts: list[dict[str, Any]] = []
         self.contracts: dict[str, Any] = {}
         self.active_names: frozenset[str] | None = None
 
     def reset(self) -> None:
-        self.files_written, self.materials = [], []
+        self.files_written, self.materials, self.mutation_receipts = [], [], []
 
     def summary(self) -> StateSummary:
         return StateSummary(tuple(dict.fromkeys(self.files_written)), tuple(self.materials), tuple(self.recorder.capture_errors))
@@ -56,6 +57,10 @@ class ToolRegistry:
         Draft202012Validator.check_schema(schema)
         self._tools[name] = RegisteredTool(ToolSpec(name, description, schema), function,
                                           Draft202012Validator(schema), execution, material, consolidation, mutation, bounded)
+
+    def unregister(self, name: str) -> None:
+        """Remove a run-scoped runtime tool without changing knowledge contracts."""
+        self._tools.pop(name, None)
 
     @property
     def consolidation_tools(self) -> frozenset[str]:
@@ -106,6 +111,7 @@ class ToolRegistry:
                 receipts = value.get("files", [value])
                 mutation_result = {"files": [mutation_receipt(v) for v in receipts]} if "files" in value else mutation_receipt(value)
                 self.files_written.extend(v["path"] for v in receipts)
+                self.mutation_receipts.extend(mutation_receipt(v) for v in receipts)
             capturing = True
             if tool.mutation:
                 assert mutation_result is not None

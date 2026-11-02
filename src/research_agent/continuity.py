@@ -114,6 +114,7 @@ class OperationalObserver:
     """Advisory signals only; no semantic inference or control permissions."""
     def __init__(self) -> None:
         self.seen: dict[str, str] = {}
+        self.repetitions: dict[str, int] = {}
         self.notified: set[str] = set()
         self.conflicts: dict[str, int] = {}
         self.last_conflict_path: str | None = None
@@ -136,6 +137,13 @@ class OperationalObserver:
                 self.pending.append({"kind": "repeated_query", "tool": tool, "reference": self.seen[key],
                                      "note": "Consulta ya satisfecha; valora reutilizar su resultado. No se bloquea."})
                 self.notified.add(key)
+            if key in self.seen:
+                self.repetitions[key] = self.repetitions.get(key, 0) + 1
+                persistent = "persistent:" + key
+                if self.repetitions[key] >= 2 and persistent not in self.notified:
+                    self.pending.append({"kind": "repeated_query_persistent", "tool": tool,
+                                         "reference": self.seen[key], "note": "Repetition after advisory; consider another approach."})
+                    self.notified.add(persistent)
             self.seen[key] = payload.get("material_ref", payload.get("artifact_ref", ""))
         path = arguments.get("path")
         if not path and arguments.get("changes") and "version_conflict: " in payload.get("message", ""):

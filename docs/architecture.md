@@ -5,10 +5,16 @@
 
 ## Frontera y componentes
 
+En `experiment/fileAgent`, B opcional integra encargos duraderos con contexto
+preparado y presupuesto protegido. Solo existen `off` y `prepared`.
+La [entrega actual](deliveries/2026-11-02-b-prepared-original.md) describe alcance,
+recuperación y límites. Se conserva el controlador E2 sin infraestructura de campañas.
+
 A dispone de ciclo acotado y continuo opcional. Ambos usan el mismo agente y
 registro de herramientas; sus presupuestos y formas de cierre son distintos.
 
-A posee un único ciclo modelo → herramienta → modelo → respuesta. No importa
+A posee un ciclo modelo → herramienta → modelo → respuesta; B opcional reutiliza
+su ejecución acotada con contexto y herramientas propios. No importa
 `finmate`, `engine` ni `api`; Findata, Infra y los contratos comunes se consumen desde
 el wheel instalado. Findata abre transacciones PostgreSQL de solo lectura, sin ingestas
 ni migraciones. No hay motor DCF preimplementado, grafo obligatorio ni variantes A0–A3. La cartera ficticia existe solo
@@ -258,8 +264,8 @@ a una evaluación, ni una cita certifica inferencias o comparabilidad numérica.
 
 Desde el 2026-10-27, `build_agent(..., python_enabled=True)` o `--python` registra
 `describe_python_operator` y `run_python` en el mismo registro, también con simulación.
-Por defecto no están disponibles. No cambian las fases: ambas se excluyen de
-consolidación y las revisiones permanecen sin herramientas.
+Por defecto no están disponibles. En continuo E2 permanecen disponibles durante
+el trabajo ordinario y checkpoints; los evaluadores no tienen herramientas.
 
 La [integración](../src/research_agent/integrations/python_tools.py) resuelve JSON/CSV
 del workspace, valida código y contratos, captura la petición exacta y ejecuta el
@@ -353,115 +359,77 @@ explica las modalidades, revisión y límites de recuperación.
 
 ## Ciclo continuo y presupuesto de contexto
 
-`AgentRequest.continuous: ContinuousConfig | None` activa el mismo A con un ciclo
-renovable implementado en `research_agent.continuous`. Requiere mandato explícito.
-`None` mantiene el ciclo y los límites anteriores. No añade agentes ni planificador.
-El presupuesto opcional de llamadas ordinarias, herramientas y duración se define en
-`ContinuousConfig`; `AgentLimits.timeout_seconds` conserva el timeout finito por operación,
-sin imponer sus otros máximos al modo continuo.
+Desde E2 (2026-11-01), el continuo ejecuta un único bucle ReAct con intervenciones.
+`continuous.py` posee ejecución y captura; `runtime_control.py` compone funciones de
+política y estado operativo; `context_management.py` reconstruye intercambios completos.
+No hay selector del controlador anterior ni fases intelectuales. El modo acotado conserva
+su cierre por consolidación/respuesta y sus restricciones anteriores.
 
-Las respuestas son registros intermedios. El runtime añade una continuación técnica
-mediante `ConversationContext`, separada de las peticiones humanas. El calendario no
-avanza: las órdenes simuladas permanecen pendientes. El modo no introduce espera autónoma.
+`max_llm_calls` limita todas las llamadas gestionadas, incluidos checkpoints y evaluadores.
+`llm_calls_by_phase` conserva su nombre por compatibilidad, con propósitos `researcher`,
+`checkpoint`, `evaluator`. Los eventos conservan `phase` como alias de propósito para
+lectores históricos; no selecciona herramientas. Reintentos internos del proveedor
+siguen en las trazas y no se convierten en llamadas adicionales del controlador.
 
-`context_budget.ByteCounter` mide los bytes UTF-8 de la representación JSON tipada
-que contiene instrucciones, historial, herramientas y continuaciones opacas. No requiere
-mapping de modelo, tiktoken ni descarga de tablas. El presupuesto es
-`ceil(input_bytes * 1.10) + max_output_tokens * 8`: el factor de salida es una reserva
-heurística en bytes, no una conversión garantizada entre bytes y tokens. La salida
-máxima del proveedor sigue expresada en tokens. Los eventos distinguen `input_bytes`,
-`reserved_output_bytes` y `budgeted_bytes`; el consumo real disponible sigue en las
-trazas del proveedor, sin inventar valores ausentes.
+Los límites opcionales de herramientas y tiempo, la cancelación, las versiones y las
+transacciones siguen siendo obligatorios. El timeout por operación permanece finito.
+El contador usa JSON UTF-8, margen del 10 % y ocho bytes por token máximo de salida:
+es una heurística local, no una garantía sobre la ventana remota. Máximo/umbral por
+defecto: 524288/262144 bytes; `consolidation_threshold_bytes` conserva el nombre Python
+histórico, pero representa renovación. CLI: `--renewal-bytes`, con alias obsoleto.
 
-`ContinuousConfig.max_context_bytes` vale 524288 por defecto y
-`consolidation_threshold_bytes` 262144; ambos comparan el presupuesto con margen y
-reserva, no solo el texto. Son límites locales de tamaño, no una garantía de caber en
-la ventana remota. El piloto usa umbral 196608 y verifica que la semilla protegida
-quepa antes de preparar el comando. Las opciones antiguas en tokens se rechazan;
-las capturas históricas conservan sus unidades originales.
+La reconstrucción intenta dejar 16 KiB de margen para la siguiente interacción.
+La renovación incorpora mandato, petición, agenda, fundamentos, evaluación identificada,
+feedback y cola de intercambios completos. No corta continuaciones opacas ni repite
+herramientas. Si hay integración pendiente/desconocida o texto sin tratamiento declarado,
+ofrece hasta dos llamadas ordinarias con todas las herramientas. Después renueva,
+conservando pendientes recuperables y sin certificar continuidad semántica. El texto
+del investigador también se archiva como referencia recuperable de integración desconocida. El límite
+duro puede adelantar la renovación; si la base/intercambio imprescindible no cabe,
+se registra fallo explícito. Los resultados grandes mantienen original y lectura paginada.
 
-Al llegar al umbral se ofrecen hasta cuatro llamadas de consolidación con herramientas
-de persistencia. Cada una descuenta recursos globales. Después se reconstruye con
-instrucciones, mandato, petición inicial, fecha/metadatos, índice, agenda y presupuesto
-actual. No se conserva cola ni se genera otro resumen. Escrituras opcionales. Los
-errores devueltos por herramientas se entregan al modelo igual que en investigación:
-no terminan la ejecución ni reinician el presupuesto. A puede corregir argumentos o
-elegir otra operación con las llamadas restantes. Al responder o agotar las cuatro
-llamadas se reconstruye, también si hubo errores o no se escribió; esto no acredita
-que el conocimiento haya quedado conservado. Los límites globales, cancelación,
-timeouts y fallos operativos siguen teniendo sus motivos de cierre. Se rechazan arranques o
-reconstrucciones cuyo contexto protegido no quepa. La entrega de un resultado se compara
-con el máximo de contexto, en ambas fases; superar solo el umbral conserva el contenido
-y activa consolidación en la siguiente iteración. Un resultado que exceda el máximo se
-entrega por referencia paginable conservando el original; nunca se elimina una llamada aislada
-ni se corta una continuación. Si el intercambio no cabe, se pausa sin enviarlo.
+`conversacion-completa.jsonl` conserva cada item; `runtime/estado.json` guarda atómicamente
+referencias, declaraciones, versiones, contadores y deduplicación fuera del conocimiento.
+Los extractos de pendientes incluyen referencia a un artefacto completo recuperable.
+Una continuación recupera estado compatible del mismo workspace/mandato, verifica versiones
+y abre un nuevo presupuesto; no restaura todo el chat. El archivo y las listas de captura
+no tienen un límite global de almacenamiento.
 
-`conversacion-completa.jsonl` conserva incrementalmente cada item por número de contexto;
-los resultados originales están en los artefactos referenciados. `conversacion.json`
-conserva solo la ventana activa al cerrar. Los eventos registran método/versiones,
-presupuestos, renovaciones, archivos modificados y causas de pausa. El manifiesto conserva
-configuración continua y no declara la política de cierre acotada. Las capturas del
-proveedor y snapshots mantienen su formato. Las salidas intermedias se registran en eventos;
-`respuesta.md`, cuando existe, conserva la última, sin significar encargo completado.
-
-Errores/cancelación cierran el proceso con evidencia disponible. La continuación explícita
-arranca desde archivos y simulador actuales, con nuevo presupuesto por ejecución; no
-restaura chat ni repite operaciones. Un cierre abrupto no garantiza que lo no escrito
-en memoria se pueda recuperar. La ventana está acotada; el volumen del archivo y las
-listas de captura/eventos en memoria de proceso no tienen un límite total en esta versión.
-
-El piloto de [contexto continuo](experiments/contexto-continuo-v1/protocol.md) se prepara
-sin clientes ni bases durante las comprobaciones de `research_campaigns`. Congela mandato, instrucciones,
-perfil, fuentes instaladas, dataset y estado nuevo, y comprueba las condiciones antes del lanzamiento integrado. En simulación, `allow_web: false`
-omite `search_web`; su ausencia conserva el comportamiento anterior con web.
+Los experimentos nuevos congelan `runtime.json` con política e instrucción exactas;
+continuar en E2 exige identidad compatible. Experimentos anteriores requieren código
+anterior o migración autorizada. `herramientas.json` sigue identificando escritura E1.
+La referencia anterior es Git `690313ced9c6311512f5623a90c20521bca458b2`.
 
 ## Autorrevisión periódica
 
-Toda ejecución continua realiza una llamada de revisión sin herramientas después de
-cada diez llamadas de investigación, si queda presupuesto ordinario para actuar.
-La frecuencia y la instrucción viven en `continuous.py`, sin interruptor ni opciones
-nuevas. El mismo modelo recibe el contexto activo y el aviso técnico en español;
-su elección breve se incorpora al historial. El harness no elige la investigación,
-no escribe una reflexión en el estado ni sustituye `answer` o `respuesta.md` con ella.
-La siguiente llamada ordinaria puede actuar o conservar lo que el modelo considere útil.
+E2 sustituye experimentalmente la revisión fija del investigador cada diez llamadas.
+La [decisión histórica](decisions/0004-revision-periodica.md) conserva sus condiciones;
+el [protocolo E2](experiments/e2-intervenciones/protocol.md) define el cambio autorizado.
 
-`ContinuousConfig.max_llm_calls` y `--max-calls` limitan investigación más
-consolidación; las revisiones son adicionales. `AgentResult.llm_calls` sigue siendo
-el total real intentado. `llm_calls_by_phase` distingue `research`, `consolidation`
-y `review`; su valor vacío por defecto conserva la construcción anterior del contrato.
-El contexto técnico distingue total consumido, desglose, límite ordinario y restante.
-El tiempo global, el timeout por operación y los límites de bytes también cubren
-la revisión. No hay llamadas adicionales después de alcanzar un límite de parada.
+La evaluación independiente responde a cambios de la evaluación identificada, hitos,
+bloqueos o repetición posterior a un aviso. Agrupa señales, separa intentos por cinco
+llamadas del investigador y tiene respaldo a veinte. El evaluador no escribe conocimiento.
+Fallos consumen presupuesto, quedan capturados y no provocan reintentos inmediatos.
+Las observaciones operativas y de reconciliación tienen un máximo conjunto de 8 KiB
+por interacción, además de los avisos operativos existentes, y se deduplican por contenido
+versionado; no certifican progreso ni obligan a adoptar un juicio.
 
-La consolidación técnica tiene prioridad sobre una revisión pendiente; esta se realiza
-tras reconstruir, antes de retomar la investigación. El contador sobrevive a las
-reconstrucciones y se reinicia en cada run. Un fallo o timeout conserva las capturas
-y detiene el ciclo. Una herramienta inesperada durante revisión no se ejecuta y pausa
-con `review_tools_disabled`; un timeout usa `review_timeout`. Una respuesta vacía permite
-continuar sin inventar una decisión. La revisión usa la reserva de salida habitual.
+`report_work`, solo durante continuo, comunica hitos/bloqueos y tratamiento de referencias:
+pendiente, integrado o irrelevante. Exige motivo, referencias existentes y hashes actuales
+para integración; no edita conocimiento ni valida semántica. Una escritura cualquiera no
+resuelve pendientes. Cambios posteriores invalidan declaraciones vinculadas a versiones
+anteriores. Sin grafo, las contradicciones económicas dependen del investigador/evaluador.
 
-El manifiesto registra `review_policy`, incluidos texto, frecuencia y presupuesto.
-Los eventos `lab.model.started`/`lab.model.finished` asocian fase, índice correlativo
-y duración de cada llamada al cliente. `trazas/events.jsonl` incorpora esa fase e
-índice también a los intentos del proveedor dentro de la llamada, conservando sus
-IDs, duración, consumo y referencias a payloads originales. Consumo ausente no es cero.
-La lectura y el informe de campañas muestran total y desglose; resultados históricos
-sin desglose se presentan como desconocidos. El ciclo acotado no cambia.
-
-La [decisión](decisions/0004-revision-periodica.md) conserva la elección permanente;
-el [protocolo](experiments/contexto-continuo-v1/protocol.md#v4--revisión-periódica-permanente)
-separa la verificación mecánica de los [hallazgos reales V1–V4](experiments/contexto-continuo-v1/findings.md).
-
+Durante las últimas cinco llamadas se entrega una orientación de cierre; la última se
+reserva a evaluación final. Con presupuesto inicial de una llamada se prioriza al investigador.
+El cierre por herramientas puede evaluar si quedan llamadas y tiempo. No se evalúa tras
+cancelación/fallo/agotamiento temporal. `call_limit` continúa siendo interrupción, no éxito.
 
 ## Revisión externa y escritura conjunta
 
-El continuo sin objetivo incorpora revisión externa adicional a la autorrevisión
-permanente. Con objetivo se usa la evaluación por criterios descrita después. `external_review`
-cuenta en el total real y queda fuera de investigación/consolidación, compartiendo
-el deadline global. Una revisión intermedia ocurre tras consumir la mitad del límite
-ordinario si queda trabajo; sin límite, tras 50 llamadas de investigación. El cierre
-por llamadas o herramientas puede revisar si queda tiempo. No se añaden llamadas tras
-cancelación, fallo operativo o agotamiento temporal.
+Sin objetivo se usa el revisor general; con objetivo, el evaluador por criterios.
+Ambos siguen la política E2 de eventos y presupuesto total. Los informes de revisión
+general tienen identificadores únicos por intento y un archivo final separado.
 
 El mismo cliente/perfil revisa secuencialmente un paquete separado (64 KiB), sin
 herramientas ni conversación del investigador. Recibe mandato, agenda, estados,
@@ -475,7 +443,7 @@ informe final completo del mismo workspace como referencia histórica.
 La agenda distingue investigación longitudinal y resultado revisable de sesión.
 La semilla recupera hasta dos referencias Markdown explícitas del foco (8 KiB de
 contenido, IDs opcionales), con versión y parcialidad, sin recorrido recursivo.
-El registro efectivo define las capacidades mostradas por fase. Los avisos mecánicos
+El registro efectivo define las herramientas disponibles para el investigador. Los avisos mecánicos
 son informativos y no certifican progreso ni fuerzan escrituras o prioridades.
 
 `record_research_advance` conserva 1–5 cambios conjuntos. Prevalida formatos, versiones
@@ -493,11 +461,10 @@ La [entrega V7](deliveries/2026-10-30-v7.md) registra alcance y verificación.
 contrato y cálculo viven en `objectives`; el paquete y recuperación en `objective_review`;
 la programación pertenece al continuo existente. El objetivo es externo al estado,
 inmutable durante el run y congelado con hash en manifiesto. Sin objetivo se mantiene
-V7; con objetivo se sustituye su revisión externa por `objective_evaluation` cada
-20 llamadas de investigación, tras consolidación y autorrevisión pendientes.
+el revisor general; con objetivo se sustituye por evaluación de criterios según la política E2.
 
 El evaluador comparte cliente/perfil y deadline, con contexto separado y sin herramientas.
-Sus llamadas son adicionales al máximo ordinario y cuentan en el total real. Un paquete
+Sus llamadas consumen el mismo techo total que el investigador. Un paquete
 de 64 KiB reserva espacio para fuentes antes de acciones; recortes, versiones y omisiones
 quedan explícitos. No es una garantía de suficiencia de fuentes ni validación económica.
 La respuesta por criterios distingue cubierto, no cubierto y no evaluable. Solo una
@@ -507,7 +474,7 @@ El feedback acotado orienta pendientes, reaperturas, reconsideración tras tres 
 no decrecientes y síntesis al alcanzar cero, sin imponer acciones ni terminar el continuo.
 Fallos, parcialidad y omisiones interrumpen estancamiento; se conserva la última cobertura
 completa por separado. El cierre por recursos puede evaluar o reutilizar una evaluación
-si conocimiento y fuentes no cambiaron, sin llamadas tras fallo, cancelación o deadline.
+solo si el paquete completo coincide exactamente, sin llamadas tras fallo, cancelación o deadline.
 
 `evaluacion-objetivo/` conserva inputs, respuestas, métricas y referencias por run fuera
 del workspace editable. Renovaciones recuperan feedback; continuaciones gestionadas
@@ -537,8 +504,8 @@ las vistas del contexto investigador siguen acotadas a 4 KiB.
 
 Todas las escrituras de `agenda.md` se prevalidan con máximo de 8192 bytes UTF-8,
 también en operaciones conjuntas: se rechaza antes de publicar ningún cambio. No se
-recorta estado previo automáticamente. Para objetivos con evaluación activa se
-reservan 16 KiB de margen de semilla bajo el umbral, además de la reserva de salida.
+recorta estado previo automáticamente. La reconstrucción valida la semilla efectiva
+y el intercambio imprescindible antes de sustituir la ventana activa.
 El [protocolo de Microsoft](experiments/evaluacion-msft-v1/protocol.md) posee la campaña
 autorizada, cuya pregunta ha fijado literalmente el usuario.
 

@@ -84,7 +84,7 @@ print('worker output')
 def test_budget_and_shared_runtime_options(launcher):
     options = launcher.OPTIONS
     for flag, value in (("--max-calls", "100"), ("--max-tools", "200"), ("--timeout-seconds", "300"),
-                        ("--context-bytes", "524288"), ("--consolidation-bytes", "262144")):
+                        ("--context-bytes", "524288"), ("--renewal-bytes", "262144")):
         assert options[options.index(flag) + 1] == value
     assert {"--new", "--continuous", "--python"} <= set(options)
     assert "--objective" not in options and "--continuous-timeout-seconds" not in options

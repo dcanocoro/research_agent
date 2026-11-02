@@ -5,6 +5,14 @@ vive en `src/research_campaigns/`. Una definición es la receta; una campaña es
 ejecución concreta en una carpeta nueva. Solo A investiga: el controlador prepara
 entradas, lanza su CLI y conserva evidencia. El núcleo no importa el controlador.
 
+## Investigación autónoma abierta
+
+La [receta de 1000 llamadas](../campaigns/investigacion-autonoma-1000/README.md)
+prepara una única ejecución nueva de File Agent con el mandato del usuario, sin
+empresa asignada ni objetivo JSON. Usa la CLI nativa y techo total opcional;
+el [protocolo](experiments/investigacion-autonoma-1000/protocol.md) fija revisión
+de trayectoria. Preparada sin ejecutarla, sin incorporar las intervenciones E2.
+
 ## Tres casos fijos en paralelo
 
 El agente actual tiene una sola composición y una única escritura,
@@ -20,6 +28,13 @@ $env:LLM_TIMEOUT_SECONDS = "180"
 $env:LLM_CALL_BUDGET_SECONDS = "180"
 .\.venv\Scripts\python.exe scripts/run_fixed_cases.py --output artifacts/mi-experimento
 ```
+
+Para ejecutar los tres casos con el integrador B opcional, añadir
+`--knowledge-agent on` al lanzador. Se conserva el máximo de 100 llamadas ordinarias
+por caso, ahora compartidas entre A y B; las revisiones siguen siendo adicionales.
+El modo queda congelado en cada experimento nuevo. El
+[protocolo de esta tanda](experiments/agente-conocimiento-v1/protocol.md) declara
+sus condiciones y límites; activar B no implica una mejora demostrada.
 
 El destino debe ser nuevo. Se lanzan tres procesos simultáneos de la CLI nativa,
 cada uno con su propio directorio: `analista/`, `microsoft/` y `sector-ia/`.

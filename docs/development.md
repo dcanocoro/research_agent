@@ -48,6 +48,24 @@ metadatos o dependencias puede requerir reinstalarlo. El wheel compartido se ins
 como copia: editar FinMate no cambia esa instalación. Esto fija código, no datos,
 web, modelos remotos o configuración; verificar el entorno antes de comparar.
 
+## B opcional con contexto preparado
+
+La única modalidad activa de B es `--knowledge-agent prepared`; `off` conserva
+escritura directa de A. Se utiliza E2 (`--continuous`), mandato explícito y
+`--max-calls 100`: 24 llamadas protegidas para B, 76 para A y el controlador.
+El encargo se registra antes de ejecutarse y B recibe vistas deterministas
+hasta 32 KiB. No se incluye un lanzador de campañas ni una variante sin precarga.
+Las configuraciones históricas `on` y `protected` no se migran silenciosamente.
+Crear un experimento nuevo para esta versión. Las continuaciones heredan el modo.
+
+Verificación local sin proveedores:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/test_durable_knowledge.py tests/test_e2.py
+```
+
+La [entrega actual](deliveries/2026-11-02-b-prepared-original.md) describe alcance y límites.
+
 ## Instalación
 
 ### Python programable opcional
@@ -339,61 +357,24 @@ repetida en el entorno actual. Registrar qué se comprobó y qué quedó fuera.
 
 ## Ejecutar el modo continuo experimental
 
-El [protocolo](experiments/contexto-continuo-v1/protocol.md) define alcance y aceptación.
-Actualizar la instalación editable desde el pyproject vigente. El presupuesto continuo
-usa bytes UTF-8 sin tokenizer ni dependencias nuevas; no cambia el wheel compartido.
+El continuo usa E2: un bucle ReAct con checkpoints, `report_work`, evaluación
+por eventos y reconstrucción con intercambios completos. Requiere `--mandate` y
+`--continuous`. `--max-calls` incluye investigación, checkpoints, evaluación y B.
+`--max-total-calls` conserva compatibilidad como techo adicional (se usa el menor).
+`--context-bytes` limita el contexto; `--renewal-bytes` fija el umbral de renovación.
+`--consolidation-bytes` sigue siendo un alias de renovación. `--max-tools` y
+`--continuous-timeout-seconds` limitan herramientas y tiempo global.
 
-Ejemplo de operación para una ejecución futura autorizada, no un check documental:
+B es opcional. `--knowledge-agent prepared` exige 100 llamadas totales, protege
+24 para B y prepara sus vistas iniciales. Cada intento exige seis llamadas
+completas, hasta doce herramientas y noventa segundos, respetando el plazo global.
+No se transfieren las llamadas no utilizadas de B a A. Encargos y resultados viven
+en `control-integracion`, fuera de conocimiento editable y de la conversación.
+Los pendientes no son conocimiento integrado ni certifican calidad financiera.
 
-```powershell
-.\.venv\Scripts\python.exe -m research_agent "Continúa investigando el mandato" --experiment ./artifacts/continuo --new --run-name inicial --continuous --mandate ./mandato.md --max-calls 60 --continuous-timeout-seconds 1200
-.\.venv\Scripts\python.exe -m research_agent "Retoma desde lo conservado" --experiment ./artifacts/continuo --continue --run-name reanudacion --continuous --mandate ./mandato.md --max-calls 60
-```
-
-`--context-bytes` (524288) y `--consolidation-bytes` (262144) controlan la ventana;
-`--max-calls` limita investigación más consolidación. Desde el 2026-10-27, las
-revisiones permanentes cada diez llamadas de investigación son adicionales y no
-tienen un interruptor. Por ejemplo, 60 llamadas ordinarias, todas de investigación,
-permiten cinco revisiones intercaladas: 65 llamadas totales, sin revisión al terminar.
-`--max-tools` y `--continuous-timeout-seconds` son límites globales que también
-se aplican durante la revisión. Estos límites son opcionales por ejecución.
-Sin ellos continúa hasta interrupción o error. `--timeout-seconds`
-conserva un timeout finito por operación (300 segundos por defecto). No se admite
-`--limits` junto con `--continuous`, ni opciones continuas en modo acotado.
-La API directa recibe `AgentRequest(..., continuous=ContinuousConfig(...))` y necesita
-provider, model y max_output_tokens efectivos en la configuración de A.
-
-Con `--simulation PATH`, usar un simulador previamente preparado y separado del estado:
-se conserva su fecha, no se ejecuta el calendario longitudinal y las órdenes no avanzan
-por renovar contexto. Sin simulador, siguen disponibles las herramientas habituales;
-eso no constituye un escenario histórico congelado.
-
-El modo requiere un mandato externo y una salida máxima positiva en el perfil. No
-sustituye el modelo configurado: `gpt-6-luna` ya no está bloqueado por un mapping de
-tokenizer. El presupuesto incluye entrada serializada, margen del 10 % y una reserva
-heurística de ocho bytes por token máximo de salida; no acredita tokens reales ni
-capacidad remota. No se aceptan las antiguas opciones `--context-tokens` y
-`--consolidation-tokens`, para evitar reinterpretar unidades silenciosamente.
-
-El [protocolo del piloto](experiments/contexto-continuo-v1/protocol.md#preparación-y-ejecución-manual)
-contiene el comando de preparación offline, comprobación y ejecución manual. La preparación
-crea un estado nuevo con las instrucciones vigentes; por eso el primer comando generado
-usa `--continue`. La comprobación rechaza entradas/runtime cambiados o un destino ya usado.
-
-La CLI indica `continuous=interrupted: call_limit|tool_limit|time_limit` en pausas
-controladas y retorna 0; otros fallos retornan 1, argumentos inválidos 2. Una pausa
-no es `completed`. Para reanudar, usar `--continue`: conserva archivos y estado económico,
-abre otro archivo de ejecución y no repite herramientas previas. No hay reinicio automático.
-`conversacion-completa.jsonl` es el historial entre ventanas; el JSON habitual contiene
-la última ventana. Consultar también eventos, resultados originales y trazas de consumo.
-
-`resultado.json` conserva `llm_calls` como total real y `llm_calls_by_phase` como
-desglose de investigación, consolidación y revisión. Las capturas antiguas sin el
-desglose siguen siendo legibles. `manifiesto.json → review_policy` fija la política
-efectiva; fase e índice de llamada en eventos y trazas permiten atribuir duración y
-consumo reportado por el proveedor, incluidos sus reintentos. La reflexión no se guarda
-como entrega ni modifica archivos automáticamente. Véase la
-[arquitectura](architecture.md#autorrevisión-periódica).
+Las versiones históricas del controlador por fases y de B sin contexto preparado
+no son modalidades ejecutables de esta entrega. Los experimentos congelados
+conservan sus evidencias, sin migración silenciosa a este controlador.
 
 ## Baseline y comparabilidad
 

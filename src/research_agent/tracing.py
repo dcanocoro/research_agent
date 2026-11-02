@@ -13,6 +13,9 @@ def capture_traces(root: Path, *, flat: bool = False,
                    call_metadata: Callable[[], dict[str, Any]] | None = None) -> Iterator[list[dict[str, Any]]]:
     from findata.settings import settings
     from infra.adapters import llm_trace
+    from runtime_contracts.execution import current_run_context
+    owner = current_run_context()
+    owner_id = owner.run_id if owner is not None else None
     root.mkdir(parents=True, exist_ok=True)
     previous_mode, previous_archive = settings.LLM_TRACE_MODE, llm_trace._archive_directory
     events: list[dict[str, Any]] = []
@@ -20,6 +23,9 @@ def capture_traces(root: Path, *, flat: bool = False,
 
     class Capture(logging.Handler):
         def emit(self, record: logging.LogRecord) -> None:
+            active = current_run_context()
+            if owner_id is not None and (active.run_id if active is not None else None) != owner_id:
+                return
             fields = getattr(record, "json_fields", None)
             if isinstance(fields, dict):
                 # Snapshot before callers can mutate a logging payload.
@@ -43,7 +49,6 @@ def capture_traces(root: Path, *, flat: bool = False,
                         return payload_names.get(item, item) if isinstance(item, str) else item
                     value = renamed(value)
                 from observability_context import current_interaction_context
-                from runtime_contracts.execution import current_run_context
                 interaction, run = current_interaction_context(), current_run_context()
                 value.setdefault("occurred_at", datetime.fromtimestamp(record.created, timezone.utc).isoformat())
                 if interaction is not None:

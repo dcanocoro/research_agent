@@ -14,7 +14,10 @@ from .workspace import Workspace
 @asynccontextmanager
 async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits(), *,
                       experiment: Path | None = None, run_name: str = "intervencion",
-                      simulation: Path | None = None, python_enabled: bool = False) -> AsyncIterator[AgentA]:
+                      simulation: Path | None = None, python_enabled: bool = False,
+                      knowledge_agent: str | None = None) -> AsyncIterator[AgentA]:
+    from .knowledge import mode_for, attach
+    mode = mode_for(experiment, knowledge_agent)
     # Validate experiment paths and frozen interface before constructing clients.
     if experiment is not None:
         from .state_configuration import validate_state_configuration
@@ -46,7 +49,7 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     factory = LLMFactory(settings)
     profile = replace(configured_profile(settings, "planner"), name="lab")
     space = Workspace(workspace)
-    register_files(registry, space)
+    register_files(registry, space, writable=mode == "off")
     if python_enabled:
         from .integrations.python_tools import register_python
         register_python(registry, space, python_config)
@@ -74,9 +77,12 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
             hashes = [(str(p.relative_to(package)), hashlib.sha256(p.read_bytes()).hexdigest())
                       for p in sorted(package.rglob("*")) if p.suffix in {".py", ".md"}]
             fingerprints[module.__name__] = hashlib.sha256(repr(hashes).encode()).hexdigest()
-        yield AgentA(factory.conversation(profile), registry, space, recorder, limits,
+        agent = AgentA(factory.conversation(profile), registry, space, recorder, limits,
                      configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files",
                                     "python_operators": python_config, "state_tools_contract": "state-tools-e1", **historical})
+        if mode != "off":
+            attach(agent, lambda: factory.conversation(profile), mode)
+        yield agent
     finally:
         await factory.aclose()
         if database is not None:

@@ -6,6 +6,12 @@ correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda v
 consultar [estrategia](../strategy.md). Los estados «sin campaña» describen el cierre
 de aquella entrega; las ejecuciones posteriores están en el [registro experimental](../experiments/README.md).
 
+- [2026-11-01 — Agente de conocimiento opcional](2026-11-01-knowledge-agent.md):
+  delegación secuencial activable en CLI, presupuestos compartidos y registros hijos;
+  comprobaciones locales y tanda posterior de tres casos; persistencia insuficiente,
+  sin validación semántica.
+- [2026-11-01 — Investigación autónoma de 1000 llamadas](2026-11-01-open-research-1000.md):
+  preparación sobre experiment/fileAgent y techo total opcional; sin campaña real.
 - [2026-10-31 — Ablación E1](2026-10-31-e1-simplification.md): escritura única e
   instrucciones condensadas sobre el mismo agente; tres casos ejecutados y hallazgos
   cualitativos registrados sin control causal.
@@ -63,3 +69,5 @@ de aquella entrega; las ejecuciones posteriores están en el [registro experimen
   extracción, operación y primeras hipótesis. Conserva las verificaciones de aquel corte.
 
 - [2026-10-24 — Simulación longitudinal](2026-10-24-longitudinal.md): herramientas históricas, cartera, calendario y recuperación.
+
+- [2026-11-02 — B preparado en el checkout original](2026-11-02-b-prepared-original.md).
