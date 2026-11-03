@@ -138,7 +138,7 @@ lista de fases autorizadas para ejecución.
 | [tools.py](../../../src/research_agent/tools.py) | Valida schemas, despacha, captura resultados y crea materiales cuando corresponde; construye el payload entregado al modelo. |
 | [recording.py](../../../src/research_agent/recording.py) | Conserva resultados originales, eventos y snapshots; recupera artefactos con comprobación de identidad del workspace. |
 | [continuous.py](../../../src/research_agent/continuous.py) | Controla consolidación, reconstrucción y presupuesto de contexto; puede entregar una referencia si el resultado excede el máximo. |
-| [experiments.py](../../../src/research_agent/experiments.py) | Separa instrucciones, estado y ejecuciones; copia prompts y bloquea ejecuciones simultáneas del experimento gestionado. |
+| [Gestión de directorios](../../../src/research_agent/experiment_store.py) (antes `experiments.py`) | Separa instrucciones, estado y ejecuciones; copia prompts y bloquea ejecuciones simultáneas del experimento gestionado. |
 | [financial_research.md](../../../src/research_agent/prompts/financial_research.md) | Define metodología, documentos por empresa, IDs y revisión de consecuencias. |
 | [python_tools.py](../../../src/research_agent/integrations/python_tools.py) | Ejecutor programable y contratos consultables opcionalmente: precedente instrumental. |
 

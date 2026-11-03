@@ -13,6 +13,7 @@ from research_agent.agent import AgentA
 from research_agent.context_budget import ByteCounter
 from research_agent.runtime_control import RuntimeState, register_report, INSTRUCTION, validate_runtime, identity as control_identity
 from research_agent.continuous import CHECKPOINT_POLICY, POLICY, REVIEW_POLICY, DECISION_DIRECTION, context_seed
+from research_agent.experiments.regimes.continuous import execution_instructions
 from research_agent.contracts import AgentRequest, ContinuousConfig
 from research_agent.experiments import disjoint, validate_mandate
 from research_agent.integrations.file_tools import register_files
@@ -56,9 +57,7 @@ def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
                            continuous=ContinuousConfig(**read(root / "definicion/scenario.json")["continuous"]),
                            objective=Objective.load(root / "definicion/objective.json") if (root / "definicion/objective.json").exists() else None)
     paths = sorted((root / "instrucciones").glob("*.md"), key=lambda p: (p.name != "agente.md", p.name))
-    system = "\n\n".join(p.read_text(encoding="utf-8") for p in paths) + "\n\n" + POLICY + "\n\n" + INSTRUCTION
-    if request.objective:
-        system += "\n\n" + DECISION_DIRECTION
+    system = execution_instructions(agent, request, "\n\n".join(p.read_text(encoding="utf-8") for p in paths))
     return ByteCounter().measure(system, context_seed(agent, request, "initial"), registry.specs(), profile["max_output_tokens"])
 
 

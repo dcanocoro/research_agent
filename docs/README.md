@@ -12,6 +12,7 @@ capturada no demuestra calidad financiera ni resultados de inversión.
 | Conocer la pregunta vigente y lo pendiente | [Estrategia](strategy.md) |
 | Entender el agente actual y sus fronteras | [Arquitectura](architecture.md) |
 | Instalar, configurar y ejecutar | [Desarrollo](development.md) |
+| Preparar, lanzar y revisar experimentos por nombre | [Guía breve](launch-experiments.md) |
 | Preparar y revisar campañas | [Campañas](campaigns.md) |
 | Diseñar un contraste | [Metodología](experiments.md) |
 | Consultar resultados y sus límites | [Registro experimental](experiments/README.md) |

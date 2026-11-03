@@ -1,0 +1,10 @@
+{
+  "id": "modelo-negocio-msft",
+  "description": "Comprender el modelo de negocio de Microsoft",
+  "criteria": {
+    "productos": "Explicar los principales productos y clientes",
+    "ingresos": "Explicar las fuentes de ingresos y sus impulsores",
+    "ventajas": "Fundamentar ventajas competitivas y sus límites",
+    "incertidumbres": "Identificar incertidumbres materiales y evidencia pendiente"
+  }
+}

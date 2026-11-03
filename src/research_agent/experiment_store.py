@@ -122,7 +122,7 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
                        deliberative: bool = False, instructions_dir: Path | None = None,
                        knowledge_agent: str | None = None) -> tuple[Path, ...]:
     from .state_configuration import freeze_state_configuration, validate_state_configuration
-    from .knowledge import mode_for, freeze
+    from .composition import knowledge_mode as mode_for, freeze_knowledge as freeze, freeze_runtime_configuration
     if knowledge_agent not in (None, "off", "prepared"):
         raise ValueError("Invalid knowledge agent mode")
     root = root.absolute()
@@ -174,8 +174,7 @@ def prepare_experiment(root: Path, *, new: bool, instructions: tuple[Path, ...] 
             raise ValueError("Invalid experiment: expected instrucciones/, estado/ and ejecuciones/.")
     if new:
         freeze_state_configuration(root)
-        from .runtime_control import freeze_runtime
-        freeze_runtime(root)
+        freeze_runtime_configuration(root)
         if knowledge_agent is not None:
             freeze(root, knowledge_agent)
     paths = (root / "instrucciones/agente.md", *sorted(p for p in (root / "instrucciones").glob("*.md") if p.name not in {"agente.md", "agente-conocimiento.md", "delegacion-conocimiento.md"}))

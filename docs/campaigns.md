@@ -1,5 +1,10 @@
 # Campañas de investigación
 
+Para las pruebas actuales `regimenes`, `progreso` y `multiagente`, empieza por la
+[guía breve de preparación, lanzamiento y revisión](launch-experiments.md).
+Las recetas fechadas de este documento conservan sus condiciones históricas;
+no sustituyen la CLI actual por nombre.
+
 Las definiciones se proporcionan en un directorio externo o en `campaigns/`; el código de preparación, ejecución y revisión
 vive en `src/research_campaigns/`. Una definición es la receta; una campaña es una
 ejecución concreta en una carpeta nueva. Solo A investiga: el controlador prepara

@@ -357,6 +357,20 @@ repetida en el entorno actual. Registrar qué se comprobó y qué quedó fuera.
 
 ## Ejecutar el modo continuo experimental
 
+Para uso manual, el [lanzamiento corto por carpetas](../campaigns/README.md) carga
+mandato y petición desde el repositorio: `--name NOMBRE --continuous --max-calls 100
+--output DESTINO --new` (o `--continue`). No requiere petición posicional, nombre
+del run, máximo de herramientas ni timeout en el comando. Los ejemplos avanzados
+que siguen conservan la interfaz anterior para consumidores existentes.
+
+La [organización actual](architecture.md#organización-del-código) usa un motor común
+para acotado, continuo y B. Se mantienen argumentos, alias y valores predeterminados;
+no hay archivos nuevos de selección de extensiones. `--experiment` sigue nombrando
+el directorio de estado y capturas, no una variante del agente. Los manifiestos
+registran además `extensions`; las campañas preparadas con fingerprints distintos
+siguen rechazándose. La [entrega del refactor](deliveries/2026-11-02-runtime-refactor.md)
+documenta la verificación local y la incidencia previa de recopilación de tests.
+
 El continuo usa E2: un bucle ReAct con checkpoints, `report_work`, evaluación
 por eventos y reconstrucción con intercambios completos. Requiere `--mandate` y
 `--continuous`. `--max-calls` incluye investigación, checkpoints, evaluación y B.

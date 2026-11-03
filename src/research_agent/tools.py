@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 from jsonschema import Draft202012Validator
 from runtime_contracts.llm import ResponseFunctionCall, ToolResult, ToolSpec
-from .contracts import StateSummary, serializable
+from .runtime.contracts import StateSummary, serializable
 from .recording import RunRecorder, encoded
 from .workspace import Workspace
 from .advances import RecoveryRequired

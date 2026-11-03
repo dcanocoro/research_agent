@@ -40,18 +40,73 @@ en el modo experimental de simulación, separado de Findata y del producto.
 
 | Componente | Responsabilidad |
 |---|---|
-| [AgentA](../src/research_agent/agent.py) | Contexto, replay del proveedor, presupuestos y cierre |
+| [AgentA](../src/research_agent/agent.py) | Fachada pública y entrada al motor compartido |
+| [Motor ReAct](../src/research_agent/runtime/execution.py) | Interacciones, herramientas, timeouts, bindings y finalización |
 | [Workspace](../src/research_agent/workspace.py) | Estado UTF-8 acotado y materiales originales |
 | [ToolRegistry](../src/research_agent/tools.py) | Schemas, despacho, materiales y entrega paginada |
 | [RunRecorder](../src/research_agent/recording.py) | Manifest, eventos, respuesta y snapshots |
-| [Experimentos](../src/research_agent/experiments.py) | Crear/continuar, bloqueo y observación de Git |
+| [Directorios de experimentos](../src/research_agent/experiment_store.py) | Crear/continuar, bloqueo y observación de Git |
 | [build_agent](../src/research_agent/bootstrap.py) | Composición de A con las bibliotecas compartidas |
 | [capture_traces](../src/research_agent/tracing.py) | Logs y payloads locales del proveedor |
 
 ## Organización del código
 
-`research_agent` posee el ciclo y la captura. `AgentA.run` delega preparación y cierre
-en `_prepare` y `_finish`. Cada herramienta declara ejecución (`inline`, `thread`,
+`research_agent` posee el ciclo y la captura. Desde la reorganización del 2026-11-02,
+`AgentA.run` solicita una política a `bootstrap.compose_policy` y entra en el único
+bucle de `runtime.execution.execute`. Las políticas no llaman directamente al
+proveedor ni despachan herramientas. Las revisiones aisladas usan el mismo transporte
+del motor y B abre una sesión hija del mismo motor, secuencial y con cargo al padre.
+
+```text
+research_agent/
+  agent.py                  fachada compatible
+  bootstrap.py              selección y construcción
+  composition.py            instrucciones, activación y metadatos
+  experiment_store.py       directorios, bloqueo y copias congeladas
+  runtime/
+    execution.py            único bucle y transporte
+    contracts.py            límites y resultados neutrales
+    limits.py               contabilidad común de llamadas y deadlines
+    bounded.py              política acotada predeterminada
+    lifecycle.py            captura final común
+  experiments/
+    multiagent/             encargos B, reservas y cierre verificable
+    progress/               objetivos, revisiones y señales de progreso
+    regimes/                política continua E2 y su estado operativo
+```
+
+`workspace`, `advances`, `tools`, `recording`, `tracing`, adaptadores y mecanismos
+técnicos de contexto permanecen compartidos. `contracts.AgentRequest` conserva su
+interfaz; el núcleo importa valores neutrales de `runtime.contracts`, sin cargar
+objetivos. El paquete `experiments` reexporta la gestión histórica de directorios.
+Los módulos históricos de conocimiento, objetivos, revisión y continuo son aliases
+compatibles de sus implementaciones, incluidos los puntos de monkeypatch existentes.
+
+La política tiene preparación, siguiente paso, recepción y finalización. El motor
+ejecuta llamadas de modelo/herramientas, renovación y acciones aisladas de revisión;
+no conoce B ni E2. `CallBudget` contabiliza intentos también cuando fallan y conserva
+límites locales y agregados; los presupuestos protegidos pertenecen a multiagente.
+Composición conecta los colaboradores concretos de progreso con el régimen continuo.
+No hay descubrimiento automático de plugins ni YAML nuevo. El
+[lanzamiento por carpetas](../campaigns/README.md) permite seleccionar las
+composiciones existentes con `--name`, entradas Markdown y `--output`.
+
+Sin opciones experimentales se conserva el cierre acotado. `--continuous` compone
+E2 con revisión general; `--objective` selecciona revisión por criterios;
+`--knowledge-agent prepared` añade B con sus restricciones anteriores. Estas son
+las combinaciones existentes, no una garantía de compatibilidad con variantes futuras.
+Una ejecución básica se verifica bloqueando imports de las implementaciones opcionales.
+
+Los manifiestos añaden `extensions` con régimen, progreso y multiagente efectivos;
+se conservan los campos anteriores. `runtime.json` mantiene sus bytes de identidad:
+su definición empaquetada permite congelar el registro histórico sin cargar E2 en
+una ejecución básica. Los fingerprints de código sí cambian; las campañas preparadas
+que exigen coincidencia exacta siguen rechazando el nuevo código. No hay migración.
+La [auditoría previa](deliveries/2026-11-02-runtime-audit.md), la
+[decisión aceptada](decisions/0005-nucleo-react-extensiones.md) y la
+[entrega](deliveries/2026-11-02-runtime-refactor.md) separan diagnóstico y verificación.
+
+Cada herramienta declara ejecución (`inline`, `thread`,
 `async`), conservación como material y disponibilidad durante consolidación; su
 validador se construye al registrarla. Las operaciones de archivos se ejecutan en
 línea para evitar escrituras en hilos después de cerrar un run.
@@ -378,8 +433,11 @@ explica las modalidades, revisión y límites de recuperación.
 ## Ciclo continuo y presupuesto de contexto
 
 Desde E2 (2026-11-01), el continuo ejecuta un único bucle ReAct con intervenciones.
-`continuous.py` posee ejecución y captura; `runtime_control.py` compone funciones de
-política y estado operativo; `context_management.py` reconstruye intercambios completos.
+`experiments/regimes/continuous.py` aporta las decisiones de continuidad al motor
+común; `runtime_control` conserva el estado operativo E2 y compone las políticas
+de progreso registradas desde composición. `context_management.py` reconstruye
+intercambios completos como infraestructura general. Los nombres de módulos antiguos
+continúan disponibles como aliases.
 No hay selector del controlador anterior ni fases intelectuales. El modo acotado conserva
 su cierre por consolidación/respuesta y sus restricciones anteriores.
 
@@ -476,8 +534,9 @@ La [entrega V7](deliveries/2026-10-30-v7.md) registra alcance y verificación.
 ## Objetivos y evaluación de cobertura
 
 `AgentRequest.objective: Objective | None` añade un objetivo fijo al continuo. El
-contrato y cálculo viven en `objectives`; el paquete y recuperación en `objective_review`;
-la programación pertenece al continuo existente. El objetivo es externo al estado,
+contrato y cálculo viven en `experiments/progress/objectives`; el paquete y recuperación
+en `objective_review` del mismo ámbito. Las señales de evaluación pertenecen a progreso
+y el régimen continuo solicita su ejecución al motor. El objetivo es externo al estado,
 inmutable durante el run y congelado con hash en manifiesto. Sin objetivo se mantiene
 el revisor general; con objetivo se sustituye por evaluación de criterios según la política E2.
 

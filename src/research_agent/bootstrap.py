@@ -5,10 +5,31 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from .experiments import disjoint
 from .agent import AgentA
-from .contracts import AgentLimits
+from .contracts import AgentLimits, AgentRequest
+from .runtime.execution import Policy
 from .recording import RunRecorder
 from .tools import ToolRegistry
 from .workspace import Workspace
+
+
+def validate_execution(agent: AgentA, request: AgentRequest) -> None:
+    """Reject unsupported combinations before recovery or run preparation."""
+    if agent.knowledge is not None:
+        agent.knowledge.validate_request(request)
+
+
+def compose_policy(agent: AgentA, request: AgentRequest) -> Policy:
+    """The only selector of concrete execution policies; no implicit variants."""
+    validate_execution(agent, request)
+    if agent.role == "B":
+        from .experiments.multiagent.closing import IntegrationPolicy
+        return IntegrationPolicy(agent, request)
+    if request.continuous is not None:
+        from .experiments.regimes.continuous import ContinuousPolicy
+        from .composition import progress_components
+        return ContinuousPolicy(agent, request, progress=progress_components())
+    from .runtime.bounded import BoundedPolicy
+    return BoundedPolicy(agent, request)
 
 
 @asynccontextmanager
@@ -16,8 +37,8 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
                       experiment: Path | None = None, run_name: str = "intervencion",
                       simulation: Path | None = None, python_enabled: bool = False,
                       knowledge_agent: str | None = None) -> AsyncIterator[AgentA]:
-    from .knowledge import mode_for, attach
-    mode = mode_for(experiment, knowledge_agent)
+    from .composition import knowledge_mode
+    mode = knowledge_mode(experiment, knowledge_agent)
     # Validate experiment paths and frozen interface before constructing clients.
     if experiment is not None:
         from .state_configuration import validate_state_configuration
@@ -81,6 +102,7 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
                      configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files",
                                     "python_operators": python_config, "state_tools_contract": "state-tools-e1", **historical})
         if mode != "off":
+            from .experiments.multiagent.knowledge import attach
             attach(agent, lambda: factory.conversation(profile), mode)
         yield agent
     finally:

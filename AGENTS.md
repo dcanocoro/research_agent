@@ -18,6 +18,7 @@ implementado. Las reflexiones orientan preguntas; no autorizan cambios de compor
 | Cambiar ciclo, memoria, herramientas o trazas | [Arquitectura](docs/architecture.md), productores, consumidores y pruebas |
 | Diseñar estado o persistencia | [Estrategia](docs/strategy.md), [arquitectura](docs/architecture.md) y decisiones relacionadas |
 | Implementar o evaluar experimentos | [Metodología](docs/experiments.md), [protocolo del contraste](docs/experiments/README.md) y arquitectura |
+| Preparar entradas, lanzar o revisar ejecuciones/campañas | [Guía breve de experimentos](docs/launch-experiments.md); para campañas gestionadas, [Campañas](docs/campaigns.md) |
 | Cambiar Findata, Infra, contratos o Audit | [Desarrollo y dependencias](docs/development.md) y [referencias de FinMate](docs/finmate-references.md) |
 | Instalar, verificar o entregar | [Desarrollo](docs/development.md) y entrega vigente en `docs/deliveries/` |
 

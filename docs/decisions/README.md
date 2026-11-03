@@ -17,6 +17,9 @@ o garantías. La
 - [ADR-0004 — Revisión periódica permanente](0004-revision-periodica.md): aceptada
   el 2026-10-27 para el ciclo continuo, con llamadas adicionales y utilidad semántica pendiente.
 
+- [ADR-0005 — Núcleo ReAct y extensiones](0005-nucleo-react-extensiones.md): aceptada
+  el 2026-11-02; motor único, composición explícita y compatibilidad de mecanismos.
+
 Usar `0001-nombre-breve.md`, con número consecutivo y este contenido mínimo:
 
 ```markdown
