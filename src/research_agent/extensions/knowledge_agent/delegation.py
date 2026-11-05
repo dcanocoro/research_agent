@@ -22,7 +22,14 @@ from research_agent.observability.recording import encoded
 from research_agent.core.tools import ToolRegistry
 from research_agent.storage.workspace import Workspace
 
-RESERVE = 30
+CALL_RESERVES = {60: 18, 70: 21, 100: 30}
+
+
+def validate_budget(continuous: Any) -> int:
+    total = continuous.max_llm_calls if continuous is not None else None
+    if total not in CALL_RESERVES:
+        raise ValueError("Durable B requires --continuous with --max-calls 60, 70 or 100")
+    return total
 LIMITS = AgentLimits(max_llm_calls=15, max_tool_calls=24, timeout_seconds=180,
                      finalization_seconds=60, max_context_bytes=128 * 1024)
 CONFIG = "agente-conocimiento.json"
@@ -132,18 +139,18 @@ class KnowledgeService:
         self.charge_tool: Callable[[], None] = lambda: None
 
 
-    @staticmethod
-    def validate_request(request: AgentRequest) -> None:
-        if request.continuous is None or request.continuous.max_llm_calls != 100:
-            raise ValueError("Durable B requires E2 with 100 total LLM calls")
+    def validate_request(self, request: AgentRequest) -> None:
+        self.total = validate_budget(request.continuous)
+        self.reserve = CALL_RESERVES[self.total]
+        self.agent.configuration["knowledge_reserve"] = self.reserve
 
     def remaining_for_research(self, calls: int) -> int:
-        return 100 - RESERVE - (calls - self.used)
+        return self.total - self.reserve - (calls - self.used)
 
     def bind_runtime(self, session: Any) -> None:
         """Attach the protected child budget to the parent's common accounting."""
         def charge_model() -> None:
-            if session.calls >= 100 or self.used >= RESERVE:
+            if session.calls >= self.total or self.used >= self.reserve:
                 raise RuntimeError("Integration budget exhausted")
             session.resources.charge_model()
             session.calls_by_phase["integration"] += 1
@@ -152,7 +159,7 @@ class KnowledgeService:
             session.resources.charge_tool()
 
         def available() -> dict[str, Any]:
-            return {"calls": 100 - session.calls,
+            return {"calls": self.total - session.calls,
                     "tools": session.config.max_tool_calls - session.tool_calls if session.config.max_tool_calls is not None else 200,
                     "seconds": session.deadline - session.clock() if session.deadline is not None else None,
                     "deadline": session.deadline}
@@ -174,8 +181,7 @@ class KnowledgeService:
 
 
     def begin(self, request: AgentRequest, state: Any) -> None:
-        if request.continuous is None or request.continuous.max_llm_calls != 100:
-            raise ValueError("Durable B requires E2 with 100 total LLM calls")
+        self.validate_request(request)
         assert self.agent.run_id is not None
         self.activation, self.state = self.agent.run_id, state
         self.used = self.tools_used = 0
@@ -304,7 +310,7 @@ class KnowledgeService:
             if len(encoded([*selected, row])) <= 4096:
                 selected.append(row)
         return {"tasks": selected, "pending_count": sum(t["status"] == "pending" for t in tasks),
-                "omitted": len(rows) - len(selected), "recovery": {"tool": "inspect_knowledge_tasks", "offset": 0}, "B_calls_used": self.used, "B_reserved_remaining": RESERVE - self.used}
+                "omitted": len(rows) - len(selected), "recovery": {"tool": "inspect_knowledge_tasks", "offset": 0}, "B_calls_used": self.used, "B_reserved_remaining": self.reserve - self.used}
 
     def packet(self, task: dict[str, Any]) -> dict[str, Any]:
         payload = task["payload"]
@@ -430,7 +436,7 @@ class KnowledgeService:
                 continue
             budget = self.available()
             remaining_time = budget.get("seconds")
-            if (RESERVE - self.used < LIMITS.max_llm_calls or budget.get("calls", 0) < LIMITS.max_llm_calls or budget.get("tools", 0) < LIMITS.max_tool_calls
+            if (self.reserve - self.used < LIMITS.max_llm_calls or budget.get("calls", 0) < LIMITS.max_llm_calls or budget.get("tools", 0) < LIMITS.max_tool_calls
                     or (remaining_time is not None and remaining_time < LIMITS.timeout_seconds + 1)):
                 task["reason"] = "resources"
                 self.store.save(task)
@@ -445,7 +451,7 @@ class KnowledgeService:
         store = self.store
         packet = self.packet(task)
         budget = self.available()
-        if (RESERVE - self.used < LIMITS.max_llm_calls or budget.get("calls", 0) < LIMITS.max_llm_calls or budget.get("tools", 0) < LIMITS.max_tool_calls
+        if (self.reserve - self.used < LIMITS.max_llm_calls or budget.get("calls", 0) < LIMITS.max_llm_calls or budget.get("tools", 0) < LIMITS.max_tool_calls
                 or (budget.get("seconds") is not None and budget["seconds"] < LIMITS.timeout_seconds + 1)):
             task["reason"] = "resources"
             store.save(task)
@@ -582,7 +588,7 @@ def attach(agent: Any, client_factory: Callable[[], Any], mode: str) -> None:
     agent.knowledge = service
     agent.tools.unregister("record_research_advance")
     agent.tools.contracts.pop("record_research_advance", None)
-    agent.configuration = {**agent.configuration, "knowledge_mode": mode, "knowledge_reserve": RESERVE,
+    agent.configuration = {**agent.configuration, "knowledge_mode": mode,
                            "knowledge_limits": asdict(LIMITS)}
     string = {"type": "string", "minLength": 1}
     doc = {"type": "object", "properties": {"path": string, "section_id": {"type": ["string", "null"]}},

@@ -40,8 +40,8 @@ Estos comandos consumen llamadas reales. `--name` carga los archivos de la carpe
 en terminales distintas usando salidas distintas; comparten límites del proveedor.
 No cambies código, configuración o entradas mientras se ejecutan.
 
-El presupuesto incluye investigación y revisiones. Multiagente exige 100 llamadas:
-70 para A/controlador y 30 protegidas para B, sin transferir a A las sobrantes.
+El presupuesto incluye investigación y revisiones. Multiagente admite 60, 70 o 100 llamadas. B protege 18, 21 o 30 respectivamente,
+sin transferir a A las sobrantes.
 El timeout global predeterminado es 24 horas. No hay máximo global de herramientas;
 se conservan timeouts por operación y límites internos de B.
 

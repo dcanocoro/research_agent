@@ -35,7 +35,7 @@ e historia, y `artifacts/` salidas locales ignoradas. Las pruebas reflejan estas
 | Deliberación | No | --mandate o entradas de --name |
 | Progress | No | --progress o --objective; incompatible con B |
 | Nota de continuidad | No | --context-note con continuo |
-| B preparado | No | --knowledge-agent prepared; continuo de 100 llamadas |
+| B preparado | No | --knowledge-agent prepared; continuo de 60, 70 o 100 llamadas |
 | Estado, aritmética, Findata, web | Sí en composición estándar | Disponibles; no obliga a utilizarlas |
 | Python | No | --python; dependencias opcionales |
 | Simulación | No | --simulation; sustituye acceso financiero ordinario |

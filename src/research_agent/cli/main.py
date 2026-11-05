@@ -147,8 +147,9 @@ def main(argv: list[str] | None = None) -> int:
         prompts = prepare_experiment(root, new=args.new, instructions=tuple(args.instructions),
                                      deliberative=mandate is not None, knowledge_agent=args.knowledge_agent)
         from research_agent.composition.configuration import knowledge_mode as mode_for
-        if mode_for(root, args.knowledge_agent) != "off" and (continuous is None or continuous.max_llm_calls != 100):
-            raise ValueError("Durable B requires --continuous --max-calls 100")
+        if mode_for(root, args.knowledge_agent) != "off":
+            from research_agent.extensions.knowledge_agent.delegation import validate_budget
+            validate_budget(continuous)
         with experiment_lock(root):
             if continuous is not None:
                 from research_agent.regimes.continuous.control import validate_runtime

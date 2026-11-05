@@ -178,15 +178,16 @@ def test_packet_boundaries_missing_sections_and_original_evidence(tmp_path):
     assert packet["handoff"]["interpretation"] == payload()["interpretation"]
 
 
-def test_full_e2_budget_counts_children_and_preserves_30(tmp_path):
+@pytest.mark.parametrize(("total", "research"), [(60, 42), (70, 49), (100, 70)])
+def test_full_e2_budget_counts_children_and_protects_reserve(tmp_path, total, research):
     agent, request = make(tmp_path, [call("integrate_knowledge", **payload()), *[text()] * 100],
-                          config=ContinuousConfig(max_llm_calls=100, max_tool_calls=200))
+                          config=ContinuousConfig(max_llm_calls=total, max_tool_calls=200))
     attach(agent, lambda: ScriptedClient([writer(), finish()]), "prepared")
     result = execute(agent, request)
     assert result.error is None and result.stop_reason == "call_limit"
-    assert result.llm_calls == sum(result.llm_calls_by_phase.values()) <= 100
-    assert result.llm_calls_by_role == {"A": 70, "B": 2}
-    assert result.llm_calls == 72  # Unused B reserve is not transferred to A.
+    assert result.llm_calls == sum(result.llm_calls_by_phase.values()) <= total
+    assert result.llm_calls_by_role == {"A": research, "B": 2}
+    assert result.llm_calls == research + 2  # Unused B reserve is not transferred to A.
     assert result.llm_calls_by_phase["integration"] == 2
     assert result.state.files_written == ("nota.md",)
     assert any("knowledge_tasks" in str(r["input_items"]) for r in agent.client.requests[1:])

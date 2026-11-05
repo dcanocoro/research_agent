@@ -10,6 +10,8 @@ El primer run detectó un truncamiento terminal de nota; tras corregir su fallba
 la continuación cerró por presupuesto. Ocho notas válidas de quince solicitudes;
 sin contraste causal ni validación financiera.
 
+Piloto de extensiones en continuo: [protocolo](piloto-extensiones/protocol.md).
+
 ## Registro consolidado al 2026-10-31
 
 Implementación posterior (2026-11-03): [progress por compromisos](progress/protocol.md),
