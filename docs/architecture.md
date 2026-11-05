@@ -3,6 +3,43 @@
 > Referencia documental consolidada el 2026-10-31. Autoridad: código, schemas y
 > configuración efectiva; el wheel instalado puede diferir de las fuentes de FinMate.
 
+## Nota de continuidad opcional
+
+`ContinuousConfig.context_note` (`--context-note`, solo con `--continuous`) activa
+una llamada auxiliar de A antes de renovar. Sin la opción se conserva E2. El umbral
+alto sigue siendo `consolidation_threshold_bytes`; una selección sucesora explícita
+de Progress permite renovar desde el 60 % de ese umbral. La primera selección y los
+resultados terminales no disparan ese evento; se consume una sola vez. Se comprueba
+entre intercambios completos y el motivo por tamaño tiene prioridad.
+
+Se conserva el checkpoint de persistencia y se resuelven integraciones antes de
+pedir la nota. La llamada usa el transporte común, el contexto activo y ninguna
+herramienta, con salida de hasta 5000 tokens y texto aceptado de hasta 40000 bytes UTF-8.
+Cuenta como `context_note`, dentro del presupuesto de A, sin avanzar el compromiso.
+Se mantienen cinco llamadas de reserva y la reserva temporal de finalización; no
+se usa presupuesto protegido de B. Si no cabe, faltan recursos, la respuesta es
+inválida o hay fallo recuperable, se reconstruye sin nota y sin reintento. Errores
+terminales y cancelación mantienen sus causas.
+
+La reconstrucción relee la semilla existente y agrega la nota como datos
+provisionales, seguida de intercambios completos recientes mientras quepan. No
+amplía la recuperación automática ni modifica conocimiento. La ventana se valida
+antes de sustituirla; si la nota impide reconstruir, se vuelve a intentar sin ella.
+Las notas no forman parte de los intercambios retenibles y no se acumulan.
+`continuidad/nota-NNNN-input.json` y `nota-NNNN.json` registran entrada, respuesta o
+causa de omisión. Eventos y trazas conservan motivo, tamaño, coste y resultado;
+`conversacion-completa.jsonl` sigue capturando la conversación original. Estos
+checks no certifican continuidad semántica. Véase la
+[entrega](deliveries/2026-11-04-context-note.md).
+
+La nota distingue lo persistido de lo pendiente, conserva cifras materiales no
+guardadas con procedencia y documenta intentos fallidos y condiciones para volver
+a intentarlos. La instrucción de uso, solo con la opción activa, orienta a recuperar
+selectivamente, integrar pendientes y justificar repeticiones con una pregunta o
+método que pueda aportar información. Se distinguen rutas del workspace y artefactos
+de auditoría; no se amplían los contratos de herramientas. Son instrucciones a A,
+no un detector determinista de redundancia ni una garantía de persistencia.
+
 ## Frontera y componentes
 
 En `experiment/fileAgent`, B opcional integra encargos duraderos con contexto
@@ -41,75 +78,48 @@ en el modo experimental de simulación, separado de Findata y del producto.
 | Componente | Responsabilidad |
 |---|---|
 | [AgentA](../src/research_agent/agent.py) | Fachada pública y entrada al motor compartido |
-| [Motor ReAct](../src/research_agent/runtime/execution.py) | Interacciones, herramientas, timeouts, bindings y finalización |
-| [Workspace](../src/research_agent/workspace.py) | Estado UTF-8 acotado y materiales originales |
-| [ToolRegistry](../src/research_agent/tools.py) | Schemas, despacho, materiales y entrega paginada |
-| [RunRecorder](../src/research_agent/recording.py) | Manifest, eventos, respuesta y snapshots |
-| [Directorios de experimentos](../src/research_agent/experiment_store.py) | Crear/continuar, bloqueo y observación de Git |
-| [build_agent](../src/research_agent/bootstrap.py) | Composición de A con las bibliotecas compartidas |
-| [capture_traces](../src/research_agent/tracing.py) | Logs y payloads locales del proveedor |
+| [Motor ReAct](../src/research_agent/core/execution.py) | Interacciones, herramientas, timeouts, bindings y finalización |
+| [Workspace](../src/research_agent/storage/workspace.py) | Estado UTF-8 acotado y materiales originales |
+| [ToolRegistry](../src/research_agent/core/tools.py) | Schemas, despacho, materiales y entrega paginada |
+| [RunRecorder](../src/research_agent/observability/recording.py) | Manifest, eventos, respuesta y snapshots |
+| [Directorios de experimentos](../src/research_agent/experiments/store.py) | Crear/continuar, bloqueo y observación de Git |
+| [build_agent](../src/research_agent/composition/build.py) | Composición de A con las bibliotecas compartidas |
+| [capture_traces](../src/research_agent/observability/tracing.py) | Logs y payloads locales del proveedor |
 
 ## Organización del código
 
-`research_agent` posee el ciclo y la captura. Desde la reorganización del 2026-11-02,
-`AgentA.run` solicita una política a `bootstrap.compose_policy` y entra en el único
-bucle de `runtime.execution.execute`. Las políticas no llaman directamente al
-proveedor ni despachan herramientas. Las revisiones aisladas usan el mismo transporte
-del motor y B abre una sesión hija del mismo motor, secuencial y con cargo al padre.
+El [mapa de módulos](modules.md) distingue núcleo, servicios compartidos, regímenes,
+extensiones y capacidades. `AgentA.run` selecciona una política mediante composición;
+`core.execution.execute` es el único bucle modelo/herramienta. El núcleo no importa
+regímenes, extensiones, campañas ni adaptadores financieros. No hay descubrimiento de plugins.
 
-```text
-research_agent/
-  agent.py                  fachada compatible
-  bootstrap.py              selección y construcción
-  composition.py            instrucciones, activación y metadatos
-  experiment_store.py       directorios, bloqueo y copias congeladas
-  runtime/
-    execution.py            único bucle y transporte
-    contracts.py            límites y resultados neutrales
-    limits.py               contabilidad común de llamadas y deadlines
-    bounded.py              política acotada predeterminada
-    lifecycle.py            captura final común
-  experiments/
-    multiagent/             encargos B, reservas y cierre verificable
-    progress/               objetivos, revisiones y señales de progreso
-    regimes/                política continua E2 y su estado operativo
-```
+La política acotada es predeterminada. `--continuous` selecciona E2, con revisión
+general activada por defecto; `--general-review off` omite revisiones periódicas y
+finales sin suprimir checkpoints, report_work, reconciliación, respuesta o renovación.
+Progress conserva su evaluador y desactiva la revisión general. `--general-review on`
+explícito con Progress se rechaza. El selector explícito requiere continuo.
 
-`workspace`, `advances`, `tools`, `recording`, `tracing`, adaptadores y mecanismos
-técnicos de contexto permanecen compartidos. `contracts.AgentRequest` conserva su
-interfaz; el núcleo importa valores neutrales de `runtime.contracts`, sin cargar
-objetivos. El paquete `experiments` reexporta la gestión histórica de directorios.
-Los módulos históricos de conocimiento, objetivos, revisión y continuo son aliases
-compatibles de sus implementaciones, incluidos los puntos de monkeypatch existentes.
+`extensions/progress` contiene solo objetivos y compromisos vigentes. El evaluador
+V8 de cobertura/distancia ha sido retirado. Sus formatos de objetivo siguen siendo
+legibles: `assessment_path` se conserva como dato, sin activar revisión decisoria.
+Los aliases antiguos no se mantienen; imports internos y consumidores usan rutas canónicas.
 
-La política tiene preparación, siguiente paso, recepción y finalización. El motor
-ejecuta llamadas de modelo/herramientas, renovación y acciones aisladas de revisión;
-no conoce B ni E2. `CallBudget` contabiliza intentos también cuando fallan y conserva
-límites locales y agregados; los presupuestos protegidos pertenecen a multiagente.
-Composición conecta los colaboradores concretos de progreso con el régimen continuo.
-No hay descubrimiento automático de plugins ni YAML nuevo. El
-[lanzamiento por carpetas](../campaigns/README.md) permite seleccionar las
-composiciones existentes con `--name`, entradas Markdown y `--output`.
+B preparado, deliberación y nota de continuidad viven en `extensions/`; estado,
+aritmética, Findata, web, Python y simulación en `capabilities/`. Prompts y contratos
+propios acompañan a su componente. Las copias congeladas conservan nombres y bytes.
+`research_campaigns` es un paquete hermano, organizado en definiciones, ejecución e
+informes; Research Agent no depende de él.
 
-Sin opciones experimentales se conserva el cierre acotado. `--continuous` compone
-E2 con revisión general; `--objective` selecciona revisión por criterios;
-`--knowledge-agent prepared` añade B con sus restricciones anteriores. Estas son
-las combinaciones existentes, no una garantía de compatibilidad con variantes futuras.
-Una ejecución básica se verifica bloqueando imports de las implementaciones opcionales.
+Los manifiestos registran selección solicitada y efectiva de revisión general,
+además de extensiones y presupuestos. La identidad histórica `runtime.json` conserva
+sus bytes; el selector nuevo se registra por run. Los fingerprints de código cambian
+y las campañas preparadas siguen rechazando incompatibilidades. No se migran estados,
+instrucciones congeladas ni evidencias anteriores. Véase la
+[decisión de reorganización](decisions/0006-organizacion-y-revision-opcional.md).
 
-Los manifiestos añaden `extensions` con régimen, progreso y multiagente efectivos;
-se conservan los campos anteriores. `runtime.json` mantiene sus bytes de identidad:
-su definición empaquetada permite congelar el registro histórico sin cargar E2 en
-una ejecución básica. Los fingerprints de código sí cambian; las campañas preparadas
-que exigen coincidencia exacta siguen rechazando el nuevo código. No hay migración.
-La [auditoría previa](deliveries/2026-11-02-runtime-audit.md), la
-[decisión aceptada](decisions/0005-nucleo-react-extensiones.md) y la
-[entrega](deliveries/2026-11-02-runtime-refactor.md) separan diagnóstico y verificación.
-
-Cada herramienta declara ejecución (`inline`, `thread`,
-`async`), conservación como material y disponibilidad durante consolidación; su
-validador se construye al registrarla. Las operaciones de archivos se ejecutan en
-línea para evitar escrituras en hilos después de cerrar un run.
+Cada herramienta declara ejecución (`inline`, `thread`, `async`), conservación como
+material y disponibilidad durante consolidación. Las escrituras de archivos siguen
+en línea y con recuperación transaccional.
 
 ## Estado, instrucciones y ejecuciones
 
@@ -168,7 +178,7 @@ seleccionable. Los experimentos nuevos congelan `herramientas-estado.md`; las
 continuaciones con contratos anteriores se rechazan sin migración automática.
 La [operación](development.md#herramientas-de-estado) detalla compatibilidad.
 
-[StateOperations](../src/research_agent/state_tools.py) conserva inventario, mapas,
+[StateOperations](../src/research_agent/capabilities/state/operations.py) conserva inventario, mapas,
 lecturas por bytes/líneas/sección y búsqueda contextual. Cada consulta vincula bytes
 y hash; continuaciones vinculan argumentos y versiones. Secciones ATX fuera de código
 y mapas no certifican cobertura semántica. Las lecturas continúan dentro de líneas
@@ -178,7 +188,7 @@ Las vistas de empresa resuelven `empresas/<simbolo>/<dimension>.md`, para modelo
 valoracion y evaluacion. No crean documentos. Los IDs son localizadores; no hay motor
 de dependencias ni validación financiera.
 
-El [registro](../src/research_agent/integrations/state_tools.py) declara schemas
+El [registro](../src/research_agent/capabilities/state/tools.py) declara schemas
 cerrados, consultas con propósito y contratos opcionales. Las vistas se limitan a
 32 KiB incluyendo envoltorio y su original queda recuperable. Se conservan las
 restricciones por fase.
@@ -340,9 +350,9 @@ Desde el 2026-10-27, `build_agent(..., python_enabled=True)` o `--python` regist
 Por defecto no están disponibles. En continuo E2 permanecen disponibles durante
 el trabajo ordinario y checkpoints; los evaluadores no tienen herramientas.
 
-La [integración](../src/research_agent/integrations/python_tools.py) resuelve JSON/CSV
+La [integración](../src/research_agent/capabilities/python/tools.py) resuelve JSON/CSV
 del workspace, valida código y contratos, captura la petición exacta y ejecuta el
-[worker](../src/research_agent/python_worker.py) asíncrono. Hay cuatro familias:
+[worker](../src/research_agent/capabilities/python/worker.py) asíncrono. Hay cuatro familias:
 calculate, transform, evaluate y model; estas dos últimas exigen respectivamente
 criterios y supuestos como objetos no vacíos. Los contratos detallados se empaquetan
 como recursos recuperables bajo demanda; no existe otro registro de herramientas.
@@ -384,7 +394,7 @@ el registro único, las modalidades y la recuperación.
 
 ## Conservación y cierre de la investigación
 
-Desde el 2026-10-21, el [prompt general](../src/research_agent/prompts/agent_a.md)
+Desde el 2026-10-21, el [prompt general](../src/research_agent/instructions/agent.md)
 incorpora M1 como evolución de A: recuperar la evaluación anterior, clasificar la novedad,
 contrastar fundamentos y revisar solo lo justificado. Recomienda conservar juicio vigente,
 fundamentos y evidencia, incertidumbres, condiciones de revisión e historial breve de cambios
@@ -405,7 +415,7 @@ Consolidación se adelanta cuando quedan 45 segundos, dos herramientas o 32 KiB 
 al entrar antes por llamadas/contexto puede usar el tiempo restante salvo la reserva de
 respuesta, sin imponer un tope fijo prematuro de 15 segundos.
 
-Consolidación ofrece solo lectura, búsqueda y escritura del estado, incluidos los aliases.
+Consolidación ofrece solo lectura, búsqueda y escritura del estado.
 Una escritura no fuerza el cierre; una respuesta sin escritura es válida. No se exige
 publicar ni modificar una evaluación para resolver una consulta breve. Con presupuestos
 menores de cuatro llamadas o dos herramientas se conserva el cierre básico con respuesta
@@ -433,11 +443,10 @@ explica las modalidades, revisión y límites de recuperación.
 ## Ciclo continuo y presupuesto de contexto
 
 Desde E2 (2026-11-01), el continuo ejecuta un único bucle ReAct con intervenciones.
-`experiments/regimes/continuous.py` aporta las decisiones de continuidad al motor
-común; `runtime_control` conserva el estado operativo E2 y compone las políticas
-de progreso registradas desde composición. `context_management.py` reconstruye
-intercambios completos como infraestructura general. Los nombres de módulos antiguos
-continúan disponibles como aliases.
+`regimes/continuous/policy.py` aporta las decisiones al motor común;
+`regimes/continuous/control.py` conserva estado operativo y reconciliación.
+`regimes/continuous/context.py` reconstruye intercambios completos; la nota opcional
+vive en `extensions/context_note/`. Los imports internos antiguos han sido retirados.
 No hay selector del controlador anterior ni fases intelectuales. El modo acotado conserva
 su cierre por consolidación/respuesta y sus restricciones anteriores.
 
@@ -455,8 +464,8 @@ defecto: 524288/262144 bytes; `consolidation_threshold_bytes` conserva el nombre
 histórico, pero representa renovación. CLI: `--renewal-bytes`, con alias obsoleto.
 
 La reconstrucción intenta dejar 16 KiB de margen para la siguiente interacción.
-La renovación incorpora mandato, petición, agenda, fundamentos, evaluación identificada,
-feedback y cola de intercambios completos. No corta continuaciones opacas ni repite
+La renovación incorpora mandato, petición, agenda, fundamentos, feedback del mecanismo
+activo y cola de intercambios completos. No corta continuaciones opacas ni repite
 herramientas. Si hay integración pendiente/desconocida o texto sin tratamiento declarado,
 ofrece hasta dos llamadas ordinarias con todas las herramientas. Después renueva,
 conservando pendientes recuperables y sin certificar continuidad semántica. El texto
@@ -482,7 +491,7 @@ E2 sustituye experimentalmente la revisión fija del investigador cada diez llam
 La [decisión histórica](decisions/0004-revision-periodica.md) conserva sus condiciones;
 el [protocolo E2](experiments/e2-intervenciones/protocol.md) define el cambio autorizado.
 
-La evaluación independiente responde a cambios de la evaluación identificada, hitos,
+Con revisión general activada, la evaluación independiente responde a hitos,
 bloqueos o repetición posterior a un aviso. Agrupa señales, separa intentos por cinco
 llamadas del investigador y tiene respaldo a veinte. El evaluador no escribe conocimiento.
 Fallos consumen presupuesto, quedan capturados y no provocan reintentos inmediatos.
@@ -497,14 +506,16 @@ resuelve pendientes. Cambios posteriores invalidan declaraciones vinculadas a ve
 anteriores. Sin grafo, las contradicciones económicas dependen del investigador/evaluador.
 
 Durante las últimas cinco llamadas se entrega una orientación de cierre; la última se
-reserva a evaluación final. Con presupuesto inicial de una llamada se prioriza al investigador.
+reserva a evaluación final cuando la revisión está activa; con revisión apagada se usa
+para una respuesta textual sin herramientas. Con presupuesto inicial de una llamada se prioriza al investigador.
 El cierre por herramientas puede evaluar si quedan llamadas y tiempo. No se evalúa tras
 cancelación/fallo/agotamiento temporal. `call_limit` continúa siendo interrupción, no éxito.
 
 ## Revisión externa y escritura conjunta
 
-Sin objetivo se usa el revisor general; con objetivo, el evaluador por criterios.
-Ambos siguen la política E2 de eventos y presupuesto total. Los informes de revisión
+El continuo ordinario usa el revisor general salvo `--general-review off`. Progress
+usa su evaluador por compromisos y desactiva el general. Cada mecanismo conserva su
+política de activación y comparte el presupuesto total del run. Los informes de revisión
 general tienen identificadores únicos por intento y un archivo final separado.
 
 El mismo cliente/perfil revisa secuencialmente un paquete separado (64 KiB), sin
@@ -531,7 +542,34 @@ la captura identifican todos los archivos incluso si falla el archivado posterio
 
 La [entrega V7](deliveries/2026-10-30-v7.md) registra alcance y verificación.
 
-## Objetivos y evaluación de cobertura
+## Progreso por compromisos
+
+Desde el 2026-11-03, `--progress` compone un decorador de política con el ReAct
+acotado o continuo. `objective.py` conserva el objetivo fijo; `evaluator.py` construye
+una vista acotada y valida una evaluación semántica; `policy.py` selecciona y
+verifica compromisos. No hay otro bucle, proveedor ni despacho de herramientas.
+El [protocolo](experiments/progress/protocol.md) fija el contraste pendiente.
+
+Cada tramo tiene hasta 15 llamadas de A; objetivo generado, evaluaciones y cierre
+consumen el presupuesto total, 100 llamadas por defecto en CLI. En continuo se
+conservan renovación, checkpoints y avisos técnicos, sustituyendo las revisiones
+semánticas periódicas. Sin progress, E2 y B conservan su comportamiento.
+
+`progreso/estado.json` de cada run guarda atómicamente el objetivo, última evaluación,
+alternativas y hasta 20 compromisos recientes. Las entradas y respuestas de cada
+evaluación quedan archivadas por separado. Continuar recupera el último estado del
+mismo workspace y reevalúa; una revisión explícita del objetivo inicia otra serie.
+No se duplican documentos financieros. Las referencias verifican existencia y
+versión, no validez económica. Las omisiones y vistas parciales se declaran.
+
+<a id="objetivos-y-evaluación-de-cobertura"></a>
+
+## Objetivos y evaluación de cobertura V8 (histórico)
+
+El mecanismo siguiente fue sustituido por Progress y su implementación se retiró el
+2026-11-05. Este apartado conserva el contrato histórico, no módulos ni comportamiento
+vigentes. Sus formatos de objetivo y capturas permanecen legibles para auditoría, sin
+selección activa ni migración automática. `assessment_path` ya no activa su evaluación.
 
 `AgentRequest.objective: Objective | None` añade un objetivo fijo al continuo. El
 contrato y cálculo viven en `experiments/progress/objectives`; el paquete y recuperación

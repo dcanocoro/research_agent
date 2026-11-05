@@ -46,3 +46,9 @@ el motor no importa implementaciones experimentales.
 
 La [entrega](../deliveries/2026-11-02-runtime-refactor.md) recoge checks y límites.
 La reutilización en FinMate requerirá adaptar contratos y permisos en otro encargo.
+
+## Actualización del 2026-11-05
+
+La [ADR-0006](0006-organizacion-y-revision-opcional.md) modifica la obligatoriedad de
+la revisión y la compatibilidad de imports internos. El contenido anterior conserva
+la decisión y condiciones de su fecha; no es el contrato operativo actual.

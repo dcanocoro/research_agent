@@ -10,6 +10,7 @@ capturada no demuestra calidad financiera ni resultados de inversión.
 |---|---|
 | Entender el propósito | [Visión](purpose.md) |
 | Conocer la pregunta vigente y lo pendiente | [Estrategia](strategy.md) |
+| Ubicar componentes y saber qué se activa | [Mapa de módulos](modules.md) |
 | Entender el agente actual y sus fronteras | [Arquitectura](architecture.md) |
 | Instalar, configurar y ejecutar | [Desarrollo](development.md) |
 | Preparar, lanzar y revisar experimentos por nombre | [Guía breve](launch-experiments.md) |

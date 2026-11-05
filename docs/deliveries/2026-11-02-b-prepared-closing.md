@@ -53,7 +53,7 @@ cierre con publicación parcial y pendientes, declaración final restringida,
 respuesta textual insuficiente, recuperación de contexto y timeout ordinario.
 Mypy pasa en 45 archivos; `pip check` y `git diff --check` sin errores.
 
-La suite completa se detiene al recopilar `tests/test_price_review.py`: falta
+La suite completa se detiene al recopilar `tests/campaigns/test_price_review.py`: falta
 `scripts/review_historical_prices.py`, también ausente en la base Git. Se verifica
 el resto excluyendo únicamente ese archivo: 410 pruebas pasan en 365,96 segundos.
 

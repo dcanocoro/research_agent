@@ -44,7 +44,7 @@ preparación, congelación, lanzador, informes y progreso offline de campañas.
   afectadas pasadas (47,96 s), con modelos/herramientas simulados.
 - Mypy: sin errores en research_agent y research_campaigns (44 archivos).
 - La invocación completa de pytest detectó un problema previo de colección:
-  tests/test_price_review.py importa scripts/review_historical_prices.py, ausente en
+  tests/campaigns/test_price_review.py importa scripts/review_historical_prices.py, ausente en
   esta base. No se restaura un script histórico ajeno para ocultar esa limitación.
 - git diff --check: sin errores. Enlaces y anclas internos afectados: correctos.
   Persiste una referencia previa a un ADR de FinMate ausente en el checkout hermano;

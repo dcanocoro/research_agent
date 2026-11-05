@@ -25,6 +25,8 @@ un wheel local; sus fuentes permanecen en FinMate. No importa `finmate`, `engine
 
 La [documentación](docs/README.md) ofrece un mapa de visión, estrategia,
 arquitectura, experimentos, campañas y desarrollo, con registros de decisiones, hallazgos y entregas.
+El [mapa de módulos y activación](docs/modules.md) indica dónde vive cada componente
+y cuándo entra en funcionamiento.
 Las instrucciones para trabajar en este repositorio están en [AGENTS.md](AGENTS.md).
 
 Con el entorno y `.env` preparados según [desarrollo e instalación](docs/development.md):

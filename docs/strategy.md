@@ -26,6 +26,11 @@ No resuelve por sí sola las preguntas abiertas ni demuestra mejora semántica.
 
 ## Qué sigue abierto
 
+El encargo del 2026-11-03 sustituye el mecanismo activo V8 por
+[progress por compromisos](experiments/progress/protocol.md), opcional y combinable
+con continuo. Implementación y comprobaciones locales no resuelven las hipótesis
+experimentales pendientes ni autorizan una campaña real.
+
 El encargo del 2026-11-01 prepara una [campaña autónoma de 1000 llamadas](experiments/investigacion-autonoma-1000/protocol.md)
 sobre `experiment/fileAgent`, con mandato abierto, estado nuevo y comando para
 ejecución posterior por el usuario. Se conserva el controlador por fases y se añade
@@ -65,3 +70,9 @@ elección aceptada para FinMate. El [baseline](baseline.md) identifica el corte 
 del 18 de octubre, no el runtime actual. La secuencia de estudio sigue siendo comprender
 los conceptos y sus consumidores, contrastar operaciones, evaluar persistencia y
 transiciones y, solo con evidencia, adaptar capacidades al producto.
+
+## Organización vigente del laboratorio
+
+La [ADR-0006](decisions/0006-organizacion-y-revision-opcional.md) y el
+[mapa de módulos](modules.md) recogen la retirada de V8 y la revisión general opcional.
+La reorganización no resuelve las hipótesis experimentales abiertas ni autoriza campañas.

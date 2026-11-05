@@ -1,0 +1,183 @@
+"""Prepare a fixed-date pilot offline, then launch the native continuous agent."""
+from __future__ import annotations
+
+from dataclasses import asdict
+from importlib.metadata import distribution
+import json
+from pathlib import Path
+import shutil
+import sys
+from typing import Any, cast
+
+from research_agent.agent import AgentA
+from research_agent.core.context_budget import ByteCounter
+from research_agent.regimes.continuous.control import RuntimeState
+from research_agent.regimes.continuous.control import register_report
+from research_agent.regimes.continuous.control import INSTRUCTION
+from research_agent.regimes.continuous.control import validate_runtime
+from research_agent.regimes.continuous.control import identity as control_identity
+from research_agent.regimes.continuous.checkpoints import CHECKPOINT_POLICY
+from research_agent.regimes.continuous.policy import POLICY
+from research_agent.regimes.continuous.policy import REVIEW_POLICY
+from research_agent.regimes.continuous.policy import context_seed
+from research_agent.regimes.continuous.policy import execution_instructions
+from research_agent.contracts import AgentRequest
+from research_agent.contracts import ContinuousConfig
+from research_agent.experiments.store import disjoint
+from research_agent.extensions.deliberation.context import validate_mandate
+from research_agent.capabilities.state.files import register_files
+from research_agent.observability.recording import RunRecorder
+from research_agent.capabilities.simulation.state import Simulator
+from research_agent.capabilities.simulation.state import read
+from research_agent.capabilities.simulation.tools import activation_message
+from research_agent.capabilities.simulation.tools import register_simulation
+from research_agent.core.tools import ToolRegistry
+from research_agent.storage.workspace import Workspace
+from research_agent.experiments.configuration import validate_state_configuration
+from research_agent.extensions.progress.objective import Objective
+from research_agent.composition.metadata import objective_policy
+from research_campaigns.execution.longitudinal import preflight
+from research_campaigns.execution.longitudinal import runtime_identity
+from research_campaigns.execution.storage import create
+from research_campaigns.execution.storage import load
+from research_campaigns.execution.storage import digest
+from research_campaigns.execution.storage import freeze_files
+from research_campaigns.reporting.report import persist
+from research_campaigns.execution.runner import launch
+from research_campaigns.execution.runner import execute
+
+
+def installed_identity() -> dict[str, Any]:
+    identity = runtime_identity()
+    origin = json.loads(distribution("findata").read_text("direct_url.json") or "{}")
+    # Installation provenance, not a new verification of the original wheel archive.
+    return {**identity, "findata_recorded_wheel_sha256":
+            origin.get("archive_info", {}).get("hashes", {}).get("sha256")}
+
+
+def initial_budget(root: Path, profile: dict[str, Any]) -> dict[str, int]:
+    """Use the runtime seed and schemas without constructing a client or DB engine."""
+    validate_state_configuration(root)
+    validate_runtime(root)
+    space = Workspace(root / "estado", create=False)
+    registry = ToolRegistry(RunRecorder(root / "ejecuciones"))
+    register_files(registry, space)
+    register_report(registry, RuntimeState(), space)
+    simulator = Simulator(root / "simulador")
+    register_simulation(registry, simulator, None)  # Web is disabled in this pilot.
+    agent = AgentA(cast(Any, None), registry, space, registry.recorder,
+                   configuration={**profile, "simulated_date": str(simulator.today)})
+    message = activation_message(simulator, (root / "definicion/peticion.md").read_text(encoding="utf-8"), "usuario")
+    request = AgentRequest(message, "agente", "cli", mandate=(root / "definicion/mandato.md").read_text(encoding="utf-8"),
+                           metadata={"simulated_date": str(simulator.today), "activation_kind": "usuario"},
+                           continuous=ContinuousConfig(**read(root / "definicion/scenario.json")["continuous"]),
+                           objective=Objective.load(root / "definicion/objective.json") if (root / "definicion/objective.json").exists() else None)
+    paths = sorted((root / "instrucciones").glob("*.md"), key=lambda p: (p.name != "agente.md", p.name))
+    system = execution_instructions(agent, request, "\n\n".join(p.read_text(encoding="utf-8") for p in paths))
+    return ByteCounter().measure(system, context_seed(agent, request, "initial"), registry.specs(), profile["max_output_tokens"])
+
+
+def validate(definition: Path) -> dict[str, Any]:
+    config = read(definition / "scenario.json")
+    if config["schema_version"] != "continuous-pilot-v1" or config["allow_web"] is not False or config["start"] != config["end"]:
+        raise ValueError("Expected fixed-date continuous pilot with web disabled.")
+    continuous = ContinuousConfig(**config["continuous"])
+    if any(value is None for value in (continuous.max_llm_calls, continuous.max_tool_calls, continuous.timeout_seconds)):
+        raise ValueError("The pilot requires finite global call, tool and time limits.")
+    validate_mandate((definition / "mandato.md").read_text(encoding="utf-8"))
+    objective_path = definition / "objective.json"
+    if objective_path.exists():
+        Workspace._check_links(objective_path)
+        Objective.load(objective_path)
+    for name in ("peticion.md", "rubrica.md"):
+        if not (definition / name).read_text(encoding="utf-8").strip():
+            raise ValueError(f"Nonempty {name} required.")
+    return config
+
+def prepare(root: Path, definition: Path, source_data: Path) -> None:
+    root, definition, source_data = root.absolute(), definition.absolute(), source_data.absolute()
+    for path in (root, definition, source_data):
+        Workspace._check_links(path)
+    disjoint(root, definition)
+    disjoint(root, source_data)
+    config = validate(definition)
+    continuous = ContinuousConfig(**config["continuous"])
+    if digest(source_data) != config["dataset_sha256"]:
+        raise ValueError("Frozen source dataset hash mismatch.")
+    data = read(source_data)
+    report = preflight(config, data)  # Pure validation of the supplied local dataset.
+    if not report["ready"]:
+        raise ValueError(f"Dataset preflight failed: {report['problems']}")
+    identity = installed_identity()
+    if any(identity["profile"].get(k) != v for k, v in config["expected_profile"].items()):
+        raise ValueError("Configured model/profile differs from scenario; no automatic substitution.")
+    validate_mandate((definition / "mandato.md").read_text(encoding="utf-8"))
+    definition_files = [definition / name for name in ("scenario.json", "mandato.md", "peticion.md", "rubrica.md")]
+    objective = Objective.load(definition / "objective.json") if (definition / "objective.json").exists() else None
+    if objective is not None:
+        definition_files.append(definition / "objective.json")
+    record = create(root, definition, "continuous", config["id"], definition_files,
+                    deliberative=True)
+    persist(root, record)
+    Simulator.create(root / "simulador", config, data)
+    # Preserve the original bytes as well as their semantic content and provenance.
+    shutil.copyfile(source_data, root / "simulador/data.json")
+    size = initial_budget(root, identity["profile"])
+    headroom = 2048
+    if size["budgeted_bytes"] + headroom >= continuous.consolidation_threshold_bytes:
+        raise ValueError("Initial protected context plus startup margin does not fit below threshold.")
+    record.update(runtime=identity, limits=asdict(continuous), condition="deliberative",
+                  review_policy=REVIEW_POLICY if continuous.general_review and objective is None else None,
+                  general_review={"requested": continuous.general_review, "effective": continuous.general_review and objective is None},
+                  knowledge_checkpoint_policy=CHECKPOINT_POLICY, runtime_control=control_identity(),
+                  preflight={**report, "initial_budget": size, "startup_margin_bytes": headroom,
+                             "provider_checked": False, "campaign_executed": False})
+    if objective is not None:
+        record.update(objective={"definition": objective.definition(), "sha256": objective.sha256},
+                      objective_evaluation_policy=objective_policy(AgentRequest("", "", "", objective=objective)))
+    command = [sys.executable, "-m", "research_agent", (root / "definicion/peticion.md").read_text(encoding="utf-8"),
+               "--experiment", str(root), "--continue", "--run-name", "piloto",
+               "--simulation", str(root / "simulador"), "--mandate", str(root / "definicion/mandato.md"), "--continuous",
+               "--context-bytes", str(continuous.max_context_bytes),
+               "--renewal-bytes", str(continuous.consolidation_threshold_bytes),
+               "--max-calls", str(continuous.max_llm_calls), "--max-tools", str(continuous.max_tool_calls),
+               "--continuous-timeout-seconds", str(continuous.timeout_seconds)]
+    if not continuous.general_review:
+        command += ["--general-review", "off"]
+    if continuous.context_note:
+        command += ["--context-note"]
+    if objective is not None:
+        command += ["--objective", str(root / "definicion/objective.json")]
+    frozen_files = {path.relative_to(root).as_posix(): digest(path)
+                         for name in ("definicion", "instrucciones", "estado", "simulador")
+                         for path in (root / name).rglob("*") if path.is_file()}
+    frozen_files["runtime.json"] = digest(root / "runtime.json")
+    frozen_files["herramientas.json"] = digest(root / "herramientas.json")
+    record.update(command=command, byte_policy=ByteCounter().metadata, files=frozen_files)
+    persist(root, record)
+
+
+def check(root: Path) -> None:
+    """Refuse changed inputs/runtime or reuse of an already attempted pilot."""
+    root = root.absolute()
+    Workspace._check_links(root)
+    manifest = load(root)
+    actual = freeze_files(root)
+    actual.pop("campaign.json", None)
+    actual.pop("README.md", None)
+    actual.pop(".gitignore", None)
+    if actual != manifest["files"]:
+        raise ValueError("Prepared pilot changed or has already run; preserve it and prepare a fresh destination.")
+    if installed_identity() != manifest["runtime"]:
+        raise ValueError("Runtime changed after preparation; prepare a fresh destination.")
+
+
+def run_campaign(root: Path, definition: Path, source_data: Path, *, launcher=launch) -> int:
+    root = root.absolute()
+    prepare(root, definition, source_data)
+    check(root)
+    record = load(root)
+    session = {"id": "piloto", "message": (root / "definicion/peticion.md").read_text(encoding="utf-8")}
+    record["sessions"].append(session)
+    execute(root, root, record, session, record.pop("command"), launcher=launcher)
+    return 0 if session["status"] == "completed" else 1

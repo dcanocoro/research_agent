@@ -31,7 +31,7 @@ escrituras financieras. No se modifica FinMate ni el wheel compartido.
 
 ## Verificación
 
-La suite completa sigue detenida en recopilación por `tests/test_price_review.py`,
+La suite completa sigue detenida en recopilación por `tests/campaigns/test_price_review.py`,
 que importa `scripts/review_historical_prices.py` ausente en la base y en el checkout.
 Se ejecuta separadamente el resto, excluyendo solo ese archivo identificado.
 

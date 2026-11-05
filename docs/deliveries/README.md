@@ -6,6 +6,14 @@ correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda v
 consultar [estrategia](../strategy.md). Los estados «sin campaña» describen el cierre
 de aquella entrega; las ejecuciones posteriores están en el [registro experimental](../experiments/README.md).
 
+- [2026-11-05 — Organización y retirada de V8](2026-11-05-organization.md): núcleo, regímenes, extensiones y capacidades; aliases retirados y revisión general opcional.
+
+- [2026-11-04 — Nota de continuidad opcional](2026-11-04-context-note.md): renovación
+  por tamaño y compromiso sucesor, nota aislada de A y reconstrucción común;
+  verificación local, sin campaña real.
+- [2026-11-03 — Progress por compromisos](2026-11-03-progress.md): objetivos fijos,
+  evaluación semántica y compromisos sobre el motor común, con continuo opcional;
+  checks locales, sin campaña real.
 - [2026-11-03 — CLI por carpetas](2026-11-03-short-cli.md): entradas Markdown del
   repositorio, nombre, destino y creación/continuación sin variables de shell.
 - [2026-11-02 — Motor ReAct compartido](2026-11-02-runtime-refactor.md): núcleo común,

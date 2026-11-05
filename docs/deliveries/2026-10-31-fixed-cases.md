@@ -20,7 +20,7 @@ Se comprueban parámetros, entradas UTF-8, aislamiento, logs, rechazo de destino
 fallos, cancelación y recogida forzada, y lectura de capturas parciales.
 Tipado del script correcto; 72 enlaces locales y dos anclas comprobados, y `git diff --check`
 sin errores. La suite completa se bloquea durante recopilación porque el test
-preexistente `tests/test_price_review.py` requiere `scripts/review_historical_prices.py`,
+preexistente `tests/campaigns/test_price_review.py` requiere `scripts/review_historical_prices.py`,
 ausente en el checkout de base. No se restaura ese script ajeno al alcance.
 Al excluir únicamente ese archivo para poder recopilar el resto, la regresión
 termina con 354 pruebas aprobadas, 9 fallidas y 22 errores: faltan definiciones y

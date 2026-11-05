@@ -10,6 +10,11 @@ vive en `src/research_campaigns/`. Una definición es la receta; una campaña es
 ejecución concreta en una carpeta nueva. Solo A investiga: el controlador prepara
 entradas, lanza su CLI y conserva evidencia. El núcleo no importa el controlador.
 
+El paquete de campañas se divide en `definitions/`, `execution/` y `reporting/`.
+En escenarios continuos, `continuous.general_review` admite un booleano (por defecto
+true) y se transmite a la CLI; `context_note` también se transmite si está activo.
+Los informes registran la selección efectiva. Progress desactiva el revisor general.
+
 ## Investigación autónoma abierta
 
 La [receta de 1000 llamadas](../campaigns/investigacion-autonoma-1000/README.md)
@@ -79,9 +84,9 @@ Crear `campaigns/nombre/` con exactamente una entrada:
 
 Las definiciones de ejemplo se retiraron del árbol en `3c1d481`.
 No se restauran para esta consolidación. Para preparar una definición nueva,
-consultar los validadores de [suite](../src/research_campaigns/catalog.py),
-[histórica](../src/research_campaigns/longitudinal.py) y
-[continua](../src/research_campaigns/continuous.py). Los protocolos conservan las
+consultar los validadores de [suite](../src/research_campaigns/definitions/catalog.py),
+[histórica](../src/research_campaigns/execution/longitudinal.py) y
+[continua](../src/research_campaigns/execution/continuous.py). Los protocolos conservan las
 condiciones de sus experimentos, pero no garantizan una receta ejecutable disponible.
 Un archivo alternativo como `scenario-amplio.yaml` debe trasladarse a un directorio
 de definición con entrada `scenario.yaml` antes de usar la CLI actual.

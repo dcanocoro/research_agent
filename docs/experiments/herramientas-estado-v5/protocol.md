@@ -132,15 +132,15 @@ lista de fases autorizadas para ejecución.
 
 | Fuente actual | Responsabilidad y consecuencia para el diseño |
 |---|---|
-| [bootstrap.py](../../../src/research_agent/bootstrap.py) | Compone el registro efectivo; comparte archivos entre modos normal e histórico y añade Python opcionalmente. |
-| [file_tools.py](../../../src/research_agent/integrations/file_tools.py) | Registra lectura, búsqueda, escritura, recuperación de artefactos y aritmética. Las herramientas de archivos están habilitadas durante consolidación. |
-| [workspace.py](../../../src/research_agent/workspace.py) | Posee rutas, texto UTF-8, búsqueda literal, escritura atómica y protección de materiales originales. |
-| [tools.py](../../../src/research_agent/tools.py) | Valida schemas, despacha, captura resultados y crea materiales cuando corresponde; construye el payload entregado al modelo. |
-| [recording.py](../../../src/research_agent/recording.py) | Conserva resultados originales, eventos y snapshots; recupera artefactos con comprobación de identidad del workspace. |
-| [continuous.py](../../../src/research_agent/continuous.py) | Controla consolidación, reconstrucción y presupuesto de contexto; puede entregar una referencia si el resultado excede el máximo. |
-| [Gestión de directorios](../../../src/research_agent/experiment_store.py) (antes `experiments.py`) | Separa instrucciones, estado y ejecuciones; copia prompts y bloquea ejecuciones simultáneas del experimento gestionado. |
-| [financial_research.md](../../../src/research_agent/prompts/financial_research.md) | Define metodología, documentos por empresa, IDs y revisión de consecuencias. |
-| [python_tools.py](../../../src/research_agent/integrations/python_tools.py) | Ejecutor programable y contratos consultables opcionalmente: precedente instrumental. |
+| [bootstrap.py](../../../src/research_agent/composition/build.py) | Compone el registro efectivo; comparte archivos entre modos normal e histórico y añade Python opcionalmente. |
+| [file_tools.py](../../../src/research_agent/capabilities/state/files.py) | Registra lectura, búsqueda, escritura, recuperación de artefactos y aritmética. Las herramientas de archivos están habilitadas durante consolidación. |
+| [workspace.py](../../../src/research_agent/storage/workspace.py) | Posee rutas, texto UTF-8, búsqueda literal, escritura atómica y protección de materiales originales. |
+| [tools.py](../../../src/research_agent/core/tools.py) | Valida schemas, despacha, captura resultados y crea materiales cuando corresponde; construye el payload entregado al modelo. |
+| [recording.py](../../../src/research_agent/observability/recording.py) | Conserva resultados originales, eventos y snapshots; recupera artefactos con comprobación de identidad del workspace. |
+| [continuous.py](../../../src/research_agent/regimes/continuous/policy.py) | Controla consolidación, reconstrucción y presupuesto de contexto; puede entregar una referencia si el resultado excede el máximo. |
+| [Gestión de directorios](../../../src/research_agent/experiments/store.py) (antes `experiments.py`) | Separa instrucciones, estado y ejecuciones; copia prompts y bloquea ejecuciones simultáneas del experimento gestionado. |
+| [financial_research.md](../../../src/research_agent/instructions/financial_research.md) | Define metodología, documentos por empresa, IDs y revisión de consecuencias. |
+| [python_tools.py](../../../src/research_agent/capabilities/python/tools.py) | Ejecutor programable y contratos consultables opcionalmente: precedente instrumental. |
 
 Recorrido actual: el modelo recibe schemas y elige una herramienta; el registro valida
 argumentos y ejecuta; conserva el resultado y, según configuración, un material original;
@@ -383,10 +383,10 @@ puede cerrar una consulta breve, decidir que no hay impacto o trabajar otra dime
 
 No separar documentación de la herramienta que explica. Cada cambio implementado debe
 cerrar un recorrido ejecutable, no dejar una colección de interfaces vacías. Los tests
-actuales de [agente](../../../tests/test_agent.py),
-[metodología financiera](../../../tests/test_financial_methodology.py),
-[continuidad](../../../tests/test_continuous.py) y
-[Python](../../../tests/test_python_operators.py) orientan la regresión local.
+actuales de [agente](../../../tests/core/test_agent.py),
+[metodología financiera](../../../tests/capabilities/test_financial_methodology.py),
+[continuidad](../../../tests/regimes/test_continuous.py) y
+[Python](../../../tests/capabilities/test_python_operators.py) orientan la regresión local.
 
 FinData batch, web, aislamiento Python y modelado financiero adicional siguen siendo
 líneas posibles de V5, pero no dependencias para este primer recorrido de expedientes.

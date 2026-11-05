@@ -4,7 +4,19 @@ La [metodología](../experiments.md) define el contraste y la [estrategia](../st
 la pregunta vigente. Implementación, ejecución y aceptación se registran por separado.
 Una campaña exploratoria real no completa automáticamente un contraste controlado.
 
+Prueba posterior (2026-11-04): [nota de continuidad en investigación abierta](context-note-general-100/findings.md),
+100 llamadas agregadas en dos runs, 15 renovaciones y dos expedientes iniciales.
+El primer run detectó un truncamiento terminal de nota; tras corregir su fallback,
+la continuación cerró por presupuesto. Ocho notas válidas de quince solicitudes;
+sin contraste causal ni validación financiera.
+
 ## Registro consolidado al 2026-10-31
+
+Implementación posterior (2026-11-03): [progress por compromisos](progress/protocol.md),
+objetivo fijo, evaluador semántico y controlador opcional sobre el motor común.
+Sustituye la selección activa V8. Los [primeros hallazgos](progress/findings.md)
+registran un timeout y una repetición con presupuesto temporal ampliado: cierre por
+suficiencia en 50 llamadas, sin contraste causal ni mejora semántica demostrada.
 
 Tanda posterior autorizada (2026-11-01): [integración de conocimiento con B](agente-conocimiento-v1/protocol.md),
 tres casos fijos nuevos con 100 llamadas ordinarias compartidas por A y B cada uno.

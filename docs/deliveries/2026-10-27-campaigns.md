@@ -36,7 +36,7 @@ y `recording.py`; el primero se retiró): **1809 → 1420**, reducción de **389
 
 Se ejecutaron los coordinadores anterior y nuevo en directorios temporales separados,
 con las mismas entradas sintéticas y `fake_cli` de `tests/support.py`. La histórica
-usó dos empresas y tres activaciones de las fixtures de `tests/test_longitudinal.py`;
+usó dos empresas y tres activaciones de las fixtures de `tests/campaigns/test_longitudinal.py`;
 el piloto continuo comparó la preparación local con la misma configuración y dataset.
 La única adaptación de la suite anterior fue su identificador de esquema retirado.
 

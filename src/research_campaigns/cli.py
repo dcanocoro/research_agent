@@ -5,10 +5,11 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from research_agent.simulation.state import read
-from research_agent.workspace import Workspace
-from .catalog import load_suite
-from .storage import digest, load
+from research_agent.capabilities.simulation.state import read
+from research_agent.storage.workspace import Workspace
+from research_campaigns.definitions.catalog import load_suite
+from research_campaigns.execution.storage import digest
+from research_campaigns.execution.storage import load
 
 
 def definition(root: Path) -> tuple[str, Path]:
@@ -41,18 +42,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.operation == "progress":
-            from .progress import save_report
+            from research_campaigns.reporting.progress import save_report
             save_report(args.run, args.output or args.run / "progreso-v6.json", args.checks)
             return 0
         if args.operation in {"resume", "report"}:
             record = load(args.campaign)
             if args.operation == "report":
-                from .report import report
+                from research_campaigns.reporting.report import report
                 report(args.campaign, record)
                 return 0
             if record["mode"] != "historical":
                 raise ValueError("Only historical campaigns support resume.")
-            from .longitudinal import run_campaign
+            from research_campaigns.execution.longitudinal import run_campaign
             return run_campaign(args.campaign)
         mode, path = definition(args.definition)
         config: dict[str, Any] = {}
@@ -61,12 +62,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.data is not None:
                 raise ValueError("--data does not apply to document suites.")
         elif mode == "historical":
-            from .longitudinal import load_scenario, preflight
+            from research_campaigns.execution.longitudinal import load_scenario
+            from research_campaigns.execution.longitudinal import preflight
             config = load_scenario(path)
         else:
-            from .continuous import validate
+            from research_campaigns.execution.continuous import validate
             config = validate(args.definition)
-            from .longitudinal import preflight
+            from research_campaigns.execution.longitudinal import preflight
         if args.operation == "validate":
             if args.data:
                 if mode == "continuous" and digest(args.data) != config["dataset_sha256"]:
@@ -81,15 +83,15 @@ def main(argv: list[str] | None = None) -> int:
         if mode != "suite" and args.case is not None:
             raise ValueError("--case applies only to document suites.")
         if mode == "suite":
-            from .suite import run_suite
+            from research_campaigns.execution.suite import run_suite
             return run_suite(suite, args.output, args.case)[1]
         if mode == "historical":
-            from .longitudinal import run_campaign
+            from research_campaigns.execution.longitudinal import run_campaign
             return run_campaign(args.output, scenario=path, data=read(args.data) if args.data else None,
                                 condition=args.condition, instructions_dir=args.instructions_dir)
         if args.data is None:
             raise ValueError("Continuous campaigns require a local --data dataset.")
-        from .continuous import run_campaign as run_continuous
+        from research_campaigns.execution.continuous import run_campaign as run_continuous
         return run_continuous(args.output, args.definition, args.data)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         parser.error(str(exc))

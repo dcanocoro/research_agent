@@ -4,11 +4,12 @@ from __future__ import annotations
 from typing import Any
 from pathlib import Path
 from runtime_contracts.llm import ConversationClient, ConversationItem
-from .runtime.contracts import AgentLimits, AgentResult
-from .contracts import AgentRequest
-from .recording import RunRecorder
-from .tools import ToolRegistry
-from .workspace import Workspace
+from research_agent.core.contracts import AgentLimits
+from research_agent.core.contracts import AgentResult
+from research_agent.contracts import AgentRequest
+from research_agent.observability.recording import RunRecorder
+from research_agent.core.tools import ToolRegistry
+from research_agent.storage.workspace import Workspace
 
 
 class AgentA:
@@ -39,13 +40,14 @@ class AgentA:
         self.stop_requested = False
 
     async def run(self, request: AgentRequest) -> AgentResult:
-        from .bootstrap import compose_policy, validate_execution
-        from .runtime.execution import execute
-        from .advances import recover
+        from research_agent.composition.policies import compose_policy
+        from research_agent.composition.policies import validate_execution
+        from research_agent.core.execution import execute
+        from research_agent.storage.transactions import recover
 
         validate_execution(self, request)
         if self.recorder.experiment is not None:
-            from .state_configuration import validate_state_configuration
+            from research_agent.experiments.configuration import validate_state_configuration
 
             validate_state_configuration(self.recorder.experiment)
         recover(self.workspace, self.journal_root)
@@ -58,11 +60,11 @@ class AgentA:
         interaction_id: str,
         persistent: dict[str, Any] | None = None,
     ) -> str:
-        from .composition import prepare_run
+        from research_agent.composition.instructions import prepare_run
 
         return prepare_run(self, request, run_id, interaction_id, persistent)
 
     def _finish(self, result: AgentResult, captured: list[dict[str, Any]]) -> AgentResult:
-        from .runtime.lifecycle import finish_run
+        from research_agent.core.lifecycle import finish_run
 
         return finish_run(self, result, captured)

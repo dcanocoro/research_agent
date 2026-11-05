@@ -44,7 +44,7 @@ siendo variables explícitas del proceso, sin modificación permanente de .env.
 
 Comprobaciones locales, sin servicios externos:
 
-- Pasada ampliada: `python -m pytest -q tests --ignore=tests/test_price_review.py --tb=short --show-capture=no`: 386 passed y tres fallos en fixtures.
+- Pasada ampliada: `python -m pytest -q tests --ignore=tests/campaigns/test_price_review.py --tb=short --show-capture=no`: 386 passed y tres fallos en fixtures.
   Dos fixtures confundían revisión sin herramientas con consolidación tras ampliar su
   presupuesto sintético; el tercero no preparaba el contrato de una sesión gestionada.
   Corregidos y repetidos: 2 passed y 1 passed, respectivamente.
@@ -69,7 +69,7 @@ antiguos sin mutación y anclas vacías versionadas. Las pruebas de instruccione
 piloto usan fixtures sintéticos temporales en lugar de recetas históricas retiradas;
 no reconstruyen ni validan resultados de aquellas campañas.
 
-La primera colección completa está bloqueada por `tests/test_price_review.py`:
+La primera colección completa está bloqueada por `tests/campaigns/test_price_review.py`:
 importa `scripts/review_historical_prices.py`, ausente ya en la base Git.
 No se restaura ese script ni se oculta el bloqueo mediante un cambio al test histórico.
 Se comprueba el resto de la suite por separado. La primera pasada ampliada y el detalle del chequeo de enlaces quedan en

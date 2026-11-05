@@ -20,6 +20,8 @@ o garantías. La
 - [ADR-0005 — Núcleo ReAct y extensiones](0005-nucleo-react-extensiones.md): aceptada
   el 2026-11-02; motor único, composición explícita y compatibilidad de mecanismos.
 
+- [ADR-0006 — Organización y revisión opcional](0006-organizacion-y-revision-opcional.md): aceptada el 2026-11-05; retirada de V8, rutas canónicas y selector del revisor.
+
 Usar `0001-nombre-breve.md`, con número consecutivo y este contenido mínimo:
 
 ```markdown

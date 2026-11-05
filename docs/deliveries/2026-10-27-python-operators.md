@@ -24,7 +24,7 @@ local verificado. Corpus sintético y rúbrica preparados sin ejecutar un LLM.
 
 ## Verificación local
 
-- `tests/test_python_operators.py`: **38 passed**, incluidos los cuatro ejemplos,
+- `tests/capabilities/test_python_operators.py`: **38 passed**, incluidos los cuatro ejemplos,
   referencias independientes, errores, pipes acotadas, terminación/cancelación,
   schemas cerrados, CLI, simulación, continuación y modo continuo.
 - mypy: sin errores en los 33 módulos de A/campañas; `pip check`: sin conflictos.

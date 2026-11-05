@@ -3,6 +3,63 @@
 > Operación y dependencias del proyecto externo. Consolidación documental: 2026-10-31.
 > Los detalles del wheel corresponden al corte del 2026-10-16; verificar el entorno efectivo.
 
+## Organización y revisión general
+
+El [mapa de módulos](modules.md) describe rutas y activación actuales.
+En continuo, `--general-review off` desactiva las llamadas periódicas y finales de
+revisión general. Por defecto permanece activada. Repetir la elección en cada run;
+Progress usa su propio evaluador y desactiva la revisión general. La opción explícita
+requiere `--continuous`; `--general-review on` con Progress se rechaza antes de crear clientes.
+Los checkpoints, límites y persistencia permanecen activos. El mecanismo V8 ha sido
+retirado; sus instrucciones históricas no son comandos vigentes.
+
+Tras actualizar este checkout, regenerar la entrada de consola con una instalación
+editable local, sin reinstalar dependencias:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --no-deps --no-build-isolation --no-index -e .
+```
+
+La entrada es `research_agent.cli.main:main`. Los imports internos antiguos se han
+retirado. Los ejemplos de contratos de estado apuntan a las rutas canónicas nuevas;
+el hash de su texto cambia y se registra mediante el aviso de contratos existente.
+Las guías ya congeladas dentro de experimentos no se reescriben.
+
+## Renovación con nota de continuidad
+
+Añadir `--context-note` a una ejecución `--continuous` activa la nota operativa de
+A y la renovación oportunista por compromiso sucesor de Progress. Repetir la opción
+al continuar: no se hereda automáticamente de runs anteriores. Sin ella se conserva
+el comportamiento anterior. No necesita otro agente ni dependencias nuevas.
+
+`--renewal-bytes` conserva su significado y valor predeterminado (262144 bytes).
+El evento de compromiso permite renovar desde el 60 % de ese umbral. Son bytes
+presupuestados localmente, no ocupación exacta en tokens del proveedor. Sin Progress
+solo se aplica el trigger por tamaño.
+
+La nota tiene cuatro apartados: trabajo en curso, hallazgos pendientes de integrar,
+intentos fallidos y siguiente paso con referencias. Consume una llamada del techo
+total, registrada como `context_note`, con máximo de 5000 tokens de salida y hasta
+40000 bytes de texto UTF-8 aceptado. El límite es un techo, no una longitud objetivo.
+Con el contador actual, la llamada reserva 40000 bytes de salida antes de enviarse.
+Se omite
+si compromete las reservas de cierre, no cabe o falla de forma recuperable. No
+sustituye documentos ni garantiza que todos los hallazgos materiales sobrevivan.
+
+La instrucción pide referencias exactas, distinción entre información guardada y
+pendiente, intentos previos y qué cambio justificaría repetirlos. Al retomar, A
+recibe orientación para usar esa nota, guardar lo material pendiente y cambiar de
+enfoque cuando el método anterior no resuelva el bloqueo. Los archivos de auditoría
+del run no se presentan como rutas del workspace para `report_work`.
+
+Revisar `continuidad/nota-*.json`, los eventos `lab.context.note.*` y
+`lab.context.renewed`, y los contadores de `resultado.json`. La configuración efectiva
+se conserva en el manifiesto. Verificación sin proveedores:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/extensions/test_context_note.py tests/regimes/test_continuous.py tests/extensions/test_progress.py tests/regimes/test_e2.py tests/extensions/test_durable_knowledge.py
+```
+
 ## Dependencias y frontera de instalación
 
 Una distribución instalable puede aportar varios paquetes importables:
@@ -61,7 +118,7 @@ Crear un experimento nuevo para esta versión. Las continuaciones heredan el mod
 Verificación local sin proveedores:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q tests/test_durable_knowledge.py tests/test_e2.py
+.\.venv\Scripts\python.exe -m pytest -q tests/extensions/test_durable_knowledge.py tests/regimes/test_e2.py
 ```
 
 La [entrega actual](deliveries/2026-11-02-b-prepared-closing.md) describe alcance y límites.
@@ -93,7 +150,7 @@ La CLI conserva sus fuentes habituales: activar Python no congela web ni datos.
 Verificación específica sin proveedores:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q tests/test_python_operators.py
+.\.venv\Scripts\python.exe -m pytest -q tests/capabilities/test_python_operators.py
 ```
 
 Sin el extra, los casos científicos se omiten; los checks de ausencia de dependencias,
@@ -271,13 +328,13 @@ vacío solo es único en un archivo vacío: permite inicializarlo sin reemplazo 
 En los demás casos se rechaza como ambiguo. Ante conflicto releer; ante
 `applied=true` inspeccionar lo aplicado antes de reintentar.
 
-Los [contratos de estado](../src/research_agent/state_contracts/state.md) y
-[empresa](../src/research_agent/state_contracts/company.md) conservan ejemplos
+Los [contratos de estado](../src/research_agent/capabilities/state/contracts/state.md) y
+[empresa](../src/research_agent/capabilities/state/contracts/company.md) conservan ejemplos
 recuperables con `describe_state_tools`. La publicación, diarios y recuperación
 siguen siendo internos al runtime, fuera de la memoria editable.
 
 Verificación local sin proveedores:
-`python -m pytest -q tests/test_state_tools.py tests/test_v6.py tests/test_v7.py`.
+`python -m pytest -q tests/capabilities/test_state_tools.py tests/extensions/test_v6.py tests/regimes/test_v7.py`.
 Estos checks no acreditan calidad financiera ni elección autónoma de herramientas.
 
 ## Continuidad V6 y evaluación offline
@@ -294,7 +351,7 @@ existente y compatible, validación offline sin proveedores ni datos remotos:
 
 ```powershell
 .\.venv\Scripts\python.exe -m research_campaigns validate RUTA_DEFINICION_CONTINUA
-.\.venv\Scripts\python.exe -m pytest -q tests/test_v6.py
+.\.venv\Scripts\python.exe -m pytest -q tests/extensions/test_v6.py
 ```
 
 Tras una ejecución autorizada, generar observaciones sin llamar al modelo:
@@ -474,7 +531,7 @@ no demuestran elección autónoma de acciones ni razonamiento financiero superio
 La evolución V7 se aplica al continuo existente, sin nueva opción de CLI ni perfil.
 El revisor usa el mismo perfil y llamadas adicionales contabilizadas como
 `external_review`. No ejecutar campañas para verificarlo: usar clientes simulados en
-`tests/test_v7.py` y la suite local. Los informes viven en `revision-externa/` de cada
+`tests/regimes/test_v7.py` y la suite local. Los informes viven en `revision-externa/` de cada
 run; el informe final es distinto de la última respuesta intermedia del investigador.
 
 Los diarios de `ejecuciones/transacciones/` pertenecen al runtime y deben conservarse
@@ -484,7 +541,35 @@ revisión. No existe aislamiento frente a editores externos durante una escritur
 Las copias de instrucciones antiguas no se actualizan automáticamente. La nueva política
 continua sí queda registrada junto a contratos y fingerprints efectivos.
 
-## Operación V8
+## Operación progress
+
+`--progress` activa compromisos verificables sin requerir régimen continuo ni B.
+El comando de la [guía breve](launch-experiments.md) funciona con una petición libre
+o con `--name progreso`; `--objective PATH` también activa el mecanismo.
+Acepta `id`, `goal` y `criteria` como lista de textos, además del JSON histórico
+con `description` y criterios identificados. Sin archivo, genera el objetivo una
+vez. Al continuar lo recupera; un JSON explícito distinto registra una revisión.
+
+`--max-calls` fija el total (100 por defecto, también en modo independiente) y
+`--progress-step-calls` limita cada compromiso (15 por defecto). Incluye llamadas
+fallidas, generación, investigación, evaluación y cierre. El modo independiente
+conserva los límites de tiempo, herramientas y contexto de la ejecución acotada.
+Para renovar contexto se combina con `--continuous` y su mandato. Progress+B se
+rechaza antes de ejecutar. No cambia las bibliotecas compartidas ni añade un DCF.
+
+Revisar `progreso/estado.json`, inputs/respuestas del evaluador, `resultado.json`
+y documentos persistidos. `objective_sufficient` es suficiencia según el evaluador;
+`objective_blocked`, `call_limit`, `tool_limit` y `time_limit` son cierres distintos.
+Una evaluación inválida detiene el control con `progress_evaluation_invalid`.
+Cancelación o fallo técnico preservan sus causas. Ninguno certifica calidad financiera.
+Pruebas locales: `python -m pytest -q tests/extensions/test_progress.py` y regresiones de fronteras.
+
+<a id="operación-v8"></a>
+
+## Operación V8 (histórica)
+
+Las instrucciones siguientes describen el mecanismo sustituido el 2026-11-03.
+No son comandos vigentes: ahora `--objective` selecciona progress, con o sin continuo.
 
 El objetivo admite opcionalmente `assessment_path`, por ejemplo
 `empresas/MSFT/evaluacion.md`. Es una ruta Markdown editable, relativa y sin escapes;

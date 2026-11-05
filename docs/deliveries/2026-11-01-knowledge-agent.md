@@ -64,11 +64,11 @@ se mantienen dos referencias anteriores a documentos no disponibles del checkout
 hermano de FinMate (visión de producto y ADR de contratos compartidos).
 
 La ejecución sin exclusiones de `pytest -q tests` se detiene durante la colección:
-`tests/test_price_review.py` referencia `scripts/review_historical_prices.py`, que
+`tests/campaigns/test_price_review.py` referencia `scripts/review_historical_prices.py`, que
 no existe en este checkout. No se ha recreado ese script histórico como parte de
 esta funcionalidad. La regresión restante se comprueba excluyendo ese test.
 
-Resultado final: `pytest -q tests --ignore=tests/test_price_review.py --tb=short`
+Resultado final: `pytest -q tests --ignore=tests/campaigns/test_price_review.py --tb=short`
 completa **426 pruebas superadas**, incluidas las 26 del agente opcional, en una
 ejecución local sin proveedores. Se comprobó además por separado la ruta nueva
 tras el cierre de los últimos ajustes de limpieza del presupuesto de delegación.
@@ -84,7 +84,7 @@ Los materiales, fuentes y avances de A siguen siendo datos revisables. Una
 referencia existente y un lote estructuralmente válido no prueban el fundamento de
 la inferencia económica. Tampoco hay aislamiento frente a editores externos.
 
-Operación: [desarrollo](../development.md#segundo-agente-opcional-por-cli).
+Operación: [desarrollo](../development.md#b-opcional-con-contexto-preparado).
 Contrato: [arquitectura](2026-11-02-b-prepared-original.md).
 
 ## Ejecución posterior autorizada el mismo día

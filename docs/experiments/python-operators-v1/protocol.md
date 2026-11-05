@@ -22,7 +22,7 @@ con filtros preventivos y sin aislamiento de seguridad ni límite duro de memori
 No crea acceso alternativo a Findata, un motor DCF validado, un registro de funciones
 o un nuevo ciclo de planificación. La instalación es opcional y requiere `--python`.
 
-Los cuatro [contratos](../../../src/research_agent/python_contracts/calculate.md)
+Los cuatro [contratos](../../../src/research_agent/capabilities/python/contracts/calculate.md)
 definen interfaz y ejemplos. Las pruebas locales ejecutan los ejemplos con referencias
 independientes y cubren el ciclo mediante clientes simulados. No demuestran elección
 autónoma de herramientas, utilidad económica ni rendimiento de inversión.

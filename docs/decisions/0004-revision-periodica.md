@@ -40,3 +40,9 @@ consumo y latencia; el contexto de revisión puede adelantar una consolidación.
 No se garantiza un cambio de enfoque, conservación útil ni mejor análisis financiero.
 Reconsiderar frecuencia o mecanismo si la observación muestra reflexión ritual sin
 acciones útiles o coste desproporcionado. No se ejecuta v4 en esta entrega.
+
+## Actualización del 2026-11-05
+
+La [ADR-0006](0006-organizacion-y-revision-opcional.md) modifica la obligatoriedad de
+la revisión y la compatibilidad de imports internos. El contenido anterior conserva
+la decisión y condiciones de su fecha; no es el contrato operativo actual.
