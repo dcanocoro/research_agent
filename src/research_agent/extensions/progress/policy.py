@@ -50,6 +50,7 @@ class ProgressPolicy:
         self.view: dict[str, Any] = {}
         self.stem = ""
         self.latest_verified = False
+        self.evaluation_retry: str | None = None
 
     @property
     def remaining(self) -> int:
@@ -83,12 +84,16 @@ class ProgressPolicy:
         }
         self.append(ConversationContext({"progress": self.base.progress_context}))
 
+    @property
+    def evaluation_prompt(self) -> str:
+        return evaluator.OPEN_SYSTEM if self.objective and self.objective.mode == "open" else evaluator.SYSTEM
+
     def update_manifest(self) -> None:
         assert self.agent.recorder.current is not None and self.objective is not None
         path = self.agent.recorder.current / "manifiesto.json"
         value = json.loads(path.read_bytes())
         value["objective"] = {"definition": self.objective.definition(), "sha256": self.objective.sha256}
-        value["progress_prompts"] = {"generation": GENERATION_SYSTEM, "evaluation": evaluator.SYSTEM}
+        value["progress_prompts"] = {"generation": GENERATION_SYSTEM, "evaluation": self.evaluation_prompt}
         self.agent.recorder.save("manifiesto.json", value)
 
     async def prepare(self) -> None:
@@ -185,7 +190,9 @@ class ProgressPolicy:
                 "calls_remaining": self.remaining, "step_call_limit": self.request.progress_step_calls,
                 "available_tools": [spec.name for spec in self.agent.tools.specs()],
             }
-            return self.isolated("evaluator", evaluator.SYSTEM, self.view)
+            if self.evaluation_retry is not None:
+                self.view["validation_feedback"] = self.evaluation_retry
+            return self.isolated("evaluator", self.evaluation_prompt, self.view)
         if self.terminal:
             return self.closing_step()
         self.operation = "researcher"
@@ -255,7 +262,22 @@ class ProgressPolicy:
                     for document in self.view["documents"]:
                         if self.agent.workspace.read_version(document["path"])[1] != document["sha256"]:
                             raise ValueError("Workspace changed during progress evaluation.")
-                    report = evaluator.parse(value.text, self.objective, self.view)
+                    try:
+                        report = evaluator.parse(value.text, self.objective, self.view)
+                    except ValueError as exc:
+                        if self.objective.mode != "open" or self.evaluation_retry is not None or self.remaining < 3:
+                            raise
+                        self.evaluation_retry = (
+                            f"Previous report rejected: {exc} "
+                            "Rebuild references exclusively from documents in this input. "
+                            "Do not reuse paths or hashes from the previous evaluation or inventory."
+                        )
+                        self.agent.recorder.save(self.stem + ".json", {
+                            "status": "invalid", "text": value.text, "error": str(exc), "retry": True,
+                        })
+                        self.needs_evaluation = True
+                        return
+                    self.evaluation_retry = None
                     if self.commitment:
                         self.history.append({"commitment": self.commitment, "result": report["change"],
                                              "alternatives": [{**a, "status": "attempted" if a["id"] == self.commitment["id"] else "discarded",
@@ -272,7 +294,8 @@ class ProgressPolicy:
                     elif not self.terminal and self.remaining >= 3:
                         option = next(a for a in report["alternatives"] if a["id"] == report["selected"])
                         self.commitment = {**option, "budget": min(self.request.progress_step_calls, self.remaining - 2)}
-                        if had_commitment and self.request.continuous and self.request.continuous.context_note:
+                        if (had_commitment and self.objective.mode != "open"
+                                and self.request.continuous and self.request.continuous.context_note):
                             self.base.commitment_changed = True
                     else:
                         self.terminal = self.terminal or "call_limit"

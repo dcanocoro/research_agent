@@ -44,6 +44,19 @@ Compare the current view with the previous evaluation and attempted commitment.
 """
 
 
+OPEN_SYSTEM = SYSTEM.replace("continue|sufficient|blocked", "continue|blocked").replace(
+    "for sufficient/blocked", "for blocked"
+).replace(
+    """Sufficient requires every criterion sufficient and no gaps; blocked means no feasible next
+advance, not merely missing data.""",
+    "A completed commitment or sufficient criterion does not end the investigation. "
+    "Choose a new material question about an existing or new company and continue if feasible. "
+    "For continue, identify the specific next gap even if existing dossiers already meet the quality criteria. "
+    "Use blocked only when no feasible material advance remains and explain which concrete alternatives "
+    "were considered and why each is infeasible, redundant or immaterial."
+)
+
+
 def packet(workspace: Workspace, objective: Objective, previous: dict[str, Any] | None,
            commitment: dict[str, Any] | None, before: dict[str, str],
            *, max_bytes: int = 64000) -> dict[str, Any]:
@@ -78,6 +91,8 @@ def packet(workspace: Workspace, objective: Objective, previous: dict[str, Any] 
 
 def parse(text: str, objective: Objective, view: dict[str, Any]) -> dict[str, Any]:
     report = json.loads(text, object_pairs_hook=unique_object)
+    if objective.mode == "open" and isinstance(report, dict) and report.get("outcome") == "sufficient":
+        raise ValueError("Open investigation requires a next commitment or a justified global blocker.")
     keys = {"criteria", "gaps", "alternatives", "selected", "reason", "outcome", "change", "reconsideration"}
     if not isinstance(report, dict) or set(report) != keys or len(encoded(report)) > 24000:
         raise ValueError("Invalid progress evaluation shape or size.")

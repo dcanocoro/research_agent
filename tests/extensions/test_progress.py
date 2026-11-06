@@ -243,3 +243,22 @@ def test_bounded_context_limit_verifies_and_closes_in_a_small_context(tmp_path):
     assert all(len(encoded({"system": r["system"], "input": r["input_items"], "tools": r["tools"]})) <= 30000
                for r in a.client.requests)
 
+
+
+def test_open_objective_keeps_commitments_without_global_sufficiency(tmp_path):
+    class OpenClient(Client):
+        async def respond(self, **kwargs):
+            if kwargs["system"] == evaluator.OPEN_SYSTEM:
+                kwargs["system"] = evaluator.SYSTEM
+            return await super().respond(**kwargs)
+
+    a, req = make(tmp_path, [], config=ContinuousConfig(max_llm_calls=12))
+    a.client = OpenClient(final="continue")
+    opened = replace(objective(), mode="open")
+    assert Objective.from_dict(opened.definition()) == opened
+    result = execute(a, replace(req, objective=opened, progress_step_calls=2))
+    assert result.stop_reason == "call_limit"
+    assert a.client.evaluations > 1
+    view = evaluator.packet(a.workspace, opened, None, None, {})
+    with pytest.raises(ValueError, match="Open investigation"):
+        evaluator.parse(json.dumps(report(view, outcome="sufficient")), opened, view)

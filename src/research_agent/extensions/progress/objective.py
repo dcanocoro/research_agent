@@ -37,6 +37,7 @@ class Objective:
     description: str
     criteria: tuple[Criterion, ...]
     assessment_path: str | None = None
+    mode: str = "finite"
 
     def __post_init__(self) -> None:
         if (not isinstance(self.id, str) or not self.id.strip()
@@ -53,6 +54,8 @@ class Objective:
                     or path.startswith("/") or any(p in {"", ".", ".."} for p in path.split("/"))
                     or path.split("/")[0].casefold() == "materiales" or not path.endswith(".md")):
                 raise ValueError("assessment_path requires a relative editable Markdown path.")
+        if self.mode not in ("finite", "open"):
+            raise ValueError("Objective mode must be finite or open.")
         if len(encode(self.definition())) > 16384:
             raise ValueError("Objective exceeds 16 KiB.")
 
@@ -61,6 +64,8 @@ class Objective:
                 "criteria": {c.id: c.description for c in self.criteria}}
         if self.assessment_path is not None:
             value["assessment_path"] = self.assessment_path
+        if self.mode != "finite":
+            value["mode"] = self.mode
         return value
 
     @property
@@ -75,11 +80,12 @@ class Objective:
             value = {"id": value["id"], "description": value["goal"],
                      "criteria": {f"criterion-{i}": text for i, text in enumerate(value["criteria"], 1)}}
         if (not isinstance(value, dict) or not {"id", "description", "criteria"} <= set(value)
-                or set(value) - {"id", "description", "criteria", "assessment_path"}
+                or set(value) - {"id", "description", "criteria", "assessment_path", "mode"}
                 or not isinstance(value["criteria"], dict)):
             raise ValueError("Expected objective JSON: id, description, criteria (id: description).")
         return cls(value["id"], value["description"],
-                   tuple(Criterion(k, v) for k, v in value["criteria"].items()), value.get("assessment_path"))
+                   tuple(Criterion(k, v) for k, v in value["criteria"].items()), value.get("assessment_path"),
+                   value.get("mode", "finite"))
 
     @classmethod
     def load(cls, path: Path) -> Objective:

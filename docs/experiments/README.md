@@ -102,3 +102,7 @@ Las entregas de [expedientes](../deliveries/2026-10-17-casefile.md) y
 [conservación](../deliveries/2026-10-17-persistent-research.md) resumen los intentos.
 El [baseline](../baseline.md) conserva la transición al estado de archivos. Estos
 antecedentes no constituyen aceptación del mecanismo vigente ni de una arquitectura FinMate.
+
+- [Conocimiento financiero acumulativo](conocimiento-acumulativo/protocol.md). Contraste de Progress con y sin nota.
+
+- [Expedientes con FinData en una sesión](expedientes-findata/protocol.md).
