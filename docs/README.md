@@ -17,6 +17,7 @@ capturada no demuestra calidad financiera ni resultados de inversión.
 | Preparar y revisar campañas | [Campañas](campaigns.md) |
 | Diseñar un contraste | [Metodología](experiments.md) |
 | Consultar resultados y sus límites | [Registro experimental](experiments/README.md) |
+| Consultar evaluaciones por campaña y capacidad | [Evaluaciones](evaluaciones/README.md) |
 | Identificar una referencia histórica para comparar | [Baseline del 18 de octubre](baseline.md) |
 | Consultar elecciones aceptadas | [Decisiones](decisions/README.md) |
 | Recuperar cambios y verificaciones fechados | [Entregas](deliveries/README.md) |

@@ -110,3 +110,5 @@ antecedentes no constituyen aceptación del mecanismo vigente ni de una arquitec
 - [Baseline FinData de 150 llamadas: fallos y repetición](expedientes-findata/baseline-150.md).
 
 - [Pareja FinData de 150 llamadas: trayectoria y utilidad de las notas](expedientes-findata/baseline-150-findings.md).
+
+- [V0 — Evaluación retrospectiva D1–D5 de la pareja FinData de 150 llamadas](../evaluaciones/V0/informe.md).
