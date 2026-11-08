@@ -1,0 +1,74 @@
+[
+  {
+    "id": "S1", "group": "simple",
+    "request": "Según el corpus, ¿qué ingresos declaró Alba en 2025 y en qué moneda y unidad? Cita la fuente y responde brevemente.",
+    "corpus": "# Alba — ficha sintética\nFuente A1: comunicado anual, publicado 2026-02-20. Ejercicio terminado 2025-12-31. Ingresos: 240 millones EUR; beneficio operativo: 36 millones EUR. Comparativo 2024: ingresos 200 millones EUR. Las cifras se refieren al grupo consolidado.\nFuente A2: presentación comercial 2026-03-01. Clientes en 18 países, plantilla 1200 personas. No contiene cifras financieras adicionales.",
+    "rubric": "240 millones EUR, ejercicio 2025 consolidado, fuente A1. No confundir beneficio con ingresos. Basta una lectura; no requiere cálculos ni expediente."
+  },
+  {
+    "id": "S2", "group": "simple",
+    "request": "Calcula el crecimiento porcentual de ingresos de Brisa entre 2024 y 2025 con los datos del corpus. Indica fórmula, resultado y fuente.",
+    "corpus": "# Brisa — fuente B1\nInforme anual publicado 2026-02-15: ingresos consolidados 2024 = 80 millones USD; 2025 = 100 millones USD. Mismo perímetro y duración de doce meses. Beneficio neto 2025 = 9 millones USD. No se ofrecen previsiones.",
+    "rubric": "(100−80)/80×100 = 25 %. Cálculo determinista con calculate y B1 como procedencia. No usar 20 % ni convertir monedas."
+  },
+  {
+    "id": "S3", "group": "simple",
+    "request": "¿Permite el corpus calcular el PER de Cauce al cierre de 2025? Explica qué dato falta y evita estimarlo.",
+    "corpus": "# Cauce — fuente C1\nCierre 2025-12-31. Beneficio neto atribuido 2025 = 12 millones EUR. Acciones diluidas medias 2025 = 6 millones. No se publica precio de la acción, capitalización bursátil ni precios de otros días. No existe otra fuente en este escenario cerrado.",
+    "rubric": "No se puede obtener PER sin precio o capitalización de fecha pertinente. BPA calculable de 2 EUR no resuelve la ausencia. No inventar precio ni repetir búsquedas. El cálculo del BPA es opcional."
+  },
+  {
+    "id": "S4", "group": "simple",
+    "request": "Aclara la discrepancia de ingresos de Duna: el resumen dice 150 millones y la nota corregida 135. ¿Qué cifra usarías para 2025 y por qué?",
+    "corpus": "# Duna — documentos sintéticos\nD1: resumen preliminar de 2026-01-10, ingresos 2025 de 150 millones EUR, incluye una unidad vendida.\nD2: nota corregida de 2026-02-28, ingresos 2025 de operaciones continuadas de 135 millones EUR, unidad vendida reclasificada como discontinuada con 15 millones EUR; reemplaza el resumen preliminar para este perímetro.\nD3: folleto comercial 2026-04-01 menciona presencia internacional, sin cifras.\n",
+    "rubric": "135 millones EUR para operaciones continuadas, D2; explicar 15 discontinuadas y distinto perímetro, no declarar falso todo el dato de D1. La corrección y fecha deben fundamentar la elección."
+  },
+  {
+    "id": "M1", "group": "intermediate",
+    "request": "Compara la evolución del margen operativo de Encina de 2024 a 2025. Calcula ambos márgenes y su cambio en puntos porcentuales; explica si mejoró por ingresos o por beneficio sin atribuir causas no documentadas.",
+    "corpus": "# Encina — fuente E1\nInforme anual 2025 publicado 2026-03-02, millones EUR, consolidado y perímetro constante. 2024: ingresos 400, beneficio operativo 40. 2025: ingresos 500, beneficio operativo 75. Costes de ventas 2025 = 300; empleados 2500. No hay desglose causal del incremento del beneficio ni de cambios en precios o volúmenes.",
+    "rubric": "Márgenes 10 % y 15 %, +5 puntos porcentuales. Ingresos +25 %, beneficio +87,5 % si se cuantifican; beneficio crece más que ingresos. No llamar +5 % al cambio ni inventar eficiencia/precios como hechos. Usar cálculo determinista."
+  },
+  {
+    "id": "M2", "group": "intermediate",
+    "request": "¿Mejoró la generación de caja recurrente de Faro en 2025? Compara flujo operativo y flujo libre antes y después de ajustar el cobro extraordinario indicado. Da una conclusión acotada.",
+    "corpus": "# Faro — millones EUR\nF1, estado de caja 2025 publicado 2026-03-10: flujo operativo 2024 = 60; 2025 = 90. Capex pagado 2024 = 20; 2025 = 25. FCF definido aquí como flujo operativo menos capex.\nF2, nota 7 del mismo informe: el flujo operativo 2025 incluye un cobro fiscal no recurrente de 40; 2024 no incluye cobros comparables. La nota no permite asegurar qué otros movimientos son recurrentes.\nF3, presentación: la dirección destaca crecimiento del flujo operativo del 50 %, sin ajuste. No hay otra información.",
+    "rubric": "Operativo reportado 60→90, ajustado 2025=50 frente a60; FCF reportado40→65, ajustado2025=25 frente40. No concluir mejora recurrente por +50 % reportado. El ajuste específico no demuestra depuración completa de recurrencia. Citar F1 y F2."
+  },
+  {
+    "id": "M3", "group": "intermediate",
+    "request": "Compara el crecimiento de Greda y Haya en 2025. Determina si las cifras permiten ordenar su crecimiento orgánico; comprueba periodos y moneda antes de concluir.",
+    "corpus": "# Comparación sintética\nG1: Greda, ingresos consolidados anuales 2024=200 millones EUR, 2025=240 millones EUR. Informe 2026-02-10. Una adquisición aporta 30 millones EUR de los ingresos de 2025; no aportó en 2024. Sin variaciones de tipo de cambio materiales.\nH1: Haya, ingresos de nueve meses a septiembre: 2024=100 millones USD, 2025=125 millones USD; sin adquisiciones. Informe 2025-11-15. No hay cifras de doce meses ni conversión de moneda.\nH2: comunicado de enero 2026 confirma cierre de ejercicio a diciembre pero no publica cifras. No se conoce el cuarto trimestre.",
+    "rubric": "Greda reportado20 %, excluyendo aporte adquirido(240−30−200)/200=5 %. Haya nueve meses25 %, no es crecimiento anual. No ordenar crecimiento orgánico anual con periodos distintos. Monedas distintas no impiden ratios internos, pero no convertir ni comparar niveles absolutos sin base."
+  },
+  {
+    "id": "M4", "group": "intermediate",
+    "request": "Evalúa si Isla puede atender el vencimiento de deuda de los próximos doce meses con caja disponible y el flujo indicado. Calcula la cobertura en base y estrés, sin contar líneas no comprometidas, y explica la limitación.",
+    "corpus": "# Isla — corte 2026-10-31, millones EUR\nI1: deuda que vence en próximos doce meses=70. Caja total=50, de la que20 está restringida y no puede pagar deuda.\nI2: presupuesto de caja de dirección para próximos doce meses: flujo operativo base=60, capex obligatorio=25. Estrés: flujo operativo=40 y mismo capex. Son previsiones, no resultados observados.\nI3: presentación anuncia conversaciones para línea bancaria de30; no firmada ni comprometida. No hay otros recursos confirmados. No se especifica calendario mensual de cobros/pagos.",
+    "rubric": "Caja disponible30. Recursos base30+60−25=65, déficit5; estrés30+40−25=45, déficit25. Cobertura65/70≈0,929 y45/70≈0,643 si se expresa ratio. No contar restringida ni línea30. Proyecciones y calendario ausente impiden garantía de liquidez incluso con totales."
+  },
+  {
+    "id": "O1", "group": "open",
+    "request": "Prepara una evaluación provisional de la calidad del crecimiento de Junco en 2025: volumen, margen y caja. Concluye qué sostiene el optimismo y qué lo limita. No valores la acción ni amplíes a un análisis completo de la empresa.",
+    "corpus": "# Junco — corpus sintético, millones EUR salvo indicación\nJ1, informe anual 2026-02-20: ingresos2024=300,2025=390; beneficio operativo2024=45,2025=39; flujo operativo2024=42,2025=20; capex2024=15,2025=25.\nJ2, nota comercial: unidades vendidas2024=100 mil,2025=130 mil; precio medio sin cambio material; no hubo adquisiciones.\nJ3, nota de circulante: incremento de existencias consume25 de caja en2025; parte corresponde a lanzamiento de producto. No cuantifica obsolescencia ni fecha de normalización.\nJ4, carta de dirección: espera recuperar margen y liberar inventario en2026; sin cifras ni contratos que lo garanticen.\nJ5, informe de sostenibilidad: 85 % de energía renovable. No cuantifica efecto en costes. No hay precio de mercado, coste de capital ni previsión financiera verificable.",
+    "rubric": "Crecimiento ingresos30 % y unidades30 %, soporte a crecimiento de volumen. Margen15 %→10 %. FCF27→−5. Deterioro de margen/caja limita optimismo; inventarios explica consumo pero normalización es incierta, promesa dirección no hecho. No DCF ni recomendación de compra. Cálculos deterministas; balance material."
+  },
+  {
+    "id": "O2", "group": "open",
+    "request": "Con el corpus, formula un juicio provisional sobre la resiliencia de Linde ante la pérdida de su cliente principal. Cuantifica exposición y un escenario simple con los supuestos disponibles. Explica qué no puede concluirse; no investigues otros riesgos sin relación con esta pregunta.",
+    "corpus": "# Linde — escenario cerrado\nL1, informe2025: ingresos totales500 millones EUR; cliente principal representa40 %. Beneficio operativo50 millones EUR. Caja libre80 millones EUR, deuda financiera100 millones EUR.\nL2, hecho de2026-10-15: cliente anuncia no renovar al final de2026. No afecta a otros clientes conocidos. No hay pedidos sustitutivos firmados.\nL3, sensibilidad preparada por dirección: para ingresos perdidos del cliente, margen de contribución30 % y costes fijos sin cambio en primer año; aplicar pérdida anual completa sin sustitución como estrés, no como previsión.\nL4, carta de2026-10-20: conversaciones con nuevos clientes, sin importe ni probabilidad. No hay calendario mensual, tipos de deuda, vencimientos ni datos de capital circulante.\nL5: premio de innovación2025 sin efecto económico cuantificado.",
+    "rubric": "Exposición200 millones EUR, contribución perdida60, operativo estrés50−60=−10. Supuestos de año completo, sin sustitución y costes fijos constantes; no pronóstico. Caja/deuda no permite afirmar solvencia ni quiebra sin calendario/caja operativa. Negociaciones no compensación confirmada. Conclusión provisional negativa sobre resiliencia operativa fundamentada, sin falso precio objetivo."
+  },
+  {
+    "id": "O3", "group": "open",
+    "request": "Valora si la mejora operativa de Marea en 2025 respalda la afirmación de que su acción está barata. Separa lo que puede concluirse de lo que no, usando las dos notas del corpus y cálculos pertinentes. No inventes una valoración.",
+    "corpus": "# Marea — fuentes ficticias\nMA1, informe anual publicado2026-02-28: ingresos2024=600 y2025=660 millones EUR; beneficio operativo2024=60 y2025=99; flujo operativo2025=110; capex2025=35 millones EUR. Sin adquisiciones, perímetro constante.\nMA2, nota comercial2026-09-30: dice que la acción está barata porque el margen ha aumentado. No ofrece precio, capitalización, deuda neta, número de acciones, coste de capital ni expectativas de mercado.\nMA3, carta dirección: guía de crecimiento futuro entre0 % y15 % sin probabilidades y sujeta a demanda; no garantiza repetir margen. No existen más datos de mercado en el escenario.\nMA4, noticia: nueva sede inaugurada; no informa coste ni retorno.",
+    "rubric": "Ingresos+10 %, margen10 %→15 %, FCF2025=75 millones EUR; evidencia operativa favorable no prueba acción barata. Faltan precio/valor empresa y expectativas/supuestos de valoración; no fabricar PER/DCF ni recomendar comprar. Guía no garantiza persistencia. Insuficiencia de valoración es una respuesta válida, no obligación de seguir investigando fuera del corpus."
+  },
+  {
+    "id": "O4", "group": "open",
+    "request": "¿La recuperación de Noria justifica dar por resuelto su deterioro? Evalúa con el corpus ingresos, caja y calidad de la evidencia; incorpora la corrección posterior y termina con un juicio provisional y la incertidumbre material que queda.",
+    "corpus": "# Noria — corte2026-10-31, millones EUR\nN1, informe2024 publicado2025-03-01: ingresos200, beneficio operativo10, flujo operativo8, capex12.\nN2, resumen preliminar2025 publicado2026-01-20: ingresos260, beneficio operativo26, flujo operativo30, capex14. Titula recuperación completa.\nN3, corrección auditada2026-03-15: ingresos2025=230, beneficio operativo2025=16; cifras preliminares incluían30 de ventas sin transferencia de control y10 de resultado asociado. Flujo operativo30 y capex14 permanecen sin cambio. Sustituye N2 en ingresos y resultado.\nN4, nota de caja del informe auditado: reducción de cuentas a cobrar heredadas aporta20 al flujo operativo2025; no se espera repetir esa liberación cada año. No permite atribuir la totalidad del resto a actividad recurrente.\nN5, entrevista2026-10-01: dirección dice que el año próximo será mejor, sin pedidos, importes ni evidencia nueva. No hay otros datos actuales.\n",
+    "rubric": "Usar230 y16 corregidos; ingresos+15 %, margen2024=5 %,2025≈6,96 %. FCF reportado−4→16; ajustando liberación20, FCF2025=−4. Mejora operativa parcial con soporte de caja no recurrente; no dar por resuelto deterioro ni usar260/26 o entrevista como confirmación. Incertidumbre de caja futura y sostenibilidad; no exigir imposible certeza."
+  }
+]

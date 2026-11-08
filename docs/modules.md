@@ -24,6 +24,11 @@ posee catálogos; `execution/`, ejecución y almacenamiento; `reporting/`, evide
 informes. `campaigns/` contiene entradas y lanzadores, `docs/experiments/` protocolos
 e historia, y `artifacts/` salidas locales ignoradas. Las pruebas reflejan estas áreas.
 
+El experimento de [terminación acotada](experiments/terminacion-react/protocol.md)
+vive en `research_campaigns/termination/`, con composición local y política derivada
+del acotado. Su entrada es `python -m research_campaigns.termination`; no se activa
+en la CLI de A y puede retirarse sin modificarla.
+
 ## Qué está activo
 
 | Componente | Predeterminado | Activación y restricciones |

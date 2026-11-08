@@ -1,5 +1,11 @@
 # Registro de experimentos y hallazgos
 
+- [Terminación inteligente del ReAct acotado](terminacion-react/protocol.md): montaje
+  aislado V0/V1/V2, corpus sintético y rúbrica privada;
+  [piloto y lanzamiento paralelo](terminacion-react/execution-2026-11-08.md) y
+  [resultados de 108 trabajos](terminacion-react/findings.md): V1 sin ahorro de llamadas,
+  V2 reduce trabajo de A pero añade más coste de revisión; revisión semántica abierta.
+
 La [metodología](../experiments.md) define el contraste y la [estrategia](../strategy.md)
 la pregunta vigente. Implementación, ejecución y aceptación se registran por separado.
 Una campaña exploratoria real no completa automáticamente un contraste controlado.

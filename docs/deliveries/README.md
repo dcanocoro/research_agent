@@ -1,5 +1,8 @@
 # Entregas
 
+- [2026-11-08 — Experimento aislado de terminación](2026-11-08-termination-experiment.md):
+  V0/V1/V2 acotados, corpus congelado y control externo; preparado sin campaña.
+
 Cada entrega conserva qué se cambió y verificó en una fecha, con base Git, alcance,
 limitaciones y siguiente paso recuperable. Enlazar el diseño, experimento o decisión
 correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda vigente:
