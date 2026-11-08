@@ -560,7 +560,8 @@ rechaza antes de ejecutar. No cambia las bibliotecas compartidas ni añade un DC
 Revisar `progreso/estado.json`, inputs/respuestas del evaluador, `resultado.json`
 y documentos persistidos. `objective_sufficient` es suficiencia según el evaluador;
 `objective_blocked`, `call_limit`, `tool_limit` y `time_limit` son cierres distintos.
-Una evaluación inválida detiene el control con `progress_evaluation_invalid`.
+Una evaluación inválida admite un intento de reparación si quedan al menos tres
+  llamadas; si vuelve a fallar, detiene el control con `progress_evaluation_invalid`.
 Cancelación o fallo técnico preservan sus causas. Ninguno certifica calidad financiera.
 Pruebas locales: `python -m pytest -q tests/extensions/test_progress.py` y regresiones de fronteras.
 

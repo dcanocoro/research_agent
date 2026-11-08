@@ -46,6 +46,8 @@ class AgentA:
         from research_agent.storage.transactions import recover
 
         validate_execution(self, request)
+        from research_agent.composition.provider_errors import TRUNCATED_RESPONSE_ERRORS
+        self.truncated_response_errors = TRUNCATED_RESPONSE_ERRORS
         if self.recorder.experiment is not None:
             from research_agent.experiments.configuration import validate_state_configuration
 

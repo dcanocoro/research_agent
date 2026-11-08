@@ -265,12 +265,12 @@ class ProgressPolicy:
                     try:
                         report = evaluator.parse(value.text, self.objective, self.view)
                     except ValueError as exc:
-                        if self.objective.mode != "open" or self.evaluation_retry is not None or self.remaining < 3:
+                        if self.evaluation_retry is not None or self.remaining < 3:
                             raise
                         self.evaluation_retry = (
                             f"Previous report rejected: {exc} "
                             "Rebuild references exclusively from documents in this input. "
-                            "Do not reuse paths or hashes from the previous evaluation or inventory."
+                            "Cite only document ids from this input; never reuse ids from previous evaluations."
                         )
                         self.agent.recorder.save(self.stem + ".json", {
                             "status": "invalid", "text": value.text, "error": str(exc), "retry": True,

@@ -93,11 +93,11 @@ def test_evaluator_rejects_missing_stale_and_unchanged_progress(tmp_path):
     view = evaluator.packet(a.workspace, objective(), None, None, {})
     good = report(view, outcome="sufficient", kind="progress")
     assert evaluator.parse(json.dumps(good), objective(), view)
-    good["criteria"][0]["references"][0]["sha256"] = "wrong"
-    with pytest.raises(ValueError, match="stale"):
+    good["criteria"][0]["references"][0] = "wrong"
+    with pytest.raises(ValueError, match="Unknown"):
         evaluator.parse(json.dumps(good), objective(), view)
     good["criteria"][0]["references"] = [{"path": "missing.md", "sha256": None}]
-    with pytest.raises(ValueError, match="Missing"):
+    with pytest.raises(ValueError, match="Unknown"):
         evaluator.parse(json.dumps(good), objective(), view)
     same = evaluator.packet(a.workspace, objective(), None, None, evaluator.versions(view))
     with pytest.raises(ValueError, match="changed persisted"):
@@ -209,7 +209,7 @@ def test_cli_progress_create_and_continue(tmp_path, monkeypatch, named):
 def test_failed_evaluation_preserves_last_valid_state_for_continuation(tmp_path):
     class FailSecond(Client):
         async def respond(self, **kwargs):
-            if kwargs["system"] == evaluator.SYSTEM and self.evaluations == 1:
+            if kwargs["system"] == evaluator.SYSTEM and self.evaluations >= 1:
                 self.evaluations += 1
                 return text("invalid")
             return await super().respond(**kwargs)
@@ -262,3 +262,35 @@ def test_open_objective_keeps_commitments_without_global_sufficiency(tmp_path):
     view = evaluator.packet(a.workspace, opened, None, None, {})
     with pytest.raises(ValueError, match="Open investigation"):
         evaluator.parse(json.dumps(report(view, outcome="sufficient")), opened, view)
+
+
+def test_reference_ids_resolve_versions_and_cannot_cross_evaluations(tmp_path):
+    a = bounded_agent(tmp_path, [])
+    a.workspace.write_file("result.md", "Saved result")
+    view = evaluator.packet(a.workspace, objective(), None, None, {})
+    raw = report(view, outcome="sufficient", kind="progress")
+    parsed = evaluator.parse(json.dumps(raw), objective(), view)
+    expected = next(d for d in view["documents"] if d["path"] == "result.md")
+    assert parsed["change"]["references"] == [{"path": "result.md", "sha256": expected["sha256"]}]
+    other = evaluator.packet(a.workspace, objective(), None, None, {})
+    with pytest.raises(ValueError, match="Unknown or unseen"):
+        evaluator.parse(json.dumps(raw), objective(), other)
+    omitted = {**view, "documents": []}
+    with pytest.raises(ValueError, match="Unknown or unseen"):
+        evaluator.parse(json.dumps(raw), objective(), omitted)
+
+
+def test_invalid_evaluation_is_repaired_once_in_finite_mode(tmp_path):
+    class RepairClient(Client):
+        async def respond(self, **kwargs):
+            if kwargs["system"] == evaluator.SYSTEM and not getattr(self, "injected_failure", False):
+                self.injected_failure = True
+                return text("invalid")
+            return await super().respond(**kwargs)
+    a = bounded_agent(tmp_path, [], AgentLimits(max_llm_calls=8))
+    a.client = RepairClient()
+    result = execute(a, AgentRequest("Explain", "w", "c", objective=objective()))
+    assert result.stop_reason == "objective_sufficient"
+    assert a.client.evaluations == 2
+    attempts = [json.loads(p.read_bytes()) for p in (a.recorder.current / "progreso").glob("*-evaluator.json")]
+    assert sum(p.get("status") == "invalid" for p in attempts) == 1

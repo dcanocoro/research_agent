@@ -78,7 +78,7 @@ def test_all_three_routes_enter_the_same_engine(tmp_path, monkeypatch):
         raise AssertionError("Invalid B configuration reached transaction recovery")
 
     monkeypatch.setattr("research_agent.storage.transactions.recover", no_recovery)
-    with pytest.raises(ValueError, match="100 total"):
+    with pytest.raises(ValueError, match="Durable B requires --continuous with --max-calls 60, 70 or 100"):
         execute(parent, replace(child_request, continuous=None))
 
 

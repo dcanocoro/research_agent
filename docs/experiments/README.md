@@ -106,3 +106,7 @@ antecedentes no constituyen aceptación del mecanismo vigente ni de una arquitec
 - [Conocimiento financiero acumulativo](conocimiento-acumulativo/protocol.md). Contraste de Progress con y sin nota.
 
 - [Expedientes con FinData en una sesión](expedientes-findata/protocol.md).
+
+- [Baseline FinData de 150 llamadas: fallos y repetición](expedientes-findata/baseline-150.md).
+
+- [Pareja FinData de 150 llamadas: trayectoria y utilidad de las notas](expedientes-findata/baseline-150-findings.md).

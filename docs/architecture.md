@@ -652,3 +652,22 @@ siempre el mismo formato propio, también en las construcciones directas de prue
 La operación y los comandos están en [desarrollo](development.md). El
 [baseline](baseline.md) distingue capacidad implementada, resultado observado y
 aceptación semántica pendiente.
+
+## Recuperación acotada y referencias de evaluación (2026-11-07)
+
+El evaluador Progress cita identificadores locales a su paquete, asignados solo a
+los documentos con texto visible. El runtime resuelve cada identificador a ruta y
+hash; las capturas válidas mantienen ese formato resuelto. Las referencias de otra
+evaluación o de documentos omitidos se rechazan. La validación informa el campo
+concreto. Un informe inválido admite un intento de reparación en ambos modos,
+con al menos tres llamadas restantes; después conserva el fallo y el estado válido.
+
+El motor común reconoce truncamientos mediante la clasificación inyectada por
+composición, sin importar Infra. Descarta la respuesta incompleta antes de despacho
+y solicita un nuevo paso a la política, con orientación para reducir la salida.
+Permite una recuperación por episodio y hasta tres por ejecución; todas las llamadas
+consumen el presupuesto normal y respetan reservas, contexto y deadline. No reintenta
+herramientas. Un segundo truncamiento consecutivo conserva el error original.
+`lab.model.truncated` registra el fallo y si se programó recuperación; las trazas
+conservan los payloads del proveedor. No garantiza que el proveedor deje de repetir
+texto ni que una campaña llegue a consumir todo su presupuesto.

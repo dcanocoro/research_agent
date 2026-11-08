@@ -16,7 +16,7 @@ def objective():
 
 
 def report(view, *, outcome="continue", kind="initial", reconsideration=""):
-    refs = [{"path": d["path"], "sha256": d["sha256"]} for d in view["documents"] if d["path"] == "result.md"]
+    refs = [d["id"] for d in view["documents"] if d["path"] == "result.md"]
     ids = list(view["objective"]["criteria"])
     return {"criteria": [{"id": identifier, "status": "sufficient" if outcome == "sufficient" else "pending",
                            "reason": "Persisted explanation" if refs else "Explanation is missing", "references": refs} for identifier in ids],

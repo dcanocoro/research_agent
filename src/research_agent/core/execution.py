@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Protocol
 from collections.abc import Callable, Awaitable
 
@@ -73,6 +73,8 @@ async def interact(client: Any, step: ModelCall) -> ResponseTurn:
 async def execute(policy: Policy) -> AgentResult:
     """Own the only ReAct loop and always finalize under the session bindings."""
     error: BaseException | None = None
+    recovery_pending = False
+    recoveries = 0
     with bind_run_context(policy.context), bind_interaction_context(policy.interaction):
         try:
             await policy.prepare()
@@ -85,14 +87,33 @@ async def execute(policy: Policy) -> AgentResult:
                     continue
                 try:
                     if isinstance(step, ModelCall):
+                        if recovery_pending:
+                            step = replace(step, system=step.system + "\nRuntime recovery: the previous model response was truncated and discarded; "
+                                           "no tool from that response was executed. Generate a fresh, smaller response. "
+                                           "For writes, preserve one small coherent advance per call; do not repeat long hashes or text. "
+                                           "For structured reports, use concise reasons and references from the current input only.")
                         value = await interact(policy.agent.client, step)
                     else:
                         timeout = step.budget.operation_timeout(step.timeout) if step.budget else step.timeout
                         async with asyncio.timeout(timeout):
                             value = await policy.agent.tools.execute(step.call, allowed_names=step.allowed)
                 except BaseException as exc:
+                    # A provider exception has not yielded a ResponseTurn: no tool can
+                    # have been dispatched by this engine. Never retry a ToolCall.
+                    if isinstance(step, ModelCall) and isinstance(exc, getattr(policy.agent, "truncated_response_errors", ())):
+                        retry = not recovery_pending and recoveries < 3
+                        policy.agent.recorder.event("lab.model.truncated", error_type=type(exc).__name__,
+                                                    recovery_scheduled=retry, recoveries_used=recoveries)
+                        if retry:
+                            recoveries += 1
+                            recovery_pending = True
+                            # Ask the policy for a fresh call: it charges resources and
+                            # checks deadlines/context/reserves just like any other call.
+                            continue
                     await policy.receive(exc)
                 else:
+                    if isinstance(step, ModelCall):
+                        recovery_pending = False
                     await policy.receive(value)
         except BaseException as exc:
             error = exc

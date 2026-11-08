@@ -21,8 +21,8 @@ se conservan controles técnicos y renovación, sustituyendo las revisiones sem�
 El evaluador recibe una vista acotada con versiones y omisiones. Suficiencia exige
 referencias persistidas; progreso requiere además soporte en un resultado cambiado,
 con explicación semántica. Un hash distinto no demuestra calidad. Una tentativa
-sin progreso debe reconsiderarse antes de continuar. Una evaluación inválida detiene
-el control y conserva el último estado válido; no inventa cumplimiento ni bloqueo.
+sin progreso debe reconsiderarse antes de continuar. Desde el 2026-11-07, una evaluación inválida admite un intento de reparación
+si quedan recursos; si sigue inválida, detiene el control y conserva el último estado válido; no inventa cumplimiento ni bloqueo.
 
 El estado operativo y hasta 20 compromisos recientes quedan en `progreso/estado.json`
 del run; las capturas completas de evaluaciones conservan el resto del historial.
