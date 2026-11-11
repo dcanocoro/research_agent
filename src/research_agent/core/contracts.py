@@ -34,13 +34,18 @@ class ContinuousConfig:
     timeout_seconds: float | None = None
     context_note: bool = False
     general_review: bool = True
+    max_react_calls: int | None = None  # ReAct, including checkpoint/closing; auxiliary calls remain in totals.
+    allow_voluntary_stop: bool = False
 
     def __post_init__(self) -> None:
         if type(self.general_review) is not bool:
             raise ValueError("general_review must be a boolean.")
+        if type(self.allow_voluntary_stop) is not bool:
+            raise ValueError("allow_voluntary_stop must be a boolean.")
         if not 0 < self.consolidation_threshold_bytes < self.max_context_bytes:
             raise ValueError("Continuous context threshold must be below the byte limit.")
-        if any(v is not None and v < 1 for v in (self.max_llm_calls, self.max_tool_calls)):
+        if any(v is not None and (type(v) is not int or v < 1)
+               for v in (self.max_llm_calls, self.max_tool_calls, self.max_react_calls)):
             raise ValueError("Continuous call limits must be positive.")
         if self.timeout_seconds is not None and (
             not isfinite(self.timeout_seconds) or self.timeout_seconds <= 0

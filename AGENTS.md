@@ -56,7 +56,8 @@ o una decisión aceptada; plantear la discrepancia y actualizar su referencia al
 - Conservar procedencia, fechas, periodos, moneda, unidades y ausencias. Una cita o
   referencia existente no prueba la inferencia económica ni la calidad de una fuente.
 - Usar cálculos deterministas cuando estén disponibles; no inventar cálculos, valoración
-  o postura. Actualmente hay aritmética y métricas, pero no DCF ni gestión de cartera.
+  o postura. Hay aritmética, métricas y DCF Lab opcional con configuración explícita;
+  no hay gestión de cartera fuera de la simulación.
 - Insuficiencia, neutralidad, vigencia y posición en cartera no son equivalentes.
 - Investigar cuestiones materiales para la pregunta. No premiar volumen de argumentos,
   documentos, pasos o cambios de opinión. Una consulta breve puede cerrar sin expediente.

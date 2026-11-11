@@ -60,6 +60,12 @@ POLICY = (
 CONTINUE = (
     "Runtime continuation: no new human request. Continue the existing mandate; choose the next useful work."
 )
+VOLUNTARY_POLICY = POLICY.replace(
+    "Text responses are intermediate records, not completion of the mandate. Choose your next useful ",
+    "A substantive text response without a tool call publishes your evaluation and completes this run. "
+    "Continue with tools while material questions justify more work; the call budget is a ceiling, not a target. "
+    "Choose your next useful ",
+)
 REVIEW_POLICY = CONTROL_POLICY  # Compatibility name; E2 policy, not a research phase.
 from research_agent.regimes.continuous.checkpoints import CHECKPOINT_POLICY
 from research_agent.core.limits import CallBudget
@@ -73,7 +79,8 @@ def execution_instructions(agent: AgentA, request: AgentRequest, base: str) -> s
     instruction = INSTRUCTION
     if agent.knowledge is not None:
         instruction = agent.knowledge.control_instruction(instruction)
-    system = base + "\n\n" + POLICY + "\n\n" + instruction
+    policy = VOLUNTARY_POLICY if request.continuous and request.continuous.allow_voluntary_stop else POLICY
+    system = base + "\n\n" + policy + "\n\n" + instruction
     if request.continuous is not None and request.continuous.context_note:
         from research_agent.extensions.context_note.note import NOTE_USE_INSTRUCTION
         system += "\n\n" + NOTE_USE_INSTRUCTION
@@ -102,7 +109,7 @@ def context_seed(agent: AgentA, request: AgentRequest, cause: str) -> list[Any]:
                 "runtime": {
                     "cause": cause,
                     "metadata": request.metadata,
-                    "policy": POLICY,
+                    "policy": VOLUNTARY_POLICY if request.continuous and request.continuous.allow_voluntary_stop else POLICY,
                     "configuration": agent.configuration.get("simulated_date"),
                 },
             }
@@ -163,6 +170,7 @@ class ContinuousPolicy:
         self.final_record: dict[str, Any] | None = None
         self.reviewed_versions: dict[str, str] = {}
         self.calls_by_phase = {"researcher": 0, "checkpoint": 0, "evaluator": 0}
+        self.specialist_counts: dict[str, int] = {}
         if self.config.context_note:
             self.calls_by_phase["context_note"] = 0
         if self.agent.knowledge is not None:
@@ -235,6 +243,10 @@ class ContinuousPolicy:
             "llm_calls_used": self.calls,
             "tool_calls_used": self.tool_calls,
             "llm_calls_by_phase": dict(self.calls_by_phase),
+            "react_calls_used": self.react_calls,
+            "react_calls_limit": self.config.max_react_calls,
+            "react_calls_remaining": (max(0, self.config.max_react_calls - self.react_calls)
+                                      if self.config.max_react_calls is not None else None),
             "ordinary_llm_calls_used": self.calls_by_phase["researcher"] + self.calls_by_phase["checkpoint"],
             "ordinary_llm_calls_limit": None,
             "ordinary_llm_calls_remaining": None,
@@ -261,7 +273,12 @@ class ContinuousPolicy:
             self.agent.recorder.current / "runtime/estado.json", self.agent.workspace, self.mandate
         )
 
-    def a_remaining(self) -> int | None:
+    @property
+    def react_calls(self) -> int:
+        return (self.calls_by_phase["researcher"] + self.calls_by_phase["checkpoint"]
+                + self.calls_by_phase.get("closing", 0))
+
+    def total_remaining(self) -> int | None:
         if self.config.max_llm_calls is None:
             return None
         return (
@@ -270,6 +287,12 @@ class ContinuousPolicy:
             else self.config.max_llm_calls - self.calls
         )
 
+    def a_remaining(self) -> int | None:
+        limits = [self.total_remaining()]
+        if self.config.max_react_calls is not None:
+            limits.append(self.config.max_react_calls - self.react_calls)
+        return min(v for v in limits if v is not None) if any(v is not None for v in limits) else None
+
     async def drain_integrations(self) -> None:
         if self.agent.knowledge is not None:
             await self.agent.knowledge.drain()
@@ -277,7 +300,8 @@ class ContinuousPolicy:
     def charged(self, purpose: str) -> None:
         if self.config.max_llm_calls is not None and self.calls >= self.config.max_llm_calls:
             raise RuntimeError("LLM budget exhausted")
-        available_for_a = self.a_remaining()
+        available_for_a = (self.a_remaining() if purpose in {"researcher", "checkpoint", "closing"}
+                           else self.total_remaining())
         if available_for_a is not None and available_for_a <= 0:
             raise RuntimeError("Research/checkpoint/evaluator budget exhausted")
         self.resources.charge_model()
@@ -367,7 +391,8 @@ class ContinuousPolicy:
         self.output_tokens = self.agent.configuration.get("max_output_tokens", 0)
         if not isinstance(self.output_tokens, int) or self.output_tokens <= 0:
             raise ContextConfigurationError("invalid_output_token_reserve")
-        self.agent.recorder.event("lab.context.counter", **self.counter.metadata, policy=POLICY)
+        self.agent.recorder.event("lab.context.counter", **self.counter.metadata,
+                                  policy=VOLUNTARY_POLICY if self.config.allow_voluntary_stop else POLICY)
         if self.agent.knowledge is not None:
             self.agent.knowledge.bind_runtime(self)
         self.seed("initial")
@@ -410,10 +435,10 @@ class ContinuousPolicy:
             if not self.general_review and not self.request.progress and (self.remaining is None or self.remaining > 0):
                 return self.final_response_step("tool_limit")
             return None
-        if not self.general_review and not self.request.progress and self.remaining == 1 and self.config.max_llm_calls != 1:
+        if not self.general_review and not self.request.progress and self.remaining == 1 and self.config.max_llm_calls != 1 and self.config.max_react_calls != 1:
             await self.drain_integrations()
             return self.final_response_step("call_limit")
-        if self.general_review and self.remaining == 1 and self.config.max_llm_calls != 1:
+        if self.general_review and self.remaining == 1 and self.config.max_llm_calls != 1 and self.config.max_react_calls != 1:
             await self.drain_integrations()
             return Action(self.final_call_review)
         if (
@@ -596,7 +621,8 @@ class ContinuousPolicy:
                 self.reason, self.done = ("time_limit", True)
                 return
             self.resources.charge_tool()
-            self.pending_tool = ToolCall(value.function_call, timeout, budget=self.resources)
+            self.pending_tool = ToolCall(value.function_call, timeout, budget=self.resources,
+                                         models_available=self.specialist_available, charge_model=self.charge_specialist)
         else:
             self.accept_text()
             self.complete_exchange()
@@ -610,6 +636,18 @@ class ContinuousPolicy:
         if self.agent.knowledge is not None:
             timeout = self.agent.knowledge.tool_timeout(name, timeout, self.deadline)
         return timeout
+
+    def specialist_available(self) -> int | None:
+        remaining = self.total_remaining()
+        return None if remaining is None else max(0, remaining - (2 if self.request.progress else 1))
+
+    def charge_specialist(self, purpose: str) -> None:
+        remaining = self.specialist_available()
+        if remaining is not None and remaining < 1:
+            raise RuntimeError("Managed model budget exhausted")
+        self.calls_by_phase.setdefault(purpose, 0)
+        self.charged(purpose)
+        self.specialist_counts[purpose] = self.specialist_counts.get(purpose, 0) + 1
 
     def accept_tool(self, result: ToolResult) -> None:
         self.observer.observe(
@@ -648,6 +686,10 @@ class ContinuousPolicy:
             )
             self.state.references[self.text_ref] = {"disposition": "unknown", "source": "researcher_text"}
         self.agent.recorder.event("lab.continuous.response", text=self.turn.text, **self.budget())
+        if self.config.allow_voluntary_stop and self.turn.text and self.turn.text.strip():
+            self.status, self.reason, self.done = ("completed", "researcher_completed", True)
+            self.agent.recorder.event("lab.continuous.voluntary_stop", **self.budget())
+            return
         self.append(ConversationContext({"runtime_notice": CONTINUE}))
 
     def complete_exchange(self) -> None:
@@ -673,7 +715,7 @@ class ContinuousPolicy:
             self.agent.recorder.event(
                 "lab.continuous.error", error_type=self.error, purpose=self.active_call.get("purpose")
             )
-        if error is None and self.config.max_llm_calls == 1 and self.general_review:
+        if error is None and (self.config.max_llm_calls == 1 or self.config.max_react_calls == 1) and self.general_review:
             self.agent.recorder.event("lab.evaluation.skipped", reason="single_call_prioritizes_researcher")
         self.agent.tools.unregister("report_work")
         if self.agent.knowledge is not None:

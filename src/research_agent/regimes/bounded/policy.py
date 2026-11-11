@@ -51,6 +51,8 @@ class BoundedPolicy:
         self.reason = "budget"
         self.can_consolidate = self.agent.limits.max_llm_calls >= 4 and self.agent.limits.max_tool_calls >= 2
         self.phase = "research"
+        self.calls_by_phase: dict[str, int] = {}
+        self.specialist_counts: dict[str, int] = {}
         self.consolidation_calls = 0
         self.consolidation_deadline = self.deadline
         self.response_seconds = self.agent.limits.finalization_seconds * 2 / 3
@@ -228,6 +230,7 @@ class BoundedPolicy:
         if self.agent.on_model_call is not None:
             self.agent.on_model_call()
         self.resources.charge_model()
+        self.calls_by_phase[self.phase] = self.calls_by_phase.get(self.phase, 0) + 1
         if self.phase == "consolidation":
             self.consolidation_calls += 1
         self.operation = "model"
@@ -265,6 +268,19 @@ class BoundedPolicy:
     def tool_received(self) -> None:
         pass
 
+    def specialist_available(self) -> int:
+        reserve = 3 if self.can_consolidate else 1
+        return max(0, self.agent.limits.max_llm_calls - self.calls - reserve)
+
+    def charge_specialist(self, purpose: str) -> None:
+        if self.specialist_available() < 1:
+            raise RuntimeError("Managed model budget exhausted")
+        if self.agent.on_model_call is not None:
+            self.agent.on_model_call()
+        self.resources.charge_model()
+        self.calls_by_phase[purpose] = self.calls_by_phase.get(purpose, 0) + 1
+        self.specialist_counts[purpose] = self.specialist_counts.get(purpose, 0) + 1
+
     async def receive(self, value: ResponseTurn | ToolResult | BaseException) -> None:
         if isinstance(value, BaseException):
             if not isinstance(value, TimeoutError):
@@ -295,7 +311,8 @@ class BoundedPolicy:
             self.agent.on_tool_call()
         self.resources.charge_tool()
         self.pending_tool = ToolCall(
-            value.function_call, max(0.001, self.tool_seconds()), self.allowed, self.resources
+            value.function_call, max(0.001, self.tool_seconds()), self.allowed, self.resources,
+            self.specialist_available, self.charge_specialist,
         )
 
     async def finalize(self, error: BaseException | None) -> AgentResult:
@@ -322,6 +339,7 @@ class BoundedPolicy:
                 self.tool_calls,
                 self.error,
                 self.agent.tools.summary(),
+                dict(self.calls_by_phase),
             ),
             self.captured,
         )

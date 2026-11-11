@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from time import monotonic
 from dataclasses import dataclass, field, replace
 from typing import Any, Protocol
 from collections.abc import Callable, Awaitable
@@ -31,6 +32,8 @@ class ToolCall:
     timeout: float
     allowed: frozenset[str] | None = None
     budget: CallBudget | None = None
+    models_available: Callable[[], int | None] | None = None
+    charge_model: Callable[[str], None] | None = None
 
 
 @dataclass
@@ -95,8 +98,16 @@ async def execute(policy: Policy) -> AgentResult:
                         value = await interact(policy.agent.client, step)
                     else:
                         timeout = step.budget.operation_timeout(step.timeout) if step.budget else step.timeout
-                        async with asyncio.timeout(timeout):
-                            value = await policy.agent.tools.execute(step.call, allowed_names=step.allowed)
+                        from research_agent.core.tool_runtime import ToolRuntime, current_tool_runtime
+                        runtime = (ToolRuntime(step.call.call_id, monotonic() + timeout,
+                                               step.models_available, step.charge_model)
+                                   if step.models_available is not None and step.charge_model is not None else None)
+                        token = current_tool_runtime.set(runtime)
+                        try:
+                            async with asyncio.timeout(timeout):
+                                value = await policy.agent.tools.execute(step.call, allowed_names=step.allowed)
+                        finally:
+                            current_tool_runtime.reset(token)
                 except BaseException as exc:
                     # A provider exception has not yielded a ResponseTurn: no tool can
                     # have been dispatched by this engine. Never retry a ToolCall.

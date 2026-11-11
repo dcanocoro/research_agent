@@ -13,7 +13,8 @@ El [baseline del 18 de octubre](docs/baseline.md) es una referencia histórica.
 Hoy implementa A: modelo → herramienta → modelo → respuesta, con estado Markdown,
 JSON, TXT y CSV, materiales automáticos e instrucciones y ejecuciones separadas.
 Permite empezar una prueba vacía o continuar su estado; Git es manual.
-No incorpora un motor DCF preimplementado, cartera o grafo obligatorio. E001/E002 son antecedentes históricos.
+Puede consumir [DCF Lab opcional](docs/development.md#dcf-lab-opcional), con motor
+compartido y presupuesto explícito. No impone cartera ni grafo. E001/E002 son antecedentes históricos.
 La [capacidad Python opcional](docs/experiments/python-operators-v1/protocol.md)
 permite construir cálculos y modelos acotados mediante `--python`, con contratos
 recuperables y procesos locales; es una POC sin sandbox de seguridad.

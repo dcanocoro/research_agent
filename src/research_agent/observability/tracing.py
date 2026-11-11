@@ -11,13 +11,11 @@ from datetime import datetime, timezone
 @contextmanager
 def capture_traces(root: Path, *, flat: bool = False,
                    call_metadata: Callable[[], dict[str, Any]] | None = None) -> Iterator[list[dict[str, Any]]]:
-    from findata.settings import settings
     from infra.adapters import llm_trace
     from runtime_contracts.execution import current_run_context
     owner = current_run_context()
     owner_id = owner.run_id if owner is not None else None
     root.mkdir(parents=True, exist_ok=True)
-    previous_mode, previous_archive = settings.LLM_TRACE_MODE, llm_trace._archive_directory
     events: list[dict[str, Any]] = []
     payload_names: dict[str, str] = {}
 
@@ -64,16 +62,13 @@ def capture_traces(root: Path, *, flat: bool = False,
     # Attach to actual emitting loggers once; disable propagation duplication.
     targets = [logging.getLogger("ingestion_service.llm_trace"), logging.getLogger("ingestion_service.observability")]
     levels = [logger.level for logger in targets]
-    try:
-        settings.LLM_TRACE_MODE = "full"
-        llm_trace.configure_local_archive(root if flat else root / "llm")
-        for logger in targets:
-            logger.addHandler(handler)
-            logger.setLevel(logging.INFO)
-        yield events
-    finally:
-        for logger, level in zip(targets, levels):
-            logger.removeHandler(handler)
-            logger.setLevel(level)
-        settings.LLM_TRACE_MODE = previous_mode
-        llm_trace._archive_directory = previous_archive
+    with llm_trace.local_trace_capture(root if flat else root / "llm"):
+        try:
+            for logger in targets:
+                logger.addHandler(handler)
+                logger.setLevel(logging.INFO)
+            yield events
+        finally:
+            for logger, level in zip(targets, levels):
+                logger.removeHandler(handler)
+                logger.setLevel(level)

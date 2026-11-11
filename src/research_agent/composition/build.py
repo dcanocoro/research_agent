@@ -15,9 +15,23 @@ from research_agent.storage.workspace import Workspace
 async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits(), *,
                       experiment: Path | None = None, run_name: str = "intervencion",
                       simulation: Path | None = None, python_enabled: bool = False,
-                      knowledge_agent: str | None = None) -> AsyncIterator[AgentA]:
+                      knowledge_agent: str | None = None,
+                      valuation: dict | None = None) -> AsyncIterator[AgentA]:
     from research_agent.composition.configuration import knowledge_mode
     mode = knowledge_mode(experiment, knowledge_agent)
+    valuation_config = None
+    had_valuation = False
+    if experiment is not None:
+        import json
+        manifests = sorted((experiment / "ejecuciones").glob("*/manifiesto.json"), key=lambda p: p.stat().st_mtime_ns, reverse=True)
+        if manifests:
+            Workspace._check_links(manifests[0])
+            had_valuation = bool(json.loads(manifests[0].read_bytes()).get("configuration", {}).get("valuation", {}).get("enabled"))
+    if valuation is not None or had_valuation or (experiment is not None and (experiment / "dcf-lab.json").exists()):
+        if simulation is not None:
+            raise ValueError("DCF Lab is unavailable in historical simulation")
+        from research_agent.capabilities.valuation.configuration import configuration
+        valuation_config = configuration(experiment, valuation)
     # Validate experiment paths and frozen interface before constructing clients.
     if experiment is not None:
         from research_agent.experiments.configuration import validate_state_configuration
@@ -50,6 +64,29 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
     profile = replace(configured_profile(settings, "planner"), name="lab")
     space = Workspace(workspace)
     register_files(registry, space, writable=mode == "off")
+    valuation_metadata: dict = {"enabled": False}
+    if valuation_config is not None:
+        import os
+        from dcf_lab.adapters.llm import OpenAIModel
+        from dcf_lab.adapters.findata import FindataSource
+        from research_agent.capabilities.valuation.tools import ValuationTools
+
+        class FrozenSnapshotSource:
+            def load(self, symbol: str):
+                assert valuation_config is not None and valuation_config.snapshot is not None
+                if valuation_config.snapshot.profile.symbol.upper() != symbol:
+                    raise ValueError("Configured snapshot company mismatch")
+                return valuation_config.snapshot
+
+        source = (FrozenSnapshotSource() if valuation_config.source == "snapshot" else FindataSource(
+            settings.DATABASE_URL, equity_risk_premium=valuation_config.equity_risk_premium,
+            erp_as_of=valuation_config.erp_as_of, erp_source=valuation_config.erp_source))
+        ValuationTools(registry, space, source, OpenAIModel(valuation_config.model,
+            os.environ.get("DCF_LAB_OPENAI_API_KEY") or settings.OPENAI_API_KEY,
+            timeout=valuation_config.timeout_seconds), valuation_config.timeout_seconds).register()
+        from dcf_lab.reporting import fingerprint
+        valuation_metadata = {"enabled": True, "configuration": valuation_config.model_dump(mode="json"),
+                              "configuration_sha256": fingerprint(valuation_config.model_dump(mode="json"))}
     if python_enabled:
         from research_agent.capabilities.python.tools import register_python
         register_python(registry, space, python_config)
@@ -71,7 +108,11 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
         historical = {"simulation": simulator.config, "simulated_date": str(simulator.today)}
     try:
         fingerprints = {}
-        for module in (infra, runtime_contracts, findata, research_agent):
+        modules = [infra, runtime_contracts, findata, research_agent]
+        if valuation_config is not None:
+            import dcf_lab
+            modules.append(dcf_lab)
+        for module in modules:
             assert module.__file__ is not None
             package = Path(module.__file__).parent
             hashes = [(str(p.relative_to(package)), hashlib.sha256(p.read_bytes()).hexdigest())
@@ -80,6 +121,7 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
         agent = AgentA(factory.conversation(profile), registry, space, recorder, limits,
                      configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files",
                                     "python_operators": python_config, "state_tools_contract": "state-tools-e1", **historical})
+        agent.configuration["valuation"] = valuation_metadata
         if mode != "off":
             from research_agent.extensions.knowledge_agent.delegation import attach
             attach(agent, lambda: factory.conversation(profile), mode)

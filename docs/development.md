@@ -60,6 +60,73 @@ se conserva en el manifiesto. Verificación sin proveedores:
 .\.venv\Scripts\python.exe -m pytest -q tests/extensions/test_context_note.py tests/regimes/test_continuous.py tests/extensions/test_progress.py tests/regimes/test_e2.py tests/extensions/test_durable_knowledge.py
 ```
 
+## DCF Lab opcional
+
+Disponible desde 2026-11-11 mediante el paquete independiente `dcf-lab==0.2.0`.
+El [plan de origen](experiments/dcf-lab-v1/implementation.md) conserva las decisiones
+propuestas; el [protocolo](experiments/dcf-lab-v1/protocol.md) separa aceptación técnica
+y contraste pendiente. No se activa en experimentos existentes por actualizar código.
+
+Construir e instalar explícitamente el wheel, sin copiar implementaciones:
+
+```powershell
+..\FinMate\.venv\Scripts\python.exe -m pip wheel --no-deps --no-build-isolation ..\dcf_lab --wheel-dir ..\dcf_lab\dist
+.\.venv\Scripts\python.exe -m pip install --no-deps --force-reinstall ..\dcf_lab\dist\dcf_lab-0.2.0-py3-none-any.whl
+```
+
+El extra `dcf` declara también PostgreSQL/HTTPX. Instalar sus dependencias en un
+entorno nuevo. El wheel base permite recálculo con Pydantic, sin esos extras.
+
+Crear `dcf-config.json` con `source: "snapshot"`, `model` explícito y `snapshot`
+con el objeto JSON de una fotografía exportada por DCF Lab; no basta una ruta.
+Alternativamente, `source: "findata"` requiere `equity_risk_premium`, `erp_as_of`
+y `erp_source` explícitos. La conexión usa la configuración FinData de solo lectura;
+no incluir URLs con credenciales en el archivo. El proveedor especializado es
+OpenAI; usa `DCF_LAB_OPENAI_API_KEY` o la clave OpenAI de la configuración existente.
+`timeout_seconds` opcional limita cada llamada (120 por defecto, máximo 300).
+
+```powershell
+research-agent "Investiga la empresa" --output artifacts/dcf-piloto --run-name inicial --new --dcf-config ./dcf-config.json
+research-agent "Revisa la evidencia nueva" --output artifacts/dcf-piloto --run-name revision --continue
+```
+
+La primera ejecución congela `dcf-lab.json`; la continuación lo recupera sin
+repetir `--dcf-config`. El manifiesto conserva configuración, hash y huella de código
+del paquete. `build_agent(..., valuation={...})` permite la misma configuración
+en una composición sin experimento. Con experimento debe coincidir con el registro
+congelado. Se rechaza DCF con `--simulation`: aún no hay fuente histórica válida.
+
+La herramienta `evaluate_company(company_id, knowledge_paths, previous_evaluation_ref)`
+acepta archivos explícitos del workspace; utilizar `[]` y `null` cuando no existan.
+Se pueden usar materiales de valoraciones previas del mismo workspace, verificados
+contra su copia de auditoría. No se exige un expediente completo ni un mínimo de pasos.
+No actualiza automáticamente Modelo de Empresa, Valoración o Evaluación.
+
+Cada invocación cuenta como una herramienta y hasta dos llamadas del techo global
+LLM, además de la llamada del investigador que la solicitó. Respeta cierre,
+deadline y cancelación; los intentos fallidos enviados también consumen presupuesto.
+Un cálculo sin diagnóstico válido queda `partial`. El resumen no supera 8 KiB;
+recuperar detalles y omisiones con `read_file` o `read_artifact`.
+
+En continuo, `--max-react-calls N` permite fijar por separado el máximo de llamadas
+ReAct (investigador, checkpoint y respuesta de cierre). Los especialistas y revisores
+siguen sumando al total observado. `--max-calls` conserva su significado de techo
+global; si se proporcionan ambos, se respetan ambos límites. Sin `--max-calls`, las
+llamadas auxiliares son adicionales al límite ReAct, con deadline y cancelación
+vigentes. Esta opción no activa DCF ni modifica la selección autónoma de herramientas.
+
+`--allow-voluntary-stop`, solo en continuo, permite que una respuesta textual
+sustantiva sin herramienta termine con `completed: researcher_completed`. El sistema
+efectivo lo explica al investigador. Por defecto, las respuestas siguen siendo
+intermedias. El cierre voluntario no acredita suficiencia financiera y no dispara
+una revisión general final adicional; conserva los checkpoints y capturas finales.
+
+Bundles e informes están en `estado/materiales/dcf-<id>.json|md`; copias de auditoría,
+inputs y outputs en `ejecuciones/<run>/valoraciones/`. La copia editable no sustituye
+la auditoría. Eventos `lab.valuation.*` enlazan evaluación e invocación; los propósitos
+son `valuation_assumptions` y `valuation_diagnosis`. Uso/coste desconocidos no equivalen
+a cero. No se ha ejecutado una campaña real de aceptación financiera.
+
 ## Dependencias y frontera de instalación
 
 Una distribución instalable puede aportar varios paquetes importables:

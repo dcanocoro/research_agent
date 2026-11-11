@@ -4,6 +4,15 @@ La [metodología](../experiments.md) define el contraste y la [estrategia](../st
 la pregunta vigente. Implementación, ejecución y aceptación se registran por separado.
 Una campaña exploratoria real no completa automáticamente un contraste controlado.
 
+Preparación posterior (2026-11-11): [DCF Lab compartido](dcf-lab-v1/protocol.md),
+biblioteca y herramienta opcional implementadas con validación local. Sin campaña
+real ni utilidad financiera demostrada; la [entrega](../deliveries/2026-11-11-dcf-lab.md)
+conserva verificaciones y límites.
+
+Piloto autorizado posterior: [Adobe con DCF Lab](dcf-lab-v1/adbe-longitudinal.md),
+una ejecución experimental con hasta 300 llamadas ReAct y especialistas adicionales.
+El usuario retira el control; no permite una comparación causal entre brazos.
+
 Prueba posterior (2026-11-04): [nota de continuidad en investigación abierta](context-note-general-100/findings.md),
 100 llamadas agregadas en dos runs, 15 renovaciones y dos expedientes iniciales.
 El primer run detectó un truncamiento terminal de nota; tras corregir su fallback,

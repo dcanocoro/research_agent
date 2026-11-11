@@ -14,7 +14,7 @@
 | extensions/progress/ | Objetivos, compromisos y evaluador vigente |
 | extensions/context_note/ | Nota LLM opcional de continuidad |
 | extensions/knowledge_agent/ | Delegación y política de B preparado |
-| capabilities/ | Estado, aritmética, Findata, web, Python y simulación |
+| capabilities/ | Estado, aritmética, Findata, web, Python, valoración y simulación |
 | instructions/ | Guía de A y especialización financiera |
 | experiments/ | Directorios, bloqueo y configuración congelada |
 | cli/ | Argumentos y resolución de entradas |
@@ -38,6 +38,7 @@ e historia, y `artifacts/` salidas locales ignoradas. Las pruebas reflejan estas
 | B preparado | No | --knowledge-agent prepared; continuo de 60, 70 o 100 llamadas |
 | Estado, aritmética, Findata, web | Sí en composición estándar | Disponibles; no obliga a utilizarlas |
 | Python | No | --python; dependencias opcionales |
+| DCF Lab | No | --dcf-config con --new; wheel independiente, configuración congelada, sin simulación histórica |
 | Simulación | No | --simulation; sustituye acceso financiero ordinario |
 
 `--name progreso` activa Progress; `--name multiagente` selecciona B si no se indica

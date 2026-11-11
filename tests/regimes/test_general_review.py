@@ -73,3 +73,21 @@ def test_old_config_defaults_and_type_validation():
     assert ContinuousConfig(**{"max_llm_calls": 3}).general_review is True
     with pytest.raises(ValueError, match="boolean"):
         ContinuousConfig(general_review="off")
+
+
+def test_voluntary_text_finishes_before_budget(tmp_path):
+    from support.continuous import execute
+    a, req = make(tmp_path, [text("Evaluación defendible con sus incertidumbres")],
+                  config=ContinuousConfig(max_react_calls=300, allow_voluntary_stop=True))
+    result = execute(a, req)
+    assert result.status == "completed" and result.stop_reason == "researcher_completed"
+    assert result.llm_calls == 1 and result.answer
+    assert not a.client.review_requests
+    assert "intermediate records" not in a.client.requests[0]["system"]
+    assert "completes this run" in a.client.requests[0]["system"]
+
+
+def test_voluntary_stop_is_opt_in_and_validated():
+    assert ContinuousConfig().allow_voluntary_stop is False
+    with pytest.raises(ValueError, match="boolean"):
+        ContinuousConfig(allow_voluntary_stop="on")

@@ -6,6 +6,8 @@ correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda v
 consultar [estrategia](../strategy.md). Los estados «sin campaña» describen el cierre
 de aquella entrega; las ejecuciones posteriores están en el [registro experimental](../experiments/README.md).
 
+- [2026-11-11 — DCF Lab compartido](2026-11-11-dcf-lab.md): biblioteca portable,
+  valoración opcional con presupuesto y auditoría, sin campaña real.
 - [2026-11-07 — Referencias y recuperación de Progress](2026-11-07-progress-recovery.md).
 - [2026-11-05 — Piloto de extensiones](2026-11-05-extension-pilot.md).
 - [2026-11-05 — Organización y retirada de V8](2026-11-05-organization.md): núcleo, regímenes, extensiones y capacidades; aliases retirados y revisión general opcional.

@@ -38,6 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout-seconds", type=float, default=300, help=argparse.SUPPRESS)
     parser.add_argument("--simulation", type=Path, help="Private simulator directory supplied by the longitudinal controller")
     parser.add_argument("--python", dest="python_enabled", action="store_true", help="Enable optional local Python operators (POC, not a security sandbox)")
+    parser.add_argument("--dcf-config", type=Path, help="Explicit DCF Lab configuration JSON, frozen only with --new")
     parser.add_argument("--activation-kind", choices=["usuario", "temporal"], default="usuario")
     parser.add_argument("--limits", type=Path, help="Frozen AgentLimits JSON or campaign record containing limits")
     parser.add_argument("--continuous", "--continuos", action="store_true", help="Ejecución continua; --name carga el mandato desde mandato.md")
@@ -50,12 +51,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--context-note", action="store_true", help="Prepare a continuity note before continuous context renewal")
     parser.add_argument("--consolidation-bytes", type=int, default=None, help="Deprecated alias for --renewal-bytes")
     parser.add_argument("--max-calls", type=int, default=None, help="TOTAL managed LLM calls with --continuous or --progress, including generation, evaluations and closing")
+    parser.add_argument("--max-react-calls", type=int, default=None, help="Continuous ReAct ceiling (including checkpoint/closing); auxiliary calls are additional unless --max-calls also limits the total")
+    parser.add_argument("--allow-voluntary-stop", action="store_true", help="In continuous mode, a substantive text response without tools completes the run")
     parser.add_argument("--max-tools", type=int, default=None, help=argparse.SUPPRESS)
     parser.add_argument("--max-total-calls", type=int, default=None, help="Compatibility ceiling; E2 already counts all managed calls in --max-calls")
     parser.add_argument("--continuous-timeout-seconds", type=float, default=None, help=argparse.SUPPRESS)
     args = parser.parse_args(raw)
+    if args.dcf_config is not None and (not args.new or args.simulation is not None):
+        parser.error("--dcf-config requires --new and cannot use historical simulation")
     if args.context_note and not args.continuous:
         parser.error("--context-note requires --continuous.")
+    if args.allow_voluntary_stop and not args.continuous:
+        parser.error("--allow-voluntary-stop requires --continuous.")
     resolve_inputs(parser, args)
     args.progress = args.progress or args.objective is not None
     if args.general_review is not None and not args.continuous:
@@ -72,7 +79,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.max_total_calls < 1:
             parser.error("--max-total-calls must be positive")
         args.max_calls = min(args.max_calls, args.max_total_calls) if args.max_calls is not None else args.max_total_calls
-    continuous_options = (args.renewal_bytes, args.context_bytes, args.consolidation_bytes, args.max_tools, args.continuous_timeout_seconds)
+    continuous_options = (args.renewal_bytes, args.context_bytes, args.consolidation_bytes, args.max_tools, args.continuous_timeout_seconds, args.max_react_calls)
     if args.continuous and (args.mandate is None or args.limits is not None):
         parser.error("--continuous requires --mandate and cannot use bounded --limits; use --max-calls/--max-tools instead.")
     if not args.continuous and (any(value is not None for value in continuous_options) or (args.max_calls is not None and not args.progress)):
@@ -114,6 +121,10 @@ def main(argv: list[str] | None = None) -> int:
             return result
     try:
         human_name(args.run_name)
+        if args.dcf_config is not None:
+            from research_agent.capabilities.valuation.configuration import ValuationConfiguration
+            Workspace._check_links(args.dcf_config)
+            ValuationConfiguration.model_validate_json(args.dcf_config.read_bytes())
         if args.python_enabled:
             from research_agent.capabilities.python.tools import python_configuration
             python_configuration()
@@ -123,7 +134,9 @@ def main(argv: list[str] | None = None) -> int:
                                            args.consolidation_bytes if args.consolidation_bytes is not None else 262144),
             max_llm_calls=args.max_calls, max_tool_calls=args.max_tools,
             timeout_seconds=args.continuous_timeout_seconds, context_note=args.context_note,
-            general_review=args.general_review != "off") if args.continuous else None
+            general_review=args.general_review != "off",
+            max_react_calls=args.max_react_calls,
+            allow_voluntary_stop=args.allow_voluntary_stop) if args.continuous else None
         limits_data = json.loads(args.limits.read_text(encoding="utf-8")) if args.limits else {"timeout_seconds": args.timeout_seconds}
         if args.progress and not args.continuous:
             limits_data["max_llm_calls"] = args.max_calls
@@ -151,6 +164,9 @@ def main(argv: list[str] | None = None) -> int:
             from research_agent.extensions.knowledge_agent.delegation import validate_budget
             validate_budget(continuous)
         with experiment_lock(root):
+            if args.new and args.dcf_config is not None:
+                from research_agent.capabilities.valuation.configuration import freeze_configuration
+                freeze_configuration(root, args.dcf_config)
             if continuous is not None:
                 from research_agent.regimes.continuous.control import validate_runtime
                 validate_runtime(root)

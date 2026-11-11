@@ -16,6 +16,7 @@ capturada no demuestra calidad financiera ni resultados de inversión.
 | Preparar, lanzar y revisar experimentos por nombre | [Guía breve](launch-experiments.md) |
 | Preparar y revisar campañas | [Campañas](campaigns.md) |
 | Diseñar un contraste | [Metodología](experiments.md) |
+| Usar DCF Lab opcional y revisar su entrega | [Operación](development.md#dcf-lab-opcional), [entrega](deliveries/2026-11-11-dcf-lab.md) y [plan de origen](experiments/dcf-lab-v1/implementation.md) |
 | Consultar resultados y sus límites | [Registro experimental](experiments/README.md) |
 | Consultar evaluaciones por campaña y capacidad | [Evaluaciones](evaluaciones/README.md) |
 | Identificar una referencia histórica para comparar | [Baseline del 18 de octubre](baseline.md) |

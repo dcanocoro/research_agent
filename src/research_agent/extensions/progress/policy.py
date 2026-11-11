@@ -342,6 +342,7 @@ class ProgressPolicy:
             self.base.status, self.base.reason, self.base.error = "failed", self.terminal, type(error).__name__
             handled_error = None
         result = await self.base.finalize(handled_error)
+        self.call_counts.update(self.base.specialist_counts)
         if self.request.continuous and self.request.continuous.context_note:
             self.call_counts["context_note"] = self.base.calls_by_phase["context_note"]
         reason = self.terminal if self.terminal in {"progress_evaluation_invalid", "progress_context_limit"} else result.stop_reason

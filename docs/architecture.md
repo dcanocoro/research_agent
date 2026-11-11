@@ -42,6 +42,15 @@ no un detector determinista de redundancia ni una garantía de persistencia.
 
 ## Frontera y componentes
 
+Desde 2026-11-11, `capabilities/valuation/` adapta el paquete independiente DCF Lab
+como herramienta opcional. Recibe snapshot y documentos explícitos, consume hasta
+dos llamadas del presupuesto global y conserva bundles con cálculo/diagnóstico.
+`core/tool_runtime.py` aporta recursos neutrales a herramientas con llamadas LLM
+aisladas; el núcleo no importa DCF Lab. El transporte financiero asíncrono y los
+prompts pertenecen al paquete compartido. Cancelación y deadline siguen bajo el
+motor común. La [operación](development.md#dcf-lab-opcional) detalla configuración,
+materiales y auditoría; no está disponible en simulación histórica.
+
 En `experiment/fileAgent`, B opcional integra encargos duraderos con contexto
 preparado y presupuesto protegido. Solo existen `off` y `prepared`.
 La [entrega actual](deliveries/2026-11-02-b-prepared-closing.md) describe alcance,
@@ -72,7 +81,8 @@ A posee un ciclo modelo → herramienta → modelo → respuesta; B opcional reu
 su ejecución acotada con contexto y herramientas propios. No importa
 `finmate`, `engine` ni `api`; Findata, Infra y los contratos comunes se consumen desde
 el wheel instalado. Findata abre transacciones PostgreSQL de solo lectura, sin ingestas
-ni migraciones. No hay motor DCF preimplementado, grafo obligatorio ni variantes A0–A3. La cartera ficticia existe solo
+ni migraciones. El DCF opcional procede de la biblioteca compartida; no hay grafo
+obligatorio ni variantes A0–A3. La cartera ficticia existe solo
 en el modo experimental de simulación, separado de Findata y del producto.
 
 | Componente | Responsabilidad |
@@ -105,7 +115,7 @@ legibles: `assessment_path` se conserva como dato, sin activar revisión decisor
 Los aliases antiguos no se mantienen; imports internos y consumidores usan rutas canónicas.
 
 B preparado, deliberación y nota de continuidad viven en `extensions/`; estado,
-aritmética, Findata, web, Python y simulación en `capabilities/`. Prompts y contratos
+aritmética, Findata, web, Python, valoración y simulación en `capabilities/`. Prompts y contratos
 propios acompañan a su componente. Las copias congeladas conservan nombres y bytes.
 `research_campaigns` es un paquete hermano, organizado en definiciones, ejecución e
 informes; Research Agent no depende de él.
@@ -430,8 +440,8 @@ fallo, cancelación e interrupción conservan los archivos y capturas disponible
 conservan contenidos iniciales/finales de los cuatro formatos, con errores identificados.
 No reconstruyen cada edición intermedia. El archivo se mantiene fuera del alcance de
 escritura del agente. Todas las ejecuciones agrupan eventos del ciclo y payloads del proveedor dentro del run,
-con nombres españoles. No ejecutar capturas simultáneas en un proceso,
-porque el adaptador compartido emplea configuración global temporal.
+con nombres españoles. La captura utiliza el contexto local del adaptador compartido
+y filtra eventos por identidad de ejecución.
 
 Las campañas conservan esa captura nativa y generan un `README.md` con enlaces a
 respuestas, snapshots, eventos y trazas. `campaign.json` concentra el control y los
@@ -451,6 +461,13 @@ No hay selector del controlador anterior ni fases intelectuales. El modo acotado
 su cierre por consolidación/respuesta y sus restricciones anteriores.
 
 `max_llm_calls` limita todas las llamadas gestionadas, incluidos checkpoints y evaluadores.
+`max_react_calls` es un techo continuo opcional adicional para investigador,
+checkpoint y cierre textual; no descuenta especialistas ni evaluadores. Totales y
+desgloses permanecen completos. Si no se fija techo global, esos auxiliares son
+adicionales al techo ReAct, conservando deadline y cancelación.
+`allow_voluntary_stop`, desactivado por defecto, permite cerrar con una respuesta
+textual sustantiva sin herramienta. Cambia explícitamente la instrucción de
+continuación y produce `researcher_completed`; no certifica suficiencia semántica.
 `llm_calls_by_phase` conserva su nombre por compatibilidad, con propósitos `researcher`,
 `checkpoint`, `evaluator`. Los eventos conservan `phase` como alias de propósito para
 lectores históricos; no selecciona herramientas. Reintentos internos del proveedor

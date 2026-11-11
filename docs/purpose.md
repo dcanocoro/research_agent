@@ -35,8 +35,9 @@ experimento, Findata de solo lectura, Tavily, aritmética y captura experimental
 El estado sustituye al candidato anterior de expedientes; Git se gestiona manualmente.
 Un B opcional integra conocimiento por encargo de A, sin investigar nuevas fuentes;
 su utilidad sigue pendiente de contraste.
-No administra cartera ni ejecuta inversiones; no dispone de motor DCF preimplementado o vigilancia
-programada. El contrato vigente está en [arquitectura](architecture.md).
+No administra cartera ni ejecuta inversiones. Puede consumir [DCF Lab opcional](development.md#dcf-lab-opcional)
+como biblioteca compartida; no dispone de vigilancia programada.
+El contrato vigente está en [arquitectura](architecture.md).
 
 La POC opcional de [operadores Python](experiments/python-operators-v1/protocol.md)
 permite implementar procedimientos y modelos acotados con datos explícitos; su utilidad
