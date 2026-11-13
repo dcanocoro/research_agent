@@ -49,14 +49,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--renewal-bytes", type=int, default=None, help="Continuous context renewal threshold (default 262144)")
     parser.add_argument("--general-review", choices=["on", "off"], default=None, help="General continuous reviewer (default on; disabled by Progress)")
     parser.add_argument("--context-note", action="store_true", help="Prepare a continuity note before continuous context renewal")
+    parser.add_argument("--communication", choices=["off", "hook", "communicator"], default="off",
+                        help="Optional progress communication (default off; repeat when continuing)")
+    parser.add_argument("--communication-max-calls", type=int, default=None,
+                        help="Separate communicator call budget (default 20)")
+    parser.add_argument("--communication-timeout-seconds", type=float, default=None,
+                        help="Communicator inference timeout (default 30)")
     parser.add_argument("--consolidation-bytes", type=int, default=None, help="Deprecated alias for --renewal-bytes")
-    parser.add_argument("--max-calls", type=int, default=None, help="TOTAL managed LLM calls with --continuous or --progress, including generation, evaluations and closing")
+    parser.add_argument("--max-calls", type=int, default=None, help="TOTAL research-runtime LLM calls with --continuous or --progress, including generation, evaluations and closing; external communication has a separate budget")
     parser.add_argument("--max-react-calls", type=int, default=None, help="Continuous ReAct ceiling (including checkpoint/closing); auxiliary calls are additional unless --max-calls also limits the total")
     parser.add_argument("--allow-voluntary-stop", action="store_true", help="In continuous mode, a substantive text response without tools completes the run")
     parser.add_argument("--max-tools", type=int, default=None, help=argparse.SUPPRESS)
     parser.add_argument("--max-total-calls", type=int, default=None, help="Compatibility ceiling; E2 already counts all managed calls in --max-calls")
     parser.add_argument("--continuous-timeout-seconds", type=float, default=None, help=argparse.SUPPRESS)
     args = parser.parse_args(raw)
+    from research_agent.extensions.communication.configuration import CommunicationConfig
+    if args.communication != "communicator" and (
+            args.communication_max_calls is not None or args.communication_timeout_seconds is not None):
+        parser.error("Communication budgets require --communication communicator")
+    try:
+        communication_config = CommunicationConfig(args.communication,
+            20 if args.communication_max_calls is None else args.communication_max_calls,
+            30 if args.communication_timeout_seconds is None else args.communication_timeout_seconds)
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.dcf_config is not None and (not args.new or args.simulation is not None):
         parser.error("--dcf-config requires --new and cannot use historical simulation")
     if args.context_note and not args.continuous:
@@ -97,6 +113,9 @@ def main(argv: list[str] | None = None) -> int:
     async def execute(root: Path, prompts: tuple[Path, ...], limits: AgentLimits) -> AgentResult:
         nonlocal run_directory
         options = {"simulation": args.simulation} if args.simulation is not None else {}
+        if communication_config.mode != "off":
+            options["communication"] = communication_config
+            options["on_progress"] = lambda update: print(update["message"], file=sys.stderr, flush=True)
         if args.python_enabled:
             options["python_enabled"] = True
         from research_agent.composition.configuration import knowledge_mode as mode_for

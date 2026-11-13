@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 """Composition root; shared services own transport and provider policy."""
 from dataclasses import asdict, replace
 from pathlib import Path
+from typing import Any, TYPE_CHECKING
 from contextlib import asynccontextmanager
 from research_agent.experiments.store import disjoint
 from research_agent.agent import AgentA
@@ -10,13 +11,22 @@ from research_agent.observability.recording import RunRecorder
 from research_agent.core.tools import ToolRegistry
 from research_agent.storage.workspace import Workspace
 
+if TYPE_CHECKING:
+    from research_agent.extensions.communication.configuration import CommunicationConfig
+
 
 @asynccontextmanager
 async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLimits(), *,
                       experiment: Path | None = None, run_name: str = "intervencion",
                       simulation: Path | None = None, python_enabled: bool = False,
                       knowledge_agent: str | None = None,
-                      valuation: dict | None = None) -> AsyncIterator[AgentA]:
+                      valuation: dict | None = None,
+                      communication: "CommunicationConfig | None" = None,
+                      on_progress: Any = None) -> AsyncIterator[AgentA]:
+    from research_agent.extensions.communication.configuration import CommunicationConfig
+    communication_config = CommunicationConfig() if communication is None else communication
+    if not isinstance(communication_config, CommunicationConfig):
+        raise ValueError("communication requires CommunicationConfig")
     from research_agent.composition.configuration import knowledge_mode
     mode = knowledge_mode(experiment, knowledge_agent)
     valuation_config = None
@@ -122,6 +132,10 @@ async def build_agent(workspace: Path, runs: Path, limits: AgentLimits = AgentLi
                      configuration={**asdict(profile), "code_sha256": fingerprints, "state_mode": "files",
                                     "python_operators": python_config, "state_tools_contract": "state-tools-e1", **historical})
         agent.configuration["valuation"] = valuation_metadata
+        if communication_config.mode != "off":
+            communication_client = (factory.conversation(replace(profile, name="communicator"))
+                                    if communication_config.mode == "communicator" else None)
+            setattr(agent, "communication", (communication_config, communication_client, on_progress))
         if mode != "off":
             from research_agent.extensions.knowledge_agent.delegation import attach
             attach(agent, lambda: factory.conversation(profile), mode)

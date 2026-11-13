@@ -6,6 +6,10 @@ correspondiente sin repetirlo. Los planes de un corte antiguo no son la agenda v
 consultar [estrategia](../strategy.md). Los estados «sin campaña» describen el cierre
 de aquella entrega; las ejecuciones posteriores están en el [registro experimental](../experiments/README.md).
 
+- [2026-11-11 — Piloto Adobe con DCF Lab: revisión](2026-11-11-dcf-adbe-review.md):
+  cierre voluntario, cronología de integración, evaluación y límites del único brazo.
+- [2026-11-11 — Comunicación opcional](2026-11-11-communication.md): hook temporal
+  y comunicador en vivo, presupuestos separados y validación local sin campaña.
 - [2026-11-11 — DCF Lab compartido](2026-11-11-dcf-lab.md): biblioteca portable,
   valoración opcional con presupuesto y auditoría, sin campaña real.
 - [2026-11-07 — Referencias y recuperación de Progress](2026-11-07-progress-recovery.md).

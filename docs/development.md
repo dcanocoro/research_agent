@@ -25,6 +25,76 @@ retirado. Los ejemplos de contratos de estado apuntan a las rutas canónicas nue
 el hash de su texto cambia y se registra mediante el aviso de contratos existente.
 Las guías ya congeladas dentro de experimentos no se reescriben.
 
+## Comunicación opcional de progreso
+
+`--communication off|hook|communicator` selecciona una alternativa por ejecución;
+el valor predeterminado es `off` y se repite al continuar. Funciona en acotado,
+continuo y Progress. Solo afecta al investigador principal, sin propagarse a B,
+revisores, especialistas o notas de continuidad. No cambia las instrucciones
+congeladas del experimento. Los mensajes confirmados se muestran por `stderr`;
+la salida final conserva su formato.
+
+```powershell
+research-agent "Investiga la empresa" --output artifacts/comunicacion-hook --run-name inicial --new --communication hook
+research-agent "Investiga la empresa" --output artifacts/comunicacion-externa --run-name inicial --new --communication communicator --communication-max-calls 20 --communication-timeout-seconds 30
+research-agent "Revisa los datos" --output artifacts/comunicacion-externa --run-name revision --continue --communication communicator
+```
+
+En `hook`, A dispone de `publish_progress(message, evidence_refs)` y una guía
+permanente. Tras seis intercambios elegibles sin publicación confirmada recibe un
+recordatorio durante tres invocaciones. Se construye el sistema de cada petición
+sin insertar la instrucción en el historial; sus bytes se comprueban antes de enviar.
+El cooldown exige cinco intercambios desde la retirada. Publicar es opcional;
+un fallo no completa el recordatorio. No hay activaciones en consolidación,
+checkpoint o cierre; la publicación puede seguir disponible en consolidación.
+Los intercambios dedicados a publicar no cuentan como actividad elegible, aunque
+sus llamadas consumen el presupuesto ordinario de A.
+
+En `communicator`, una tarea del mismo proceso observa cada seis intercambios
+elegibles, con una inferencia activa y un snapshot pendiente reemplazable por el
+más reciente. No espera el investigador a que termine la inferencia. El cliente
+usa el mismo perfil inicial de modelo, sin herramientas, historial acumulado ni
+acceso al workspace. Los snapshots incluyen encargo, fase, corte de eventos,
+última publicación y actividad todavía no comunicada, con un límite de 32 KiB.
+Los resultados se leen de entregas de herramientas ya archivadas, nunca del
+workspace actual. Se omiten resultados superiores a 4 KiB y se declaran recortes;
+un encargo que por sí solo exceda el límite también queda marcado como recortado.
+No se reconstruye razonamiento privado. Una transición de fase invalida la
+respuesta pendiente. El cierre cancela la tarea, sin esperar una publicación final.
+
+`--communication-max-calls` (20) y `--communication-timeout-seconds` (30) solo
+se aceptan con `communicator`, con valores positivos y finitos. Cada intento
+enviado consume una llamada del presupuesto separado. Los límites de A, incluidos
+`--max-calls` y `--max-react-calls`, no incluyen estas inferencias externas.
+`resultado.json` conserva sus contadores de investigación; consultar también
+`comunicacion/resumen.json` para el consumo adicional. Tokens se registran cuando
+los aporta la captura del proveedor; coste desconocido permanece `null`.
+
+Ambos modos admiten mensajes de hasta 600 caracteres, sin duplicados exactos
+consecutivos y con cinco intercambios entre publicaciones. Las referencias deben
+estar disponibles en el corte observado y pertenecer al run: referencias de
+artefactos, rutas confirmadas o `event:N` para eventos confirmados. Comprobar su
+existencia no verifica que respalden semánticamente el texto. El comunicador solo
+puede citar referencias incluidas en su snapshot.
+
+Las publicaciones quedan en `comunicacion/publicaciones.jsonl`, separadas del
+conocimiento editable. La configuración efectiva, prompts y hashes constan en el
+manifiesto y `comunicacion/configuracion.json`. Se conservan snapshots y decisiones
+en `comunicacion/observacion-*.json`, capturas del proveedor bajo
+`comunicacion/trazas-*` y eventos `lab.communication.*`. Errores recuperables del
+comunicador o de visualización no interrumpen la investigación. Una publicación
+solo se confirma tras persistir; un fallo posterior de visualización no la revierte.
+
+Desde Python, pasar `CommunicationConfig(mode="hook")` o
+`CommunicationConfig(mode="communicator", max_calls=20, timeout_seconds=30)` a
+`build_agent(..., communication=..., on_progress=callback)`. Importar la clase de
+`research_agent.extensions.communication.configuration`; el callback síncrono
+recibe una copia del evento persistido y debe retornar inmediatamente.
+
+Comprobación local: `python -m pytest -q tests/extensions/test_communication.py`.
+No hay reproducción offline, campaña comparativa ni aceptación semántica en esta
+funcionalidad.
+
 ## Renovación con nota de continuidad
 
 Añadir `--context-note` a una ejecución `--continuous` activa la nota operativa de

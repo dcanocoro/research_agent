@@ -6,6 +6,10 @@ consumo especializado adicional. No se ejecuta control ni se atribuirá mejora c
 Este piloto estudia la trayectoria dentro de una investigación inicial; no introduce
 resultados nuevos semanas después ni acredita actualización longitudinal externa.
 
+Revisión posterior: [hallazgos de la ejecución](adbe-findings.md), con incidencias,
+consumo agregado, evaluación y límites. Se conservan a continuación las condiciones
+previas; los ajustes efectivos de las tentativas se detallan en los hallazgos.
+
 ## Contrato y entradas
 
 - Adobe (ADBE), workspace nuevo y aislado; mismo A continuo implementado.

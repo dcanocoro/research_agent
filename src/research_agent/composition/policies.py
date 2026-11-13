@@ -12,6 +12,17 @@ def validate_execution(agent: AgentA, request: AgentRequest) -> None:
 
 
 def compose_policy(agent: AgentA, request: AgentRequest) -> Policy:
+    policy = _base_policy(agent, request)
+    communication = getattr(agent, "communication", None)
+    if communication is not None and agent.role == "A":
+        config, client, callback = communication
+        if config.mode != "off":
+            from research_agent.extensions.communication.policy import CommunicationPolicy
+            return CommunicationPolicy(policy, config, client, callback)
+    return policy
+
+
+def _base_policy(agent: AgentA, request: AgentRequest) -> Policy:
     """The only selector of concrete execution policies; no implicit variants."""
     validate_execution(agent, request)
     if request.progress:

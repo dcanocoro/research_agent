@@ -42,6 +42,18 @@ no un detector determinista de redundancia ni una garantía de persistencia.
 
 ## Frontera y componentes
 
+La comunicación de avances opcional se compone como decorador de la política en
+`extensions/communication/`, sin cambios en el motor común. `hook` transforma solo
+la petición al investigador y registra `publish_progress`; `communicator` observa
+eventos y entregas de herramientas ya archivadas mediante snapshots inmutables y
+una tarea asíncrona con cliente separado. No recibe acceso al workspace ni modifica
+el historial investigador. Ambos usan publicación persistida antes de emitir al
+consumidor. El modo predeterminado `off` no registra herramientas, tareas ni
+artefactos de comunicación. Selección, presupuesto y límites de captura:
+[operación](development.md#comunicación-opcional-de-progreso). La
+[entrega](deliveries/2026-11-11-communication.md) separa checks técnicos de utilidad
+semántica pendiente.
+
 Desde 2026-11-11, `capabilities/valuation/` adapta el paquete independiente DCF Lab
 como herramienta opcional. Recibe snapshot y documentos explícitos, consume hasta
 dos llamadas del presupuesto global y conserva bundles con cálculo/diagnóstico.

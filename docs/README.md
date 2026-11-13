@@ -13,6 +13,7 @@ capturada no demuestra calidad financiera ni resultados de inversión.
 | Ubicar componentes y saber qué se activa | [Mapa de módulos](modules.md) |
 | Entender el agente actual y sus fronteras | [Arquitectura](architecture.md) |
 | Instalar, configurar y ejecutar | [Desarrollo](development.md) |
+| Comunicar avances mediante hook o comunicador | [Comunicación opcional](development.md#comunicación-opcional-de-progreso) |
 | Preparar, lanzar y revisar experimentos por nombre | [Guía breve](launch-experiments.md) |
 | Preparar y revisar campañas | [Campañas](campaigns.md) |
 | Diseñar un contraste | [Metodología](experiments.md) |

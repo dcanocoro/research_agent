@@ -9,9 +9,13 @@ biblioteca y herramienta opcional implementadas con validación local. Sin campa
 real ni utilidad financiera demostrada; la [entrega](../deliveries/2026-11-11-dcf-lab.md)
 conserva verificaciones y límites.
 
-Piloto autorizado posterior: [Adobe con DCF Lab](dcf-lab-v1/adbe-longitudinal.md),
-una ejecución experimental con hasta 300 llamadas ReAct y especialistas adicionales.
-El usuario retira el control; no permite una comparación causal entre brazos.
+Piloto ejecutado posterior: [Adobe con DCF Lab](dcf-lab-v1/adbe-longitudinal.md),
+solo experimental, hasta 300 llamadas ReAct y especialistas adicionales.
+Los [hallazgos](dcf-lab-v1/adbe-findings.md) conservan dos fallos y una continuación
+con cierre voluntario: 114 ReAct, cinco revisiones y dos llamadas internas DCF.
+Uso espontáneo y seguimiento de incertidumbres, pero contexto empresarial vacío
+en la única valoración, extracciones parciales y continuidad operativa débil.
+El usuario retiró el control; no permite atribuir mejora causal.
 
 Prueba posterior (2026-11-04): [nota de continuidad en investigación abierta](context-note-general-100/findings.md),
 100 llamadas agregadas en dos runs, 15 renovaciones y dos expedientes iniciales.
@@ -121,3 +125,5 @@ antecedentes no constituyen aceptación del mecanismo vigente ni de una arquitec
 - [Pareja FinData de 150 llamadas: trayectoria y utilidad de las notas](expedientes-findata/baseline-150-findings.md).
 
 - [V0 — Evaluación retrospectiva D1–D5 de la pareja FinData de 150 llamadas](../evaluaciones/V0/informe.md).
+
+- [Piloto de comunicación de progreso](communication-pilot/protocol.md). Tres ejecuciones exploratorias de hasta 30 llamadas, sin evaluación comparativa todavía.

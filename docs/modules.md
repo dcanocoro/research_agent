@@ -13,6 +13,7 @@
 | extensions/deliberation/ | Mandato, agenda y foco |
 | extensions/progress/ | Objetivos, compromisos y evaluador vigente |
 | extensions/context_note/ | Nota LLM opcional de continuidad |
+| extensions/communication/ | Publicación de avances, recordatorio temporal o comunicador independiente |
 | extensions/knowledge_agent/ | Delegación y política de B preparado |
 | capabilities/ | Estado, aritmética, Findata, web, Python, valoración y simulación |
 | instructions/ | Guía de A y especialización financiera |
@@ -35,6 +36,7 @@ e historia, y `artifacts/` salidas locales ignoradas. Las pruebas reflejan estas
 | Deliberación | No | --mandate o entradas de --name |
 | Progress | No | --progress o --objective; incompatible con B |
 | Nota de continuidad | No | --context-note con continuo |
+| Comunicación | No | --communication hook/communicator; alternativas por run, solo investigador principal |
 | B preparado | No | --knowledge-agent prepared; continuo de 60, 70 o 100 llamadas |
 | Estado, aritmética, Findata, web | Sí en composición estándar | Disponibles; no obliga a utilizarlas |
 | Python | No | --python; dependencias opcionales |
